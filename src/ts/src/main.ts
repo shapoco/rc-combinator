@@ -9,24 +9,33 @@ export function main() {
 
 function makeCombinatorUI(): HTMLDivElement {
   const rangeSelector = new Ui.ResistorRangeSelector();
-  const targetInput = new Ui.ResistorInput('目標値', '5.1k');
+  const targetInput = new Ui.ResistorInput('5.1k');
   const numElementsInput = Ui.makeTextBox('4');
   const resultBox = document.createElement('pre') as HTMLPreElement;
 
   const ui = Ui.makeDiv([
     Ui.makeH2('合成抵抗計算機'),
-    Ui.makeParagraph([
-      rangeSelector.container,
-      Ui.makeBr(),
-      targetInput.container,
-      Ui.makeBr(),
-      Ui.makeLabel('最大素子数', numElementsInput),
+    Ui.makeTable([
+      ['Item', 'Value', 'Unit'],
+      ['Series', rangeSelector.seriesSelect, ''],
+      ['Custom Values', rangeSelector.customValuesInput, 'Ω'],
+      ['Minimum', rangeSelector.minResisterInput.inputBox, 'Ω'],
+      ['Maximum', rangeSelector.maxResisterInput.inputBox, 'Ω'],
+      ['Max Elements', numElementsInput, ''],
+      ['Target', targetInput.inputBox, 'Ω'],
     ]),
     resultBox,
   ]);
 
   const callback = () => {
     try {
+      const custom = rangeSelector.seriesSelect.value === 'custom';
+      Ui.setVisible(Ui.parentTrOf(rangeSelector.customValuesInput)!, custom);
+      Ui.setVisible(
+          Ui.parentTrOf(rangeSelector.minResisterInput.inputBox)!, !custom);
+      Ui.setVisible(
+          Ui.parentTrOf(rangeSelector.maxResisterInput.inputBox)!, !custom);
+
       const availableValues = rangeSelector.availableValues;
       const targetValue = targetInput.value;
       const maxElements = parseInt(numElementsInput.value, 10);

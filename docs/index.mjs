@@ -70,6 +70,7 @@ var TopologyNode = class {
 		return this.iLeft + 1 >= this.iRight;
 	}
 };
+const RE_VALUE = /^(\d+(\.\d+)?)([kKmM]?)$/;
 const memo = /* @__PURE__ */ new Map();
 function formatValue(value, unit) {
 	if (value >= 1e9) return (value / 1e9).toFixed(3) + " G" + unit;
@@ -81,6 +82,36 @@ function formatValue(value, unit) {
 	else if (value >= 1e-9) return (value * 1e9).toFixed(3) + " n" + unit;
 	else if (value >= 1e-12) return (value * 0xe8d4a51000).toFixed(3) + " p" + unit;
 	else return value.toExponential(3) + " " + unit;
+}
+function parseValue(text) {
+	const match = RE_VALUE.exec(text);
+	if (!match) throw new Error(`Invalid resistor value: ${text}`);
+	let value = parseFloat(match[1]);
+	switch (match[3]) {
+		case "n":
+			value *= 1e-9;
+			break;
+		case "u":
+			value *= 1e-6;
+			break;
+		case "m":
+			value *= .001;
+			break;
+		case "k":
+		case "K":
+			value *= 1e3;
+			break;
+		case "M":
+			value *= 1e6;
+			break;
+		case "G":
+			value *= 1e9;
+			break;
+		case "T":
+			value *= 0xe8d4a51000;
+			break;
+	}
+	return value;
 }
 var Combination = class {
 	constructor(parallel = false, children = [], value = 0) {
@@ -249,75 +280,59 @@ function divideElementsRecursive(buff, buffSize, numElems, callback, depth) {
 //#region src/Ui.ts
 var ResistorRangeSelector = class {
 	seriesSelect = makeSeriesSelector();
-	minResisterInput = new ResistorInput("最小値", "1k");
-	maxResisterInput = new ResistorInput("最大値", "1M");
-	container = makeSpan([
-		makeLabel("シリーズ", this.seriesSelect),
-		makeBr(),
-		this.minResisterInput.container,
-		makeBr(),
-		this.maxResisterInput.container
-	]);
+	customValuesInput = document.createElement("textarea");
+	minResisterInput = new ResistorInput("1k");
+	maxResisterInput = new ResistorInput("1M");
+	constructor() {
+		this.customValuesInput.value = "100, 1k, 10k";
+		this.customValuesInput.placeholder = "e.g.\n100, 1k, 10k";
+		this.customValuesInput.disabled = true;
+	}
 	get availableValues() {
 		const series = this.seriesSelect.value;
-		const minValue = this.minResisterInput.value;
-		const maxValue = this.maxResisterInput.value;
-		return makeAvaiableValues(series, minValue, maxValue);
+		if (series === "custom") {
+			const valueStrs = this.customValuesInput.value.split(",");
+			const values = [];
+			for (const str of valueStrs) {
+				const val = parseValue(str.trim());
+				if (!isNaN(val)) values.push(val);
+			}
+			return values;
+		} else {
+			const minValue = this.minResisterInput.value;
+			const maxValue = this.maxResisterInput.value;
+			return makeAvaiableValues(series, minValue, maxValue);
+		}
 	}
 	onChange(callback) {
-		this.seriesSelect.addEventListener("change", () => callback());
+		this.seriesSelect.addEventListener("change", () => {
+			const custom = this.seriesSelect.value === "custom";
+			this.customValuesInput.disabled = !custom;
+			this.minResisterInput.inputBox.disabled = custom;
+			this.maxResisterInput.inputBox.disabled = custom;
+			callback();
+		});
+		this.customValuesInput.addEventListener("input", () => callback());
+		this.customValuesInput.addEventListener("change", () => callback());
 		this.minResisterInput.onChange(callback);
 		this.maxResisterInput.onChange(callback);
 	}
 };
 var ResistorInput = class {
-	RE_VALUE = /^(\d+(\.\d+)?)([kKmM]?)$/;
 	inputBox = makeTextBox();
-	container = makeSpan();
-	constructor(label, value = null) {
-		this.container.appendChild(makeLabel(label, this.inputBox, "Ω"));
+	constructor(value = null) {
 		if (value) this.inputBox.value = value;
 	}
 	get value() {
 		let text = this.inputBox.value.trim();
 		if (text === "") text = this.inputBox.placeholder.trim();
-		const match = this.RE_VALUE.exec(text);
-		if (!match) throw new Error(`Invalid resistor value: ${text}`);
-		let value = parseFloat(match[1]);
-		switch (match[3]) {
-			case "n":
-				value *= 1e-9;
-				break;
-			case "u":
-				value *= 1e-6;
-				break;
-			case "m":
-				value *= .001;
-				break;
-			case "k":
-			case "K":
-				value *= 1e3;
-				break;
-			case "M":
-				value *= 1e6;
-				break;
-			case "G":
-				value *= 1e9;
-				break;
-			case "T":
-				value *= 0xe8d4a51000;
-				break;
-		}
-		return value;
+		return parseValue(text);
 	}
 	onChange(callback) {
 		this.inputBox.addEventListener("input", () => callback());
 		this.inputBox.addEventListener("change", () => callback());
 	}
 };
-function makeBr() {
-	return document.createElement("br");
-}
 function makeH2(label) {
 	const elm = document.createElement("h2");
 	elm.textContent = label;
@@ -330,31 +345,25 @@ function makeDiv(children, className = null, center = false) {
 	if (center) elm.style.textAlign = "center";
 	return elm;
 }
-function makeParagraph(children, className = null, center = false) {
-	const elm = document.createElement("p");
-	toElementArray(children).forEach((child) => elm.appendChild(child));
-	if (className) elm.classList.add(className);
-	if (center) elm.style.textAlign = "center";
-	return elm;
-}
-function makeSpan(children = null, className = null) {
-	const elm = document.createElement("span");
-	toElementArray(children).forEach((child) => elm.appendChild(child));
-	if (className) elm.classList.add(className);
-	return elm;
-}
-function makeLabel(label, input, unit = null) {
-	const elm = document.createElement("label");
-	elm.appendChild(document.createTextNode(label + ": "));
-	elm.appendChild(input);
-	if (unit) elm.appendChild(document.createTextNode(" " + unit));
-	return elm;
+function makeTable(rows) {
+	let head = true;
+	const table = document.createElement("table");
+	for (const rowData of rows) {
+		const row = document.createElement("tr");
+		for (const cellData of rowData) {
+			const cell = document.createElement(head ? "th" : "td");
+			toElementArray(cellData).forEach((child) => cell.appendChild(child));
+			row.appendChild(cell);
+		}
+		head = false;
+		table.appendChild(row);
+	}
+	return table;
 }
 function makeTextBox(value = null) {
 	const elm = document.createElement("input");
 	elm.type = "text";
 	if (value) elm.value = value;
-	elm.style.width = "50px";
 	return elm;
 }
 function makeSeriesSelector() {
@@ -362,6 +371,10 @@ function makeSeriesSelector() {
 	for (const key of Object.keys(SERIESES)) items.push({
 		value: key,
 		label: key
+	});
+	items.push({
+		value: "custom",
+		label: "Custom"
 	});
 	return makeSelectBox(items, "E6");
 }
@@ -375,7 +388,6 @@ function makeSelectBox(items, defaultValue) {
 		select.appendChild(option);
 	}
 	select.value = defaultValue.toString();
-	select.style.width = "50px";
 	return select;
 }
 function toElementArray(children) {
@@ -385,6 +397,25 @@ function toElementArray(children) {
 	else if (children[i] instanceof Node) {} else throw new Error("Invalid child element");
 	return children;
 }
+function parentTrOf(element) {
+	let parent = element;
+	while (parent) {
+		if (parent.tagName === "TR") return parent;
+		parent = parent.parentElement;
+	}
+	return null;
+}
+function show(elem) {
+	elem.classList.remove("hidden");
+	return elem;
+}
+function hide(elem) {
+	elem.classList.add("hidden");
+	return elem;
+}
+function setVisible(elem, visible) {
+	return visible ? show(elem) : hide(elem);
+}
 
 //#endregion
 //#region src/main.ts
@@ -393,22 +424,56 @@ function main() {
 }
 function makeCombinatorUI() {
 	const rangeSelector = new ResistorRangeSelector();
-	const targetInput = new ResistorInput("目標値", "5.1k");
+	const targetInput = new ResistorInput("5.1k");
 	const numElementsInput = makeTextBox("4");
 	const resultBox = document.createElement("pre");
 	const ui = makeDiv([
 		makeH2("合成抵抗計算機"),
-		makeParagraph([
-			rangeSelector.container,
-			makeBr(),
-			targetInput.container,
-			makeBr(),
-			makeLabel("最大素子数", numElementsInput)
+		makeTable([
+			[
+				"Item",
+				"Value",
+				"Unit"
+			],
+			[
+				"Series",
+				rangeSelector.seriesSelect,
+				""
+			],
+			[
+				"Custom Values",
+				rangeSelector.customValuesInput,
+				"Ω"
+			],
+			[
+				"Minimum",
+				rangeSelector.minResisterInput.inputBox,
+				"Ω"
+			],
+			[
+				"Maximum",
+				rangeSelector.maxResisterInput.inputBox,
+				"Ω"
+			],
+			[
+				"Max Elements",
+				numElementsInput,
+				""
+			],
+			[
+				"Target",
+				targetInput.inputBox,
+				"Ω"
+			]
 		]),
 		resultBox
 	]);
 	const callback = () => {
 		try {
+			const custom = rangeSelector.seriesSelect.value === "custom";
+			setVisible(parentTrOf(rangeSelector.customValuesInput), custom);
+			setVisible(parentTrOf(rangeSelector.minResisterInput.inputBox), !custom);
+			setVisible(parentTrOf(rangeSelector.maxResisterInput.inputBox), !custom);
 			const availableValues = rangeSelector.availableValues;
 			const targetValue = targetInput.value;
 			const maxElements = parseInt(numElementsInput.value, 10);

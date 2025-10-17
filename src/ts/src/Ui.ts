@@ -2,38 +2,54 @@ import * as RcComb from './RcComb';
 
 export class ResistorRangeSelector {
   seriesSelect = makeSeriesSelector();
-  minResisterInput = new ResistorInput('最小値', '1k');
-  maxResisterInput = new ResistorInput('最大値', '1M');
-  container = makeSpan([
-    makeLabel('シリーズ', this.seriesSelect),
-    makeBr(),
-    this.minResisterInput.container,
-    makeBr(),
-    this.maxResisterInput.container,
-  ]);
+  customValuesInput = document.createElement('textarea') as HTMLTextAreaElement;
+  minResisterInput = new ResistorInput('1k');
+  maxResisterInput = new ResistorInput('1M');
+
+  constructor() {
+    this.customValuesInput.value = '100, 1k, 10k';
+    this.customValuesInput.placeholder = 'e.g.\n100, 1k, 10k';
+    this.customValuesInput.disabled = true;
+  }
 
   get availableValues() {
     const series = this.seriesSelect.value;
-    const minValue = this.minResisterInput.value;
-    const maxValue = this.maxResisterInput.value;
-    return RcComb.makeAvaiableValues(series, minValue, maxValue);
+    if (series === 'custom') {
+      const valueStrs = this.customValuesInput.value.split(',');
+      const values: number[] = [];
+      for (const str of valueStrs) {
+        const val = RcComb.parseValue(str.trim());
+        if (!isNaN(val)) {
+          values.push(val);
+        }
+      }
+      return values;
+    } else {
+      const minValue = this.minResisterInput.value;
+      const maxValue = this.maxResisterInput.value;
+      return RcComb.makeAvaiableValues(series, minValue, maxValue);
+    }
   }
 
   onChange(callback: () => void) {
-    this.seriesSelect.addEventListener('change', () => callback());
+    this.seriesSelect.addEventListener('change', () => {
+      const custom = this.seriesSelect.value === 'custom';
+      this.customValuesInput.disabled = !custom;
+      this.minResisterInput.inputBox.disabled = custom;
+      this.maxResisterInput.inputBox.disabled = custom;
+      callback();
+    });
+    this.customValuesInput.addEventListener('input', () => callback());
+    this.customValuesInput.addEventListener('change', () => callback());
     this.minResisterInput.onChange(callback);
     this.maxResisterInput.onChange(callback);
   }
 }
 
 export class ResistorInput {
-  RE_VALUE = /^(\d+(\.\d+)?)([kKmM]?)$/;
-
   inputBox = makeTextBox();
-  container = makeSpan();
 
-  constructor(label: string, value: string|null = null) {
-    this.container.appendChild(makeLabel(label, this.inputBox, 'Ω'));
+  constructor(value: string|null = null) {
     if (value) {
       this.inputBox.value = value;
     }
@@ -44,37 +60,7 @@ export class ResistorInput {
     if (text === '') {
       text = this.inputBox.placeholder.trim();
     }
-    const match = this.RE_VALUE.exec(text);
-    if (!match) {
-      throw new Error(`Invalid resistor value: ${text}`);
-    }
-    let value = parseFloat(match[1]);
-    const unit = match[3];
-    switch (unit) {
-      case 'n':
-        value *= 1e-9;
-        break;
-      case 'u':
-        value *= 1e-6;
-        break;
-      case 'm':
-        value *= 1e-3;
-        break;
-      case 'k':
-      case 'K':
-        value *= 1e3;
-        break;
-      case 'M':
-        value *= 1e6;
-        break;
-      case 'G':
-        value *= 1e9;
-        break;
-      case 'T':
-        value *= 1e12;
-        break;
-    }
-    return value;
+    return RcComb.parseValue(text);
   }
 
   onChange(callback: () => void) {
@@ -123,6 +109,22 @@ export function makeParagraph(
   return elm;
 }
 
+export function makeTable(rows: Array<Array<string|Node>>): HTMLTableElement {
+  let head = true;
+  const table = document.createElement('table');
+  for (const rowData of rows) {
+    const row = document.createElement('tr');
+    for (const cellData of rowData) {
+      const cell = document.createElement(head ? 'th' : 'td');
+      toElementArray(cellData).forEach(child => cell.appendChild(child));
+      row.appendChild(cell);
+    }
+    head = false;
+    table.appendChild(row);
+  }
+  return table;
+}
+
 export function makeSpan(
     children: string|Node|Array<string|Node>|null = null,
     className: string|null = null): HTMLSpanElement {
@@ -151,7 +153,6 @@ export function makeTextBox(value: string|null = null): HTMLInputElement {
   if (value) {
     elm.value = value;
   }
-  elm.style.width = '50px';
   return elm;
 }
 
@@ -160,6 +161,7 @@ export function makeSeriesSelector() {
   for (const key of Object.keys(RcComb.SERIESES)) {
     items.push({value: key, label: key});
   }
+  items.push({value: 'custom', label: 'Custom'});
   return makeSelectBox(items, 'E6');
 }
 
@@ -177,7 +179,6 @@ export function makeSelectBox(
     select.appendChild(option);
   }
   select.value = defaultValue.toString();
-  select.style.width = '50px';
   return select;
 }
 
@@ -205,4 +206,29 @@ export function toElementArray(children: string|Node|Array<string|Node>|
     }
   }
   return children as Array<Node>;
+}
+
+export function parentTrOf(element: HTMLElement): HTMLTableRowElement|null {
+  let parent: HTMLElement|null = element;
+  while (parent) {
+    if (parent.tagName === 'TR') {
+      return parent as HTMLTableRowElement;
+    }
+    parent = parent.parentElement;
+  }
+  return null;
+}
+
+export function show(elem: HTMLElement): HTMLElement {
+  elem.classList.remove('hidden');
+  return elem;
+}
+
+export function hide(elem: HTMLElement): HTMLElement {
+  elem.classList.add('hidden');
+  return elem;
+}
+
+export function setVisible(elem: HTMLElement, visible: boolean): HTMLElement {
+  return visible ? show(elem) : hide(elem);
 }

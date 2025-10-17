@@ -7,9 +7,24 @@ body {
 body,
 input,
 button,
-select {
+select,
+textarea {
   font-family: "Noto Color Emoji", sans-serif;
   font-size: 16px;
+}
+
+input[type="text"],
+textarea,
+select {
+  width: 100px;
+}
+
+input[type="text"] {
+  text-align: right;
+}
+
+textarea {
+  height: 100px;
 }
 
 #container {
@@ -92,10 +107,9 @@ li blockquote:first-child {
 }
 
 table {
-  margin: 10px auto;
+  margin: 10px 0px;
   background: #fff;
   border-collapse: collapse;
-  font-size: 80%;
   line-height: 2.5ex;
 }
 
@@ -140,4 +154,8 @@ code {
   padding: 0px 5px;
   color: #246;
   font-weight: bold;
+}
+
+.hidden {
+  display: none;
 }
