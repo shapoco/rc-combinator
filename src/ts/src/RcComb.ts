@@ -25,25 +25,25 @@ export class TopologyNode {
 
 const memo = new Map<number, TopologyNode[]>();
 
-export function formatValue(value: number): string {
+export function formatValue(value: number, unit: string): string {
   if (value >= 1e9) {
-    return (value / 1e9).toFixed(3) + 'G';
+    return (value / 1e9).toFixed(3) + ' G' + unit;
   } else if (value >= 1e6) {
-    return (value / 1e6).toFixed(3) + 'M';
+    return (value / 1e6).toFixed(3) + ' M' + unit;
   } else if (value >= 1e3) {
-    return (value / 1e3).toFixed(3) + 'k';
+    return (value / 1e3).toFixed(3) + ' k' + unit;
   } else if (value >= 1) {
-    return value.toFixed(3);
+    return value.toFixed(3) + ' ' + unit;
   } else if (value >= 1e-3) {
-    return (value * 1e3).toFixed(3) + 'm';
+    return (value * 1e3).toFixed(3) + ' m' + unit;
   } else if (value >= 1e-6) {
-    return (value * 1e6).toFixed(3) + 'u';
+    return (value * 1e6).toFixed(3) + ' u' + unit;
   } else if (value >= 1e-9) {
-    return (value * 1e9).toFixed(3) + 'n';
+    return (value * 1e9).toFixed(3) + ' n' + unit;
   } else if (value >= 1e-12) {
-    return (value * 1e12).toFixed(3) + 'p';
+    return (value * 1e12).toFixed(3) + ' p' + unit;
   } else {
-    return value.toExponential(3);
+    return value.toExponential(3) + ' ' + unit;
   }
 }
 
@@ -54,14 +54,14 @@ export class Combination {
 
   toString(indent: string = ''): string {
     if (this.children.length === 0) {
-      return `${indent}${formatValue(this.value)} Ω\n`;
+      return `${indent}${formatValue(this.value, 'Ω')}\n`;
     } else {
       let ret = '';
       for (const child of this.children) {
         ret += child.toString(indent + '    ');
       }
       ret = `${indent}${this.parallel ? 'Parallel' : 'Series'}: ` +
-          `${formatValue(this.value)} Ω\n${ret}`;
+          `${formatValue(this.value, 'Ω')}\n${ret}`;
       return ret;
     }
   }

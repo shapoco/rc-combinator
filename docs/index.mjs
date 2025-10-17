@@ -71,16 +71,16 @@ var TopologyNode = class {
 	}
 };
 const memo = /* @__PURE__ */ new Map();
-function formatValue(value) {
-	if (value >= 1e9) return (value / 1e9).toFixed(3) + "G";
-	else if (value >= 1e6) return (value / 1e6).toFixed(3) + "M";
-	else if (value >= 1e3) return (value / 1e3).toFixed(3) + "k";
-	else if (value >= 1) return value.toFixed(3);
-	else if (value >= .001) return (value * 1e3).toFixed(3) + "m";
-	else if (value >= 1e-6) return (value * 1e6).toFixed(3) + "u";
-	else if (value >= 1e-9) return (value * 1e9).toFixed(3) + "n";
-	else if (value >= 1e-12) return (value * 0xe8d4a51000).toFixed(3) + "p";
-	else return value.toExponential(3);
+function formatValue(value, unit) {
+	if (value >= 1e9) return (value / 1e9).toFixed(3) + " G" + unit;
+	else if (value >= 1e6) return (value / 1e6).toFixed(3) + " M" + unit;
+	else if (value >= 1e3) return (value / 1e3).toFixed(3) + " k" + unit;
+	else if (value >= 1) return value.toFixed(3) + " " + unit;
+	else if (value >= .001) return (value * 1e3).toFixed(3) + " m" + unit;
+	else if (value >= 1e-6) return (value * 1e6).toFixed(3) + " u" + unit;
+	else if (value >= 1e-9) return (value * 1e9).toFixed(3) + " n" + unit;
+	else if (value >= 1e-12) return (value * 0xe8d4a51000).toFixed(3) + " p" + unit;
+	else return value.toExponential(3) + " " + unit;
 }
 var Combination = class {
 	constructor(parallel = false, children = [], value = 0) {
@@ -89,11 +89,11 @@ var Combination = class {
 		this.value = value;
 	}
 	toString(indent = "") {
-		if (this.children.length === 0) return `${indent}${formatValue(this.value)} Ω\n`;
+		if (this.children.length === 0) return `${indent}${formatValue(this.value, "Ω")}\n`;
 		else {
 			let ret = "";
 			for (const child of this.children) ret += child.toString(indent + "    ");
-			ret = `${indent}${this.parallel ? "Parallel" : "Series"}: ${formatValue(this.value)} Ω\n${ret}`;
+			ret = `${indent}${this.parallel ? "Parallel" : "Series"}: ${formatValue(this.value, "Ω")}\n${ret}`;
 			return ret;
 		}
 	}
