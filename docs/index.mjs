@@ -60,6 +60,7 @@ let ComponentType = /* @__PURE__ */ function(ComponentType$1) {
 	return ComponentType$1;
 }({});
 var TopologyNode = class {
+	complexity_ = -1;
 	constructor(iLeft, iRight, parallel, children) {
 		this.iLeft = iLeft;
 		this.iRight = iRight;
@@ -69,9 +70,17 @@ var TopologyNode = class {
 	get isLeaf() {
 		return this.iLeft + 1 >= this.iRight;
 	}
+	get complexity() {
+		if (this.complexity_ < 0) if (this.isLeaf) this.complexity_ = 1;
+		else {
+			this.complexity_ = 0;
+			for (const child of this.children) this.complexity_ += child.complexity;
+		}
+		return this.complexity_;
+	}
 };
 const RE_VALUE = /^(\d+(\.\d+)?)([kKmM]?)$/;
-const memo = /* @__PURE__ */ new Map();
+const topologyMemo = /* @__PURE__ */ new Map();
 function formatValue(value, unit) {
 	if (value >= 1e9) return (value / 1e9).toFixed(3) + " G" + unit;
 	else if (value >= 1e6) return (value / 1e6).toFixed(3) + " M" + unit;
@@ -114,10 +123,11 @@ function parseValue(text) {
 	return value;
 }
 var Combination = class {
-	constructor(parallel = false, children = [], value = 0) {
+	constructor(parallel = false, children = [], value = 0, complexity = -1) {
 		this.parallel = parallel;
 		this.children = children;
 		this.value = value;
+		this.complexity = complexity;
 	}
 	toString(indent = "") {
 		if (this.children.length === 0) return `${indent}${formatValue(this.value, "Ω")}\n`;
@@ -129,10 +139,26 @@ var Combination = class {
 		}
 	}
 };
+var DividerCombination = class {
+	constructor(upper, lower, ratio) {
+		this.upper = upper;
+		this.lower = lower;
+		this.ratio = ratio;
+	}
+	toString() {
+		const up = this.upper[0];
+		const lo = this.lower[0];
+		let ret = `R2 / (R1 + R2) = ${this.ratio.toFixed(6)}, R1 + R2 = ${formatValue(up.value + lo.value, "Ω")}\n`;
+		ret += "  Upper:\n";
+		ret += up.toString("    ");
+		ret += "  Lower:\n";
+		ret += lo.toString("    ");
+		return ret;
+	}
+};
 function findCombinations(cType, values, targetValue, maxElements) {
 	const epsilon = targetValue * 1e-6;
 	let bestError = Number.POSITIVE_INFINITY;
-	let bestComplexity = Number.POSITIVE_INFINITY;
 	let bestCombinations = [];
 	for (let numElem = 1; numElem <= maxElements; numElem++) {
 		const topos = searchTopologies(0, numElem);
@@ -141,48 +167,94 @@ function findCombinations(cType, values, targetValue, maxElements) {
 			for (const topo of topos) {
 				const value = calcValue(cType, values, indices, topo);
 				if (isNaN(value)) continue;
-				const complexity = calcComplexity(topo);
 				const error = Math.abs(value - targetValue);
 				let update = false;
-				if (error < bestError - epsilon || error < bestError + epsilon && complexity < bestComplexity) {
+				if (error < bestError - epsilon) {
 					bestCombinations = [];
 					update = true;
-				} else if (error < bestError + epsilon && complexity === bestComplexity) update = true;
+				}
 				if (update) {
-					bestComplexity = complexity;
 					bestError = error;
 					const comb = new Combination();
 					calcValue(cType, values, indices, topo, comb);
 					bestCombinations.push(comb);
 				}
 			}
-			for (let i = 0; i < numElem; i++) {
-				indices[i]++;
-				if (indices[i] < values.length) break;
-				else if (i + 1 >= numElem) break;
-				else indices[i] = 0;
-			}
+			incrementIndices(indices, values);
 		}
 		if (bestError <= epsilon) break;
 	}
+	return selectSimplestCombinations(bestCombinations);
+}
+function findDividers(cType, values, targetRatio, totalMin, totalMax, maxElements) {
+	const epsilon = 1e-6;
+	let bestError = Number.POSITIVE_INFINITY;
+	let bestCombinations = [];
+	const combMemo = /* @__PURE__ */ new Map();
+	for (let numElem = 1; numElem <= maxElements; numElem++) {
+		const topos = searchTopologies(0, numElem);
+		const indices = new Array(numElem).fill(0);
+		while (indices[numElem - 1] < values.length) {
+			for (const topo of topos) {
+				const lowerValue = calcValue(cType, values, indices, topo);
+				if (isNaN(lowerValue)) continue;
+				const totalTargetValue = lowerValue / targetRatio;
+				const upperTargetValue = totalTargetValue - lowerValue;
+				if (totalTargetValue < totalMin || totalMax < totalTargetValue) continue;
+				if (lowerValue in combMemo) {
+					const lowerComb$1 = new Combination();
+					calcValue(cType, values, indices, topo, lowerComb$1);
+					combMemo.get(lowerValue)?.lower.push(lowerComb$1);
+					continue;
+				}
+				const upperCombs = findCombinations(cType, values, upperTargetValue, maxElements);
+				if (upperCombs.length === 0) continue;
+				const ratio = lowerValue / (upperCombs[0].value + lowerValue);
+				const error = Math.abs(ratio - targetRatio);
+				if (error > bestError + epsilon) continue;
+				if (error < bestError - epsilon) {
+					console.log(`New best error: ${error}`);
+					bestCombinations = [];
+				}
+				bestError = error;
+				const lowerComb = new Combination();
+				calcValue(cType, values, indices, topo, lowerComb);
+				const dividerComb = new DividerCombination(upperCombs, [lowerComb], ratio);
+				bestCombinations.push(dividerComb);
+				combMemo.set(lowerValue, dividerComb);
+			}
+			incrementIndices(indices, values);
+		}
+		if (bestError <= epsilon) break;
+	}
+	for (const comb of bestCombinations) {
+		comb.upper = selectSimplestCombinations(comb.upper);
+		comb.lower = selectSimplestCombinations(comb.lower);
+	}
 	return bestCombinations;
 }
+function incrementIndices(indices, values) {
+	const n = indices.length;
+	for (let i = 0; i < n; i++) {
+		indices[i]++;
+		if (indices[i] < values.length) break;
+		else if (i + 1 >= n) break;
+		else indices[i] = 0;
+	}
+}
 function calcValue(cType, values, indices, topo, comb = null) {
-	if (comb) comb.parallel = topo.parallel;
+	if (comb) {
+		comb.parallel = topo.parallel;
+		comb.complexity = topo.complexity;
+	}
 	if (topo.isLeaf) {
 		const val$1 = values[indices[topo.iLeft]];
 		if (comb) comb.value = val$1;
 		return val$1;
 	}
 	let invSum = false;
-	switch (cType) {
-		case ComponentType.Resistor:
-			invSum = topo.parallel;
-			break;
-		case ComponentType.Capacitor:
-			invSum = !topo.parallel;
-			break;
-	}
+	if (cType === ComponentType.Resistor) invSum = topo.parallel;
+	else invSum = !topo.parallel;
 	let ret = 0;
 	let lastLeafVal = Number.POSITIVE_INFINITY;
 	let lastCombVal = Number.POSITIVE_INFINITY;
@@ -205,12 +277,6 @@ function calcValue(cType, values, indices, topo, comb = null) {
 	if (comb) comb.value = val;
 	return val;
 }
-function calcComplexity(node) {
-	if (node.isLeaf) return 1;
-	let ret = 0;
-	for (const child of node.children) ret += calcComplexity(child);
-	return ret;
-}
 function makeAvaiableValues(series, minValue, maxValue) {
 	const baseValues = SERIESES[series];
 	if (!baseValues) throw new Error(`Unknown series: ${series}`);
@@ -225,6 +291,11 @@ function makeAvaiableValues(series, minValue, maxValue) {
 	values.sort((a, b) => a - b);
 	return values;
 }
+function selectSimplestCombinations(combs) {
+	let bestComplexity = Number.POSITIVE_INFINITY;
+	for (const comb of combs) if (comb.complexity < bestComplexity) bestComplexity = comb.complexity;
+	return combs.filter((comb) => comb.complexity === bestComplexity);
+}
 function searchTopologies(iLeft, iRight) {
 	let topos = searchTopologiesRecursive(iLeft, iRight, false);
 	if (iLeft + 1 < iRight) topos = topos.concat(searchTopologiesRecursive(iLeft, iRight, true));
@@ -232,11 +303,11 @@ function searchTopologies(iLeft, iRight) {
 }
 function searchTopologiesRecursive(iLeft, iRight, parallel) {
 	const key = iLeft + iRight * 1e3 + (parallel ? 1e6 : 0);
-	if (memo.has(key)) return memo.get(key);
+	if (topologyMemo.has(key)) return topologyMemo.get(key);
 	const ret = new Array();
 	if (iLeft + 1 >= iRight) {
 		ret.push(new TopologyNode(iLeft, iRight, parallel, []));
-		memo.set(key, ret);
+		topologyMemo.set(key, ret);
 		return ret;
 	}
 	const n = iRight - iLeft;
@@ -261,7 +332,7 @@ function searchTopologiesRecursive(iLeft, iRight, parallel) {
 			}
 		}
 	}, 0);
-	memo.set(key, ret);
+	topologyMemo.set(key, ret);
 	return ret;
 }
 function divideElementsRecursive(buff, buffSize, numElems, callback, depth) {
@@ -347,6 +418,13 @@ function makeDiv(children, className = null, center = false) {
 	if (center) elm.style.textAlign = "center";
 	return elm;
 }
+function makeParagraph(children, className = null, center = false) {
+	const elm = document.createElement("p");
+	toElementArray(children).forEach((child) => elm.appendChild(child));
+	if (className) elm.classList.add(className);
+	if (center) elm.style.textAlign = "center";
+	return elm;
+}
 function makeTable(rows) {
 	let head = true;
 	const table = document.createElement("table");
@@ -422,7 +500,7 @@ function setVisible(elem, visible) {
 //#endregion
 //#region src/main.ts
 function main() {
-	document.querySelector("#rcCombinator")?.appendChild(makeDiv([makeCombinatorUI()]));
+	document.querySelector("#rcCombinator")?.appendChild(makeDiv([makeCombinatorUI(), makeDividerCombinatorUI()]));
 }
 function makeCombinatorUI() {
 	const rangeSelector = new ResistorRangeSelector();
@@ -495,6 +573,98 @@ function makeCombinatorUI() {
 	targetInput.onChange(callback);
 	numElementsInput.addEventListener("change", () => callback());
 	numElementsInput.addEventListener("input", () => callback());
+	callback();
+	return ui;
+}
+function makeDividerCombinatorUI() {
+	const rangeSelector = new ResistorRangeSelector();
+	const targetInput = makeTextBox("0.3");
+	const totalMinBox = new ResistorInput("10k");
+	const totalMaxBox = new ResistorInput("100k");
+	const numElementsInput = makeTextBox("2");
+	const resultBox = document.createElement("pre");
+	const ui = makeDiv([
+		makeH2("分圧抵抗計算機"),
+		makeParagraph("R1: upper resister, R2: lower resister"),
+		makeTable([
+			[
+				"Item",
+				"Value",
+				"Unit"
+			],
+			[
+				"Series",
+				rangeSelector.seriesSelect,
+				""
+			],
+			[
+				"Custom Values",
+				rangeSelector.customValuesInput,
+				"Ω"
+			],
+			[
+				"Minimum",
+				rangeSelector.minResisterInput.inputBox,
+				"Ω"
+			],
+			[
+				"Maximum",
+				rangeSelector.maxResisterInput.inputBox,
+				"Ω"
+			],
+			[
+				"Max Elements",
+				numElementsInput,
+				""
+			],
+			[
+				"R1 + R2 (min)",
+				totalMinBox.inputBox,
+				"Ω"
+			],
+			[
+				"R1 + R2 (max)",
+				totalMaxBox.inputBox,
+				"Ω"
+			],
+			[
+				"R2 / (R1 + R2)",
+				targetInput,
+				""
+			]
+		]),
+		resultBox
+	]);
+	const callback = () => {
+		try {
+			const custom = rangeSelector.seriesSelect.value === "custom";
+			setVisible(parentTrOf(rangeSelector.customValuesInput), custom);
+			setVisible(parentTrOf(rangeSelector.minResisterInput.inputBox), !custom);
+			setVisible(parentTrOf(rangeSelector.maxResisterInput.inputBox), !custom);
+			const availableValues = rangeSelector.availableValues;
+			const targetValue = parseFloat(targetInput.value);
+			const totalMin = totalMinBox.value;
+			const totalMax = totalMaxBox.value;
+			const maxElements = parseInt(numElementsInput.value, 10);
+			if (Math.pow(availableValues.length, 2 * maxElements) > 1e7) throw new Error("Too many value combinations.");
+			const combs = findDividers(ComponentType.Resistor, availableValues, targetValue, totalMin, totalMax, maxElements);
+			let resultText = "";
+			if (combs.length > 0) {
+				resultText += `Found ${combs.length} combination(s):\n\n`;
+				for (const comb of combs) resultText += comb.toString() + "\n";
+			} else resultText = "No combinations found.";
+			resultBox.textContent = resultText;
+		} catch (e) {
+			resultBox.textContent = `Error: ${e.message}`;
+		}
+	};
+	rangeSelector.onChange(callback);
+	targetInput.addEventListener("change", () => callback());
+	targetInput.addEventListener("input", () => callback());
+	numElementsInput.addEventListener("change", () => callback());
+	numElementsInput.addEventListener("input", () => callback());
+	totalMinBox.onChange(callback);
+	totalMaxBox.onChange(callback);
 	callback();
 	return ui;
 }

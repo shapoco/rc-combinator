@@ -15,18 +15,33 @@ export const enum ComponentType {
 }
 
 export class TopologyNode {
+  complexity_: number = -1;
   constructor(
       public iLeft: number, public iRight: number, public parallel: boolean,
       public children: Array<TopologyNode>) {}
   get isLeaf(): boolean {
     return this.iLeft + 1 >= this.iRight;
   }
+
+  get complexity(): number {
+    if (this.complexity_ < 0) {
+      if (this.isLeaf) {
+        this.complexity_ = 1;
+      } else {
+        this.complexity_ = 0;
+        for (const child of this.children) {
+          this.complexity_ += child.complexity;
+        }
+      }
+    }
+    return this.complexity_;
+  }
 }
 
 const RE_VALUE = /^(\d+(\.\d+)?)([kKmM]?)$/;
 
 
-const memo = new Map<number, TopologyNode[]>();
+const topologyMemo = new Map<number, TopologyNode[]>();
 
 export function formatValue(value: number, unit: string): string {
   if (value >= 1e9) {
@@ -87,7 +102,7 @@ export function parseValue(text: string): number {
 export class Combination {
   constructor(
       public parallel: boolean = false, public children: Combination[] = [],
-      public value: number = 0) {}
+      public value: number = 0, public complexity: number = -1) {}
 
   toString(indent: string = ''): string {
     if (this.children.length === 0) {
@@ -104,13 +119,30 @@ export class Combination {
   }
 }
 
+export class DividerCombination {
+  constructor(
+      public upper: Combination[], public lower: Combination[],
+      public ratio: number) {}
+
+  toString(): string {
+    const up = this.upper[0];
+    const lo = this.lower[0];
+    let ret = `R2 / (R1 + R2) = ${this.ratio.toFixed(6)}, ` +
+        `R1 + R2 = ${formatValue(up.value + lo.value, 'Ω')}\n`;
+    ret += '  Upper:\n';
+    ret += up.toString('    ');
+    ret += '  Lower:\n';
+    ret += lo.toString('    ');
+    return ret;
+  }
+}
+
 export function findCombinations(
     cType: ComponentType, values: number[], targetValue: number,
     maxElements: number): Combination[] {
   const epsilon = targetValue * 1e-6;
 
   let bestError: number = Number.POSITIVE_INFINITY;
-  let bestComplexity: number = Number.POSITIVE_INFINITY;
   let bestCombinations: Combination[] = [];
   for (let numElem = 1; numElem <= maxElements; numElem++) {
     // console.log(`Searching combinations with ${numElem} elements...`);
@@ -124,22 +156,16 @@ export function findCombinations(
           continue;
         }
         // console.log(`Value: ${value}`);
-        const complexity = calcComplexity(topo);
         const error = Math.abs(value - targetValue);
 
         let update = false;
-        if (error < bestError - epsilon ||
-            (error < bestError + epsilon && complexity < bestComplexity)) {
+        if (error < bestError - epsilon) {
           bestCombinations = [];
-          update = true;
-        } else if (
-            error < bestError + epsilon && complexity === bestComplexity) {
           update = true;
         }
 
         if (update) {
           // console.log(`Error: ${error}`);
-          bestComplexity = complexity;
           bestError = error;
           const comb = new Combination();
           calcValue(cType, values, indices, topo, comb);
@@ -148,16 +174,7 @@ export function findCombinations(
       }
 
       // increment indices
-      for (let i = 0; i < numElem; i++) {
-        indices[i]++;
-        if (indices[i] < values.length) {
-          break;
-        } else if (i + 1 >= numElem) {
-          break;
-        } else {
-          indices[i] = 0;
-        }
-      }
+      incrementIndices(indices, values);
     }
 
     if (bestError <= epsilon) {
@@ -165,13 +182,105 @@ export function findCombinations(
     }
   }
 
+  return selectSimplestCombinations(bestCombinations);
+}
+
+export function findDividers(
+    cType: ComponentType, values: number[], targetRatio: number,
+    totalMin: number, totalMax: number,
+    maxElements: number): DividerCombination[] {
+  const epsilon = 1e-6;
+
+  let bestError: number = Number.POSITIVE_INFINITY;
+  let bestCombinations: DividerCombination[] = [];
+  const combMemo = new Map<number, DividerCombination>();
+
+  for (let numElem = 1; numElem <= maxElements; numElem++) {
+    const topos = searchTopologies(0, numElem);
+    const indices = new Array<number>(numElem).fill(0);
+    while (indices[numElem - 1] < values.length) {
+      for (const topo of topos) {
+        const lowerValue = calcValue(cType, values, indices, topo);
+        if (isNaN(lowerValue)) {
+          continue;
+        }
+
+        const totalTargetValue = lowerValue / targetRatio;
+        const upperTargetValue = totalTargetValue - lowerValue;
+        if (totalTargetValue < totalMin || totalMax < totalTargetValue) {
+          continue;
+        }
+
+        if (lowerValue in combMemo) {
+          const lowerComb = new Combination();
+          calcValue(cType, values, indices, topo, lowerComb);
+          combMemo.get(lowerValue)?.lower.push(lowerComb);
+          continue;
+        }
+
+        const upperCombs =
+            findCombinations(cType, values, upperTargetValue, maxElements);
+        if (upperCombs.length === 0) {
+          continue;
+        }
+
+        const ratio = lowerValue / (upperCombs[0].value + lowerValue);
+        const error = Math.abs(ratio - targetRatio);
+        if (error > bestError + epsilon) {
+          continue;
+        }
+
+        if (error < bestError - epsilon) {
+          console.log(`New best error: ${error}`);
+          bestCombinations = [];
+        }
+
+        bestError = error;
+        const lowerComb = new Combination();
+        calcValue(cType, values, indices, topo, lowerComb);
+        const dividerComb =
+            new DividerCombination(upperCombs, [lowerComb], ratio);
+        bestCombinations.push(dividerComb);
+        combMemo.set(lowerValue, dividerComb);
+      }
+
+      // increment indices
+      incrementIndices(indices, values);
+    }
+
+    if (bestError <= epsilon) {
+      break;
+    }
+  }
+
+  for (const comb of bestCombinations) {
+    comb.upper = selectSimplestCombinations(comb.upper);
+    comb.lower = selectSimplestCombinations(comb.lower);
+  }
   return bestCombinations;
+}
+
+function incrementIndices(indices: number[], values: number[]) {
+  const n = indices.length;
+  for (let i = 0; i < n; i++) {
+    indices[i]++;
+    if (indices[i] < values.length) {
+      break;
+    } else if (i + 1 >= n) {
+      break;
+    } else {
+      indices[i] = 0;
+    }
+  }
 }
 
 function calcValue(
     cType: ComponentType, values: number[], indices: number[],
     topo: TopologyNode, comb: Combination|null = null): number {
-  if (comb) comb.parallel = topo.parallel;
+  if (comb) {
+    comb.parallel = topo.parallel;
+    comb.complexity = topo.complexity;
+  }
 
   if (topo.isLeaf) {
     const val = values[indices[topo.iLeft]];
@@ -180,13 +289,10 @@ function calcValue(
   }
 
   let invSum = false;
-  switch (cType) {
-    case ComponentType.Resistor:
-      invSum = topo.parallel;
-      break;
-    case ComponentType.Capacitor:
-      invSum = !topo.parallel;
-      break;
+  if (cType === ComponentType.Resistor) {
+    invSum = topo.parallel;
+  } else {
+    invSum = !topo.parallel;
   }
 
   let ret = 0;
@@ -218,17 +324,6 @@ function calcValue(
   return val;
 }
 
-function calcComplexity(node: TopologyNode): number {
-  if (node.isLeaf) {
-    return 1;
-  }
-  let ret = 0;
-  for (const child of node.children) {
-    ret += calcComplexity(child);
-  }
-  return ret;
-}
-
 export function makeAvaiableValues(
     series: string, minValue: number, maxValue: number): number[] {
   const baseValues = SERIESES[series];
@@ -249,6 +344,16 @@ export function makeAvaiableValues(
   return values;
 }
 
+function selectSimplestCombinations(combs: Combination[]): Combination[] {
+  let bestComplexity = Number.POSITIVE_INFINITY;
+  for (const comb of combs) {
+    if (comb.complexity < bestComplexity) {
+      bestComplexity = comb.complexity;
+    }
+  }
+  return combs.filter(comb => comb.complexity === bestComplexity);
+}
+
 function searchTopologies(iLeft: number, iRight: number) {
   let topos = searchTopologiesRecursive(iLeft, iRight, false);
   if (iLeft + 1 < iRight) {
@@ -261,15 +366,15 @@ function searchTopologiesRecursive(
     iLeft: number, iRight: number, parallel: boolean): TopologyNode[] {
   // console.assert(iLeft < iRight);
   const key = iLeft + iRight * 1000 + (parallel ? 1000000 : 0);
-  if (memo.has(key)) {
-    return memo.get(key)!;
+  if (topologyMemo.has(key)) {
+    return topologyMemo.get(key)!;
   }
 
   const ret = new Array<TopologyNode>();
 
   if (iLeft + 1 >= iRight) {
     ret.push(new TopologyNode(iLeft, iRight, parallel, []));
-    memo.set(key, ret);
+    topologyMemo.set(key, ret);
     return ret;
   }
 
@@ -309,7 +414,7 @@ function searchTopologiesRecursive(
       }, 0);
   // console.log('B');
 
-  memo.set(key, ret);
+  topologyMemo.set(key, ret);
   return ret;
 }
 
