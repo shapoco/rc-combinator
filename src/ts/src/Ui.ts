@@ -3,7 +3,7 @@ import * as RcComb from './RcComb';
 export class ResistorRangeSelector {
   seriesSelect = makeSeriesSelector();
   customValuesInput = document.createElement('textarea') as HTMLTextAreaElement;
-  minResisterInput = new ResistorInput('1k');
+  minResisterInput = new ResistorInput('100');
   maxResisterInput = new ResistorInput('1M');
 
   constructor() {
@@ -164,7 +164,7 @@ export function makeSeriesSelector() {
     items.push({value: key, label: key});
   }
   items.push({value: 'custom', label: 'Custom'});
-  return makeSelectBox(items, 'E6');
+  return makeSelectBox(items, 'E3');
 }
 
 export function makeSelectBox(

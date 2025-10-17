@@ -281,7 +281,7 @@ function divideElementsRecursive(buff, buffSize, numElems, callback, depth) {
 var ResistorRangeSelector = class {
 	seriesSelect = makeSeriesSelector();
 	customValuesInput = document.createElement("textarea");
-	minResisterInput = new ResistorInput("1k");
+	minResisterInput = new ResistorInput("100");
 	maxResisterInput = new ResistorInput("1M");
 	constructor() {
 		this.customValuesInput.value = "100, 1k, 10k";
@@ -378,7 +378,7 @@ function makeSeriesSelector() {
 		value: "custom",
 		label: "Custom"
 	});
-	return makeSelectBox(items, "E6");
+	return makeSelectBox(items, "E3");
 }
 function makeSelectBox(items, defaultValue) {
 	const select = document.createElement("select");
