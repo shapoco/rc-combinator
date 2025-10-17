@@ -293,9 +293,11 @@ var ResistorRangeSelector = class {
 		if (series === "custom") {
 			const valueStrs = this.customValuesInput.value.split(",");
 			const values = [];
-			for (const str of valueStrs) {
-				const val = parseValue(str.trim());
-				if (!isNaN(val)) values.push(val);
+			for (let str of valueStrs) {
+				str = str.trim();
+				if (str === "") continue;
+				const val = parseValue(str);
+				if (!isNaN(val) && !values.includes(val)) values.push(val);
 			}
 			return values;
 		} else {

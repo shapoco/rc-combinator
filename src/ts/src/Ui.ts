@@ -17,9 +17,11 @@ export class ResistorRangeSelector {
     if (series === 'custom') {
       const valueStrs = this.customValuesInput.value.split(',');
       const values: number[] = [];
-      for (const str of valueStrs) {
-        const val = RcComb.parseValue(str.trim());
-        if (!isNaN(val)) {
+      for (let str of valueStrs) {
+        str = str.trim();
+        if (str === '') continue;
+        const val = RcComb.parseValue(str);
+        if (!isNaN(val) && !values.includes(val)) {
           values.push(val);
         }
       }
