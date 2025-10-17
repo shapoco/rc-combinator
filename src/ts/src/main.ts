@@ -15,7 +15,7 @@ function makeCombinatorUI(): HTMLDivElement {
   const resultBox = document.createElement('pre') as HTMLPreElement;
 
   const ui = Ui.makeDiv([
-    Ui.makeH2('合成抵抗計算機'),
+    Ui.makeH2('合成抵抗を見つける'),
     Ui.makeTable([
       ['Item', 'Value', 'Unit'],
       ['Series', rangeSelector.seriesSelect, ''],
@@ -84,7 +84,7 @@ function makeDividerCombinatorUI(): HTMLDivElement {
   const resultBox = document.createElement('pre') as HTMLPreElement;
 
   const ui = Ui.makeDiv([
-    Ui.makeH2('分圧抵抗計算機'),
+    Ui.makeH2('分圧抵抗を見つける'),
     Ui.makeParagraph('R1: upper resister, R2: lower resister'),
     Ui.makeTable([
       ['Item', 'Value', 'Unit'],

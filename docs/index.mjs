@@ -508,7 +508,7 @@ function makeCombinatorUI() {
 	const numElementsInput = makeTextBox("4");
 	const resultBox = document.createElement("pre");
 	const ui = makeDiv([
-		makeH2("合成抵抗計算機"),
+		makeH2("合成抵抗を見つける"),
 		makeTable([
 			[
 				"Item",
@@ -584,7 +584,7 @@ function makeDividerCombinatorUI() {
 	const numElementsInput = makeTextBox("2");
 	const resultBox = document.createElement("pre");
 	const ui = makeDiv([
-		makeH2("分圧抵抗計算機"),
+		makeH2("分圧抵抗を見つける"),
 		makeParagraph("R1: upper resister, R2: lower resister"),
 		makeTable([
 			[
