@@ -1,0 +1,143 @@
+body {
+  background: #e8f0f8;
+  margin: 0px;
+  padding: 0px;
+}
+
+body,
+input,
+button,
+select {
+  font-family: "Noto Color Emoji", sans-serif;
+  font-size: 16px;
+}
+
+#container {
+  background: white;
+  max-width: 900px;
+  margin: 0px auto;
+  padding: 0px;
+  position: relative;
+  box-sizing: border-box;
+}
+
+header {
+  margin: 0px;
+  padding: 0px;
+}
+
+main {
+  margin: 0px;
+  padding: 0px 1em;
+}
+
+footer {
+  border-top: solid 1px #ccc;
+  margin: 1ex 0px;
+  padding: 1ex 0px;
+  text-align: center;
+  color: #888;
+}
+
+footer a {
+  color: #888;
+  text-emphasis: underline;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+ul,
+ol,
+blockquote {
+  margin: 10px 0px;
+  padding: 0px;
+  box-sizing: border-box;
+}
+
+h1 {
+  text-align: center;
+  font-size: 30px;
+  margin-top: 0px;
+}
+
+h2 {
+  font-size: 18px;
+  background: #cde;
+  border-radius: 5px;
+  padding: 5px 10px;
+}
+
+h3 {
+  font-size: 16px;
+}
+
+ul,
+ol {
+  padding: 0px 0px 0px 2em;
+}
+
+li {
+  margin: 1ex 0px;
+  padding: 0px;
+}
+
+li p:first-child,
+li ul:first-child,
+li ol:first-child,
+li blockquote:first-child {
+  margin-top: 0px;
+}
+
+table {
+  margin: 10px auto;
+  background: #fff;
+  border-collapse: collapse;
+  font-size: 80%;
+  line-height: 2.5ex;
+}
+
+tr:nth-child(odd) {
+  background-color: #f8f8f8;
+}
+
+th,
+td {
+  border: solid 1px #888;
+  padding: 0.2ex 0.5em;
+}
+
+th {
+  background: #ddd;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+pre,
+code,
+.codePlaneTitle {
+  font-family: Consolas, 'Courier New', Courier, monospace;
+}
+
+pre,
+.codeHiddenBox {
+  padding: 1ex 1em;
+  background: #f8f8f8;
+}
+
+pre {
+  overflow: scroll;
+  font-size: 80%;
+}
+
+code {
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.1);
+  padding: 0px 5px;
+  color: #246;
+  font-weight: bold;
+}
