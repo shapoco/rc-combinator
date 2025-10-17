@@ -26,18 +26,24 @@ export class TopologyNode {
 const memo = new Map<number, TopologyNode[]>();
 
 export function formatValue(value: number): string {
-  if (value >= 1e6) {
-    return (value / 1e6).toFixed(2) + 'M';
+  if (value >= 1e9) {
+    return (value / 1e9).toFixed(3) + 'G';
+  } else if (value >= 1e6) {
+    return (value / 1e6).toFixed(3) + 'M';
   } else if (value >= 1e3) {
-    return (value / 1e3).toFixed(2) + 'k';
+    return (value / 1e3).toFixed(3) + 'k';
   } else if (value >= 1) {
-    return value.toFixed(2);
+    return value.toFixed(3);
   } else if (value >= 1e-3) {
-    return (value * 1e3).toFixed(2) + 'm';
+    return (value * 1e3).toFixed(3) + 'm';
   } else if (value >= 1e-6) {
-    return (value * 1e6).toFixed(2) + 'u';
+    return (value * 1e6).toFixed(3) + 'u';
+  } else if (value >= 1e-9) {
+    return (value * 1e9).toFixed(3) + 'n';
+  } else if (value >= 1e-12) {
+    return (value * 1e12).toFixed(3) + 'p';
   } else {
-    return value.toExponential(2);
+    return value.toExponential(3);
   }
 }
 
@@ -64,6 +70,8 @@ export class Combination {
 export function findCombinations(
     cType: ComponentType, values: number[], targetValue: number,
     maxElements: number): Combination[] {
+  const epsilon = targetValue * 1e-6;
+
   let bestError: number = Number.POSITIVE_INFINITY;
   let bestComplexity: number = Number.POSITIVE_INFINITY;
   let bestCombinations: Combination[] = [];
@@ -83,11 +91,12 @@ export function findCombinations(
         const error = Math.abs(value - targetValue);
 
         let update = false;
-        if (error < bestError ||
-            (error === bestError && complexity < bestComplexity)) {
+        if (error < bestError - epsilon ||
+            (error < bestError + epsilon && complexity < bestComplexity)) {
           bestCombinations = [];
           update = true;
-        } else if (error === bestError && complexity === bestComplexity) {
+        } else if (
+            error < bestError + epsilon && complexity === bestComplexity) {
           update = true;
         }
 
@@ -114,7 +123,7 @@ export function findCombinations(
       }
     }
 
-    if (bestError <= targetValue * 1e-6) {
+    if (bestError <= epsilon) {
       break;
     }
   }
@@ -144,15 +153,21 @@ function calcValue(
   }
 
   let ret = 0;
-  let lastVal = Number.POSITIVE_INFINITY;
+  let lastLeafVal = Number.POSITIVE_INFINITY;
+  let lastCombVal = Number.POSITIVE_INFINITY;
   for (const childTopo of topo.children) {
     const childComb = comb ? new Combination() : null;
     const childVal = calcValue(cType, values, indices, childTopo, childComb);
-    if (isNaN(childVal) || childVal > lastVal) {
-      // This combination is invalid because the values are not sorted.
+    if (isNaN(childVal)) {
       return NaN;
     }
-    lastVal = childVal;
+    if (childTopo.isLeaf) {
+      if (childVal > lastLeafVal) return NaN;
+      lastLeafVal = childVal;
+    } else {
+      if (childVal > lastCombVal) return NaN;
+      lastCombVal = childVal;
+    }
     if (comb) comb.children.push(childComb!);
     if (invSum) {
       ret += 1 / childVal;

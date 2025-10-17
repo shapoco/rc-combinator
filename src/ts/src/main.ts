@@ -9,8 +9,8 @@ export function main() {
 
 function makeCombinatorUI(): HTMLDivElement {
   const rangeSelector = new Ui.ResistorRangeSelector();
-  const targetInput = new Ui.ResistorInput('目標値', '50k');
-  const numElementsInput = Ui.makeTextBox('3');
+  const targetInput = new Ui.ResistorInput('目標値', '5.1k');
+  const numElementsInput = Ui.makeTextBox('4');
   const resultBox = document.createElement('pre') as HTMLPreElement;
 
   const ui = Ui.makeDiv([

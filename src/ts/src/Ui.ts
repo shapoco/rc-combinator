@@ -160,7 +160,7 @@ export function makeSeriesSelector() {
   for (const key of Object.keys(RcComb.SERIESES)) {
     items.push({value: key, label: key});
   }
-  return makeSelectBox(items, 'E3');
+  return makeSelectBox(items, 'E6');
 }
 
 export function makeSelectBox(

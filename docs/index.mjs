@@ -72,12 +72,15 @@ var TopologyNode = class {
 };
 const memo = /* @__PURE__ */ new Map();
 function formatValue(value) {
-	if (value >= 1e6) return (value / 1e6).toFixed(2) + "M";
-	else if (value >= 1e3) return (value / 1e3).toFixed(2) + "k";
-	else if (value >= 1) return value.toFixed(2);
-	else if (value >= .001) return (value * 1e3).toFixed(2) + "m";
-	else if (value >= 1e-6) return (value * 1e6).toFixed(2) + "u";
-	else return value.toExponential(2);
+	if (value >= 1e9) return (value / 1e9).toFixed(3) + "G";
+	else if (value >= 1e6) return (value / 1e6).toFixed(3) + "M";
+	else if (value >= 1e3) return (value / 1e3).toFixed(3) + "k";
+	else if (value >= 1) return value.toFixed(3);
+	else if (value >= .001) return (value * 1e3).toFixed(3) + "m";
+	else if (value >= 1e-6) return (value * 1e6).toFixed(3) + "u";
+	else if (value >= 1e-9) return (value * 1e9).toFixed(3) + "n";
+	else if (value >= 1e-12) return (value * 0xe8d4a51000).toFixed(3) + "p";
+	else return value.toExponential(3);
 }
 var Combination = class {
 	constructor(parallel = false, children = [], value = 0) {
@@ -96,6 +99,7 @@ var Combination = class {
 	}
 };
 function findCombinations(cType, values, targetValue, maxElements) {
+	const epsilon = targetValue * 1e-6;
 	let bestError = Number.POSITIVE_INFINITY;
 	let bestComplexity = Number.POSITIVE_INFINITY;
 	let bestCombinations = [];
@@ -109,10 +113,10 @@ function findCombinations(cType, values, targetValue, maxElements) {
 				const complexity = calcComplexity(topo);
 				const error = Math.abs(value - targetValue);
 				let update = false;
-				if (error < bestError || error === bestError && complexity < bestComplexity) {
+				if (error < bestError - epsilon || error < bestError + epsilon && complexity < bestComplexity) {
 					bestCombinations = [];
 					update = true;
-				} else if (error === bestError && complexity === bestComplexity) update = true;
+				} else if (error < bestError + epsilon && complexity === bestComplexity) update = true;
 				if (update) {
 					bestComplexity = complexity;
 					bestError = error;
@@ -128,7 +132,7 @@ function findCombinations(cType, values, targetValue, maxElements) {
 				else indices[i] = 0;
 			}
 		}
-		if (bestError <= targetValue * 1e-6) break;
+		if (bestError <= epsilon) break;
 	}
 	return bestCombinations;
 }
@@ -149,12 +153,19 @@ function calcValue(cType, values, indices, topo, comb = null) {
 			break;
 	}
 	let ret = 0;
-	let lastVal = Number.POSITIVE_INFINITY;
+	let lastLeafVal = Number.POSITIVE_INFINITY;
+	let lastCombVal = Number.POSITIVE_INFINITY;
 	for (const childTopo of topo.children) {
 		const childComb = comb ? new Combination() : null;
 		const childVal = calcValue(cType, values, indices, childTopo, childComb);
-		if (isNaN(childVal) || childVal > lastVal) return NaN;
-		lastVal = childVal;
+		if (isNaN(childVal)) return NaN;
+		if (childTopo.isLeaf) {
+			if (childVal > lastLeafVal) return NaN;
+			lastLeafVal = childVal;
+		} else {
+			if (childVal > lastCombVal) return NaN;
+			lastCombVal = childVal;
+		}
 		if (comb) comb.children.push(childComb);
 		if (invSum) ret += 1 / childVal;
 		else ret += childVal;
@@ -352,7 +363,7 @@ function makeSeriesSelector() {
 		value: key,
 		label: key
 	});
-	return makeSelectBox(items, "E3");
+	return makeSelectBox(items, "E6");
 }
 function makeSelectBox(items, defaultValue) {
 	const select = document.createElement("select");
@@ -382,8 +393,8 @@ function main() {
 }
 function makeCombinatorUI() {
 	const rangeSelector = new ResistorRangeSelector();
-	const targetInput = new ResistorInput("目標値", "50k");
-	const numElementsInput = makeTextBox("3");
+	const targetInput = new ResistorInput("目標値", "5.1k");
+	const numElementsInput = makeTextBox("4");
 	const resultBox = document.createElement("pre");
 	const ui = makeDiv([
 		makeH2("合成抵抗計算機"),
