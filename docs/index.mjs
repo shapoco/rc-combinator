@@ -149,9 +149,9 @@ var DividerCombination = class {
 		const up = this.upper[0];
 		const lo = this.lower[0];
 		let ret = `R2 / (R1 + R2) = ${this.ratio.toFixed(6)}, R1 + R2 = ${formatValue(up.value + lo.value, "Ω")}\n`;
-		ret += "  Upper:\n";
+		ret += "  R1:\n";
 		ret += up.toString("    ");
-		ret += "  Lower:\n";
+		ret += "  R2:\n";
 		ret += lo.toString("    ");
 		return ret;
 	}
