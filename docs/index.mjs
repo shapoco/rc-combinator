@@ -114,16 +114,46 @@ var TopologyNode = class {
 	}
 };
 const topologyMemo = /* @__PURE__ */ new Map();
-function formatValue(value, unit) {
-	if (value >= 1e9) return (value / 1e9).toFixed(3) + " G" + unit;
-	else if (value >= 1e6) return (value / 1e6).toFixed(3) + " M" + unit;
-	else if (value >= 1e3) return (value / 1e3).toFixed(3) + " k" + unit;
-	else if (value >= 1) return value.toFixed(3) + " " + unit;
-	else if (value >= .001) return (value * 1e3).toFixed(3) + " m" + unit;
-	else if (value >= 1e-6) return (value * 1e6).toFixed(3) + " u" + unit;
-	else if (value >= 1e-9) return (value * 1e9).toFixed(3) + " n" + unit;
-	else if (value >= 1e-12) return (value * 0xe8d4a51000).toFixed(3) + " p" + unit;
-	else return value.toExponential(3) + " " + unit;
+function formatValue(value, unit = "") {
+	let prefix = "";
+	if (unit) {
+		if (value >= 0xe8d4a51000) {
+			value /= 0xe8d4a51000;
+			prefix = "T";
+		} else if (value >= 1e9) {
+			value /= 1e9;
+			prefix = "G";
+		} else if (value >= 1e6) {
+			value /= 1e6;
+			prefix = "M";
+		} else if (value >= 1e3) {
+			value /= 1e3;
+			prefix = "k";
+		} else if (value >= 1) prefix = "";
+		else if (value >= .001) {
+			value *= 1e3;
+			prefix = "m";
+		} else if (value >= 1e-6) {
+			value *= 1e6;
+			prefix = "u";
+		} else if (value >= 1e-9) {
+			value *= 1e9;
+			prefix = "n";
+		} else if (value >= 1e-12) {
+			value *= 0xe8d4a51000;
+			prefix = "p";
+		}
+	}
+	value = Math.round(value * 1e6);
+	let s = "";
+	while (s.length <= 7 || value > 0) {
+		const digit = value % 10;
+		value = Math.floor(value / 10);
+		s = digit.toString() + s;
+		if (s.length === 6) s = "." + s;
+	}
+	s = s.replace(/\.?0+$/, "");
+	return `${s} ${prefix}${unit}`.trim();
 }
 var Combination = class {
 	constructor(parallel = false, children = [], value = 0, complexity = -1) {
@@ -610,23 +640,36 @@ var ResistorRangeSelector = class {
 		});
 		this.customValuesInput.addEventListener("input", () => callback());
 		this.customValuesInput.addEventListener("change", () => callback());
-		this.minResisterInput.onChange(callback);
-		this.maxResisterInput.onChange(callback);
+		this.minResisterInput.setOnChange(callback);
+		this.maxResisterInput.setOnChange(callback);
 	}
 };
 var ValueBox = class {
 	inputBox = makeTextBox();
+	onChangeCallback = () => {};
 	constructor(value = null) {
-		if (value) this.inputBox.value = value;
+		if (value) {
+			this.inputBox.value = value;
+			this.onChange();
+		}
 	}
 	get value() {
 		let text = this.inputBox.value.trim();
 		if (text === "") text = this.inputBox.placeholder.trim();
 		return evalExpr(text);
 	}
-	onChange(callback) {
-		this.inputBox.addEventListener("input", () => callback());
-		this.inputBox.addEventListener("change", () => callback());
+	setOnChange(callback) {
+		this.onChangeCallback = callback;
+		this.inputBox.addEventListener("input", () => this.onChange());
+		this.inputBox.addEventListener("change", () => this.onChange());
+	}
+	onChange() {
+		try {
+			this.inputBox.title = formatValue(this.value);
+		} catch (e) {
+			this.inputBox.title = e.message;
+		}
+		this.onChangeCallback();
 	}
 };
 function makeH2(label) {
@@ -792,8 +835,8 @@ function makeCombinatorUI() {
 		}
 	};
 	rangeSelector.onChange(callback);
-	targetInput.onChange(callback);
-	numElementsInput.onChange(callback);
+	targetInput.setOnChange(callback);
+	numElementsInput.setOnChange(callback);
 	callback();
 	return ui;
 }
@@ -879,10 +922,10 @@ function makeDividerCombinatorUI() {
 		}
 	};
 	rangeSelector.onChange(callback);
-	targetInput.onChange(callback);
-	numElementsInput.onChange(callback);
-	totalMinBox.onChange(callback);
-	totalMaxBox.onChange(callback);
+	targetInput.setOnChange(callback);
+	numElementsInput.setOnChange(callback);
+	totalMinBox.setOnChange(callback);
+	totalMaxBox.setOnChange(callback);
 	callback();
 	return ui;
 }

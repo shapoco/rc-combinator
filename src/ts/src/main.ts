@@ -62,8 +62,8 @@ function makeCombinatorUI(): HTMLDivElement {
     }
   };
   rangeSelector.onChange(callback);
-  targetInput.onChange(callback);
-  numElementsInput.onChange(callback);
+  targetInput.setOnChange(callback);
+  numElementsInput.setOnChange(callback);
 
   callback();
 
@@ -132,10 +132,10 @@ function makeDividerCombinatorUI(): HTMLDivElement {
     }
   };
   rangeSelector.onChange(callback);
-  targetInput.onChange(callback);
-  numElementsInput.onChange(callback);
-  totalMinBox.onChange(callback);
-  totalMaxBox.onChange(callback);
+  targetInput.setOnChange(callback);
+  numElementsInput.setOnChange(callback);
+  totalMinBox.setOnChange(callback);
+  totalMaxBox.setOnChange(callback);
 
   callback();
 

@@ -44,26 +44,47 @@ const RE_VALUE = /^(\d+(\.\d+)?)([kKmM]?)$/;
 
 const topologyMemo = new Map<number, TopologyNode[]>();
 
-export function formatValue(value: number, unit: string): string {
-  if (value >= 1e9) {
-    return (value / 1e9).toFixed(3) + ' G' + unit;
-  } else if (value >= 1e6) {
-    return (value / 1e6).toFixed(3) + ' M' + unit;
-  } else if (value >= 1e3) {
-    return (value / 1e3).toFixed(3) + ' k' + unit;
-  } else if (value >= 1) {
-    return value.toFixed(3) + ' ' + unit;
-  } else if (value >= 1e-3) {
-    return (value * 1e3).toFixed(3) + ' m' + unit;
-  } else if (value >= 1e-6) {
-    return (value * 1e6).toFixed(3) + ' u' + unit;
-  } else if (value >= 1e-9) {
-    return (value * 1e9).toFixed(3) + ' n' + unit;
-  } else if (value >= 1e-12) {
-    return (value * 1e12).toFixed(3) + ' p' + unit;
-  } else {
-    return value.toExponential(3) + ' ' + unit;
+export function formatValue(value: number, unit: string = ''): string {
+  let prefix = '';
+  if (unit) {
+    if (value >= 1e12) {
+      value /= 1e12;
+      prefix = 'T';
+    } else if (value >= 1e9) {
+      value /= 1e9;
+      prefix = 'G';
+    } else if (value >= 1e6) {
+      value /= 1e6;
+      prefix = 'M';
+    } else if (value >= 1e3) {
+      value /= 1e3;
+      prefix = 'k';
+    } else if (value >= 1) {
+      prefix = '';
+    } else if (value >= 1e-3) {
+      value *= 1e3;
+      prefix = 'm';
+    } else if (value >= 1e-6) {
+      value *= 1e6;
+      prefix = 'u';
+    } else if (value >= 1e-9) {
+      value *= 1e9;
+      prefix = 'n';
+    } else if (value >= 1e-12) {
+      value *= 1e12;
+      prefix = 'p';
+    }
   }
+  value = Math.round(value * 1000000);
+  let s = '';
+  while (s.length <= 7 || value > 0) {
+    const digit = value % 10;
+    value = Math.floor(value / 10);
+    s = digit.toString() + s;
+    if (s.length === 6) s = '.' + s;
+  }
+  s = s.replace(/\.?0+$/, '');
+  return `${s} ${prefix}${unit}`.trim();
 }
 
 // export function parseValue(text: string): number {

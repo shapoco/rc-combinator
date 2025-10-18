@@ -1,4 +1,4 @@
-import { evalExpr } from './Calc';
+import {evalExpr} from './Calc';
 import * as RcComb from './RcComb';
 import {getStr} from './Text';
 
@@ -45,17 +45,19 @@ export class ResistorRangeSelector {
     });
     this.customValuesInput.addEventListener('input', () => callback());
     this.customValuesInput.addEventListener('change', () => callback());
-    this.minResisterInput.onChange(callback);
-    this.maxResisterInput.onChange(callback);
+    this.minResisterInput.setOnChange(callback);
+    this.maxResisterInput.setOnChange(callback);
   }
 }
 
 export class ValueBox {
   inputBox = makeTextBox();
+  onChangeCallback: () => void = () => {};
 
   constructor(value: string|null = null) {
     if (value) {
       this.inputBox.value = value;
+      this.onChange();
     }
   }
 
@@ -67,12 +69,21 @@ export class ValueBox {
     return evalExpr(text);
   }
 
-  onChange(callback: () => void) {
-    this.inputBox.addEventListener('input', () => callback());
-    this.inputBox.addEventListener('change', () => callback());
+  setOnChange(callback: () => void) {
+    this.onChangeCallback = callback;
+    this.inputBox.addEventListener('input', () => this.onChange());
+    this.inputBox.addEventListener('change', () => this.onChange());
+  }
+
+  onChange() {
+    try {
+      this.inputBox.title = RcComb.formatValue(this.value);
+    } catch (e) {
+      this.inputBox.title = (e as Error).message;
+    }
+    this.onChangeCallback();
   }
 }
-
 
 export function makeBr(): HTMLBRElement {
   return document.createElement('br');
@@ -113,7 +124,8 @@ export function makeParagraph(
   return elm;
 }
 
-export function makeTable(rows: Array<Array<string|Node|Array<string|Node>>>): HTMLTableElement {
+export function makeTable(rows: Array<Array<string|Node|Array<string|Node>>>):
+    HTMLTableElement {
   let head = true;
   const table = document.createElement('table');
   for (const rowData of rows) {
