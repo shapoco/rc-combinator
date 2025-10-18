@@ -1,4 +1,5 @@
 import * as RcComb from './RcComb';
+import {getStr} from './Text';
 
 export class ResistorRangeSelector {
   seriesSelect = makeSeriesSelector();
@@ -163,7 +164,7 @@ export function makeSeriesSelector() {
   for (const key of Object.keys(RcComb.SERIESES)) {
     items.push({value: key, label: key});
   }
-  items.push({value: 'custom', label: 'Custom'});
+  items.push({value: 'custom', label: getStr('Custom')});
   return makeSelectBox(items, 'E3');
 }
 

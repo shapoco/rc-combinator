@@ -42,11 +42,6 @@ function makeCombinatorUI(): HTMLDivElement {
       const targetValue = targetInput.value;
       const maxElements = parseInt(numElementsInput.value, 10);
 
-      const numComb = Math.pow(availableValues.length, maxElements);
-      if (numComb > 1e6) {
-        throw new Error(getStr('The search space is too large.'));
-      }
-
       const combs = RcComb.findCombinations(
           RcComb.ComponentType.Resistor, availableValues, targetValue,
           maxElements);
@@ -116,11 +111,6 @@ function makeDividerCombinatorUI(): HTMLDivElement {
       const totalMin = totalMinBox.value;
       const totalMax = totalMaxBox.value;
       const maxElements = parseInt(numElementsInput.value, 10);
-
-      const numComb = Math.pow(availableValues.length, 2 * maxElements);
-      if (numComb > 1e7) {
-        throw new Error(getStr('The search space is too large.'));
-      }
 
       const combs = RcComb.findDividers(
           RcComb.ComponentType.Resistor, availableValues, targetValue, totalMin,

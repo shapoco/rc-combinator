@@ -8,6 +8,7 @@ const texts: {[key: string]: {[key: string]: string}} = {
     'Unit': '単位',
     'Minimum': '最小値',
     'Maximum': '最大値',
+    'Custom': 'カスタム',
     'Custom Values': 'カスタム値',
     'Max Elements': '最大素子数',
     'Target Value': '目標値',

@@ -8,6 +8,7 @@ const texts = { "ja": {
 	"Unit": "単位",
 	"Minimum": "最小値",
 	"Maximum": "最大値",
+	"Custom": "カスタム",
 	"Custom Values": "カスタム値",
 	"Max Elements": "最大素子数",
 	"Target Value": "目標値",
@@ -191,6 +192,8 @@ var DividerCombination = class {
 };
 function findCombinations(cType, values, targetValue, maxElements) {
 	const epsilon = targetValue * 1e-6;
+	const numComb = Math.pow(values.length, maxElements);
+	if (maxElements > 10 || numComb > 1e6) throw new Error(getStr("The search space is too large."));
 	let bestError = Number.POSITIVE_INFINITY;
 	let bestCombinations = [];
 	for (let numElem = 1; numElem <= maxElements; numElem++) {
@@ -221,6 +224,8 @@ function findCombinations(cType, values, targetValue, maxElements) {
 }
 function findDividers(cType, values, targetRatio, totalMin, totalMax, maxElements) {
 	const epsilon = 1e-6;
+	const numComb = Math.pow(values.length, 2 * maxElements);
+	if (maxElements > 10 || numComb > 1e7) throw new Error(getStr("The search space is too large."));
 	let bestError = Number.POSITIVE_INFINITY;
 	let bestCombinations = [];
 	const combMemo = /* @__PURE__ */ new Map();
@@ -487,7 +492,7 @@ function makeSeriesSelector() {
 	});
 	items.push({
 		value: "custom",
-		label: "Custom"
+		label: getStr("Custom")
 	});
 	return makeSelectBox(items, "E3");
 }
@@ -590,7 +595,6 @@ function makeCombinatorUI() {
 			const availableValues = rangeSelector.availableValues;
 			const targetValue = targetInput.value;
 			const maxElements = parseInt(numElementsInput.value, 10);
-			if (Math.pow(availableValues.length, maxElements) > 1e6) throw new Error(getStr("The search space is too large."));
 			const combs = findCombinations(ComponentType.Resistor, availableValues, targetValue, maxElements);
 			let resultText = "";
 			if (combs.length > 0) {
@@ -679,7 +683,6 @@ function makeDividerCombinatorUI() {
 			const totalMin = totalMinBox.value;
 			const totalMax = totalMaxBox.value;
 			const maxElements = parseInt(numElementsInput.value, 10);
-			if (Math.pow(availableValues.length, 2 * maxElements) > 1e7) throw new Error(getStr("The search space is too large."));
 			const combs = findDividers(ComponentType.Resistor, availableValues, targetValue, totalMin, totalMax, maxElements);
 			let resultText = "";
 			if (combs.length > 0) {

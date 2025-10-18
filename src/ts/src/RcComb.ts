@@ -144,6 +144,11 @@ export function findCombinations(
     maxElements: number): Combination[] {
   const epsilon = targetValue * 1e-6;
 
+  const numComb = Math.pow(values.length, maxElements);
+  if (maxElements > 10 || numComb > 1e6) {
+    throw new Error(getStr('The search space is too large.'));
+  }
+
   let bestError: number = Number.POSITIVE_INFINITY;
   let bestCombinations: Combination[] = [];
   for (let numElem = 1; numElem <= maxElements; numElem++) {
@@ -192,6 +197,11 @@ export function findDividers(
     totalMin: number, totalMax: number,
     maxElements: number): DividerCombination[] {
   const epsilon = 1e-6;
+
+  const numComb = Math.pow(values.length, 2 * maxElements);
+  if (maxElements > 10 || numComb > 1e7) {
+    throw new Error(getStr('The search space is too large.'));
+  }
 
   let bestError: number = Number.POSITIVE_INFINITY;
   let bestCombinations: DividerCombination[] = [];
