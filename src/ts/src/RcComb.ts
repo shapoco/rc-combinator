@@ -1,3 +1,4 @@
+import {getStr} from './Text';
 
 export const SERIESES: Record<string, number[]> = {
   'E3': [100, 220, 470],
@@ -112,7 +113,8 @@ export class Combination {
       for (const child of this.children) {
         ret += child.toString(indent + '    ');
       }
-      ret = `${indent}${this.parallel ? 'Parallel' : 'Series'}: ` +
+      ret = `${indent}${
+                this.parallel ? getStr('Parallel') : getStr('Series')}: ` +
           `${formatValue(this.value, 'Ω')}\n${ret}`;
       return ret;
     }
@@ -127,7 +129,7 @@ export class DividerCombination {
   toString(): string {
     const up = this.upper[0];
     const lo = this.lower[0];
-    let ret = `R2 / (R1 + R2) = ${this.ratio.toFixed(6)}, ` +
+    let ret = `R2 / (R1 + R2) = ${this.ratio.toFixed(6)}\n` +
         `R1 + R2 = ${formatValue(up.value + lo.value, 'Ω')}\n`;
     ret += '  R1:\n';
     ret += up.toString('    ');

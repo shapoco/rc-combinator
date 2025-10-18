@@ -1,4 +1,5 @@
 import * as RcComb from './RcComb';
+import { getStr } from './Text';
 import * as Ui from './Ui';
 
 export function main() {
@@ -15,15 +16,15 @@ function makeCombinatorUI(): HTMLDivElement {
   const resultBox = document.createElement('pre') as HTMLPreElement;
 
   const ui = Ui.makeDiv([
-    Ui.makeH2('合成抵抗を見つける'),
+    Ui.makeH2(getStr('Find Resistor Combinations')),
     Ui.makeTable([
-      ['Item', 'Value', 'Unit'],
-      ['Series', rangeSelector.seriesSelect, ''],
-      ['Custom Values', rangeSelector.customValuesInput, 'Ω'],
-      ['Minimum', rangeSelector.minResisterInput.inputBox, 'Ω'],
-      ['Maximum', rangeSelector.maxResisterInput.inputBox, 'Ω'],
-      ['Max Elements', numElementsInput, ''],
-      ['Target', targetInput.inputBox, 'Ω'],
+      [getStr('Item'), getStr('Value'), getStr('Unit')],
+      [getStr('E Series'), rangeSelector.seriesSelect, ''],
+      [getStr('Custom Values'), rangeSelector.customValuesInput, 'Ω'],
+      [getStr('Minimum'), rangeSelector.minResisterInput.inputBox, 'Ω'],
+      [getStr('Maximum'), rangeSelector.maxResisterInput.inputBox, 'Ω'],
+      [getStr('Max Elements'), numElementsInput, ''],
+      [getStr('Target Value'), targetInput.inputBox, 'Ω'],
     ]),
     resultBox,
   ]);
@@ -43,7 +44,7 @@ function makeCombinatorUI(): HTMLDivElement {
 
       const numComb = Math.pow(availableValues.length, maxElements);
       if (numComb > 1e6) {
-        throw new Error('Too many value combinations.');
+        throw new Error(getStr('The search space is too large.'));
       }
 
       const combs = RcComb.findCombinations(
@@ -52,12 +53,12 @@ function makeCombinatorUI(): HTMLDivElement {
 
       let resultText = '';
       if (combs.length > 0) {
-        resultText += `Found ${combs.length} combination(s):\n\n`;
+        resultText += getStr('Found <n> combination(s):', { n: combs.length }) + '\n\n';
         for (const comb of combs) {
           resultText += comb.toString() + '\n';
         }
       } else {
-        resultText = 'No combinations found.';
+        resultText = getStr('No combinations found.');
       }
       resultBox.textContent = resultText;
     } catch (e) {
@@ -84,15 +85,16 @@ function makeDividerCombinatorUI(): HTMLDivElement {
   const resultBox = document.createElement('pre') as HTMLPreElement;
 
   const ui = Ui.makeDiv([
-    Ui.makeH2('分圧抵抗を見つける'),
-    Ui.makeParagraph('R1: upper resister, R2: lower resister'),
+    Ui.makeH2(getStr('Find Voltage Dividers')),
+    Ui.makeParagraph(
+        `R1: ${getStr('Upper Resistor')}, R2: ${getStr('Lower Resistor')}`),
     Ui.makeTable([
-      ['Item', 'Value', 'Unit'],
-      ['Series', rangeSelector.seriesSelect, ''],
-      ['Custom Values', rangeSelector.customValuesInput, 'Ω'],
-      ['Minimum', rangeSelector.minResisterInput.inputBox, 'Ω'],
-      ['Maximum', rangeSelector.maxResisterInput.inputBox, 'Ω'],
-      ['Max Elements', numElementsInput, ''],
+      [getStr('Item'), getStr('Value'), getStr('Unit')],
+      [getStr('E Series'), rangeSelector.seriesSelect, ''],
+      [getStr('Custom Values'), rangeSelector.customValuesInput, 'Ω'],
+      [getStr('Minimum'), rangeSelector.minResisterInput.inputBox, 'Ω'],
+      [getStr('Maximum'), rangeSelector.maxResisterInput.inputBox, 'Ω'],
+      [getStr('Max Elements'), numElementsInput, ''],
       ['R1 + R2 (min)', totalMinBox.inputBox, 'Ω'],
       ['R1 + R2 (max)', totalMaxBox.inputBox, 'Ω'],
       ['R2 / (R1 + R2)', targetInput, ''],
@@ -117,7 +119,7 @@ function makeDividerCombinatorUI(): HTMLDivElement {
 
       const numComb = Math.pow(availableValues.length, 2 * maxElements);
       if (numComb > 1e7) {
-        throw new Error('Too many value combinations.');
+        throw new Error(getStr('The search space is too large.'));
       }
 
       const combs = RcComb.findDividers(
@@ -126,12 +128,12 @@ function makeDividerCombinatorUI(): HTMLDivElement {
 
       let resultText = '';
       if (combs.length > 0) {
-        resultText += `Found ${combs.length} combination(s):\n\n`;
+        resultText += getStr('Found <n> combination(s):', { n: combs.length }) + '\n\n';
         for (const comb of combs) {
           resultText += comb.toString() + '\n';
         }
       } else {
-        resultText = 'No combinations found.';
+        resultText = getStr('No combinations found.');
       }
       resultBox.textContent = resultText;
     } catch (e) {

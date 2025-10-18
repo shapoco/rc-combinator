@@ -1,3 +1,36 @@
+//#region src/Text.ts
+const texts = { "ja": {
+	"Find Resistor Combinations": "合成抵抗を見つける",
+	"Find Voltage Dividers": "分圧抵抗を見つける",
+	"E Series": "シリーズ",
+	"Item": "項目",
+	"Value": "値",
+	"Unit": "単位",
+	"Minimum": "最小値",
+	"Maximum": "最大値",
+	"Custom Values": "カスタム値",
+	"Max Elements": "最大素子数",
+	"Target Value": "目標値",
+	"The search space is too large.": "探索空間が大きすぎます。",
+	"Upper Resistor": "上側の抵抗",
+	"Lower Resistor": "下側の抵抗",
+	"No combinations found.": "組み合わせが見つかりませんでした。",
+	"Found <n> combination(s):": "<n> 件の組み合わせが見つかりました。",
+	"Parallel": "並列",
+	"Series": "直列"
+} };
+function getStr(key, vars) {
+	let ret = key;
+	const lang = navigator.language;
+	if (lang in texts && key in texts[lang]) ret = texts[lang][key];
+	if (vars) for (const varKey of Object.keys(vars)) {
+		const varValue = vars[varKey];
+		ret = ret.replace(new RegExp(`<${varKey}>`, "g"), varValue.toString());
+	}
+	return ret;
+}
+
+//#endregion
 //#region src/RcComb.ts
 const SERIESES = {
 	"E3": [
@@ -134,7 +167,7 @@ var Combination = class {
 		else {
 			let ret = "";
 			for (const child of this.children) ret += child.toString(indent + "    ");
-			ret = `${indent}${this.parallel ? "Parallel" : "Series"}: ${formatValue(this.value, "Ω")}\n${ret}`;
+			ret = `${indent}${this.parallel ? getStr("Parallel") : getStr("Series")}: ${formatValue(this.value, "Ω")}\n${ret}`;
 			return ret;
 		}
 	}
@@ -148,7 +181,7 @@ var DividerCombination = class {
 	toString() {
 		const up = this.upper[0];
 		const lo = this.lower[0];
-		let ret = `R2 / (R1 + R2) = ${this.ratio.toFixed(6)}, R1 + R2 = ${formatValue(up.value + lo.value, "Ω")}\n`;
+		let ret = `R2 / (R1 + R2) = ${this.ratio.toFixed(6)}\nR1 + R2 = ${formatValue(up.value + lo.value, "Ω")}\n`;
 		ret += "  R1:\n";
 		ret += up.toString("    ");
 		ret += "  R2:\n";
@@ -508,40 +541,40 @@ function makeCombinatorUI() {
 	const numElementsInput = makeTextBox("4");
 	const resultBox = document.createElement("pre");
 	const ui = makeDiv([
-		makeH2("合成抵抗を見つける"),
+		makeH2(getStr("Find Resistor Combinations")),
 		makeTable([
 			[
-				"Item",
-				"Value",
-				"Unit"
+				getStr("Item"),
+				getStr("Value"),
+				getStr("Unit")
 			],
 			[
-				"Series",
+				getStr("E Series"),
 				rangeSelector.seriesSelect,
 				""
 			],
 			[
-				"Custom Values",
+				getStr("Custom Values"),
 				rangeSelector.customValuesInput,
 				"Ω"
 			],
 			[
-				"Minimum",
+				getStr("Minimum"),
 				rangeSelector.minResisterInput.inputBox,
 				"Ω"
 			],
 			[
-				"Maximum",
+				getStr("Maximum"),
 				rangeSelector.maxResisterInput.inputBox,
 				"Ω"
 			],
 			[
-				"Max Elements",
+				getStr("Max Elements"),
 				numElementsInput,
 				""
 			],
 			[
-				"Target",
+				getStr("Target Value"),
 				targetInput.inputBox,
 				"Ω"
 			]
@@ -557,13 +590,13 @@ function makeCombinatorUI() {
 			const availableValues = rangeSelector.availableValues;
 			const targetValue = targetInput.value;
 			const maxElements = parseInt(numElementsInput.value, 10);
-			if (Math.pow(availableValues.length, maxElements) > 1e6) throw new Error("Too many value combinations.");
+			if (Math.pow(availableValues.length, maxElements) > 1e6) throw new Error(getStr("The search space is too large."));
 			const combs = findCombinations(ComponentType.Resistor, availableValues, targetValue, maxElements);
 			let resultText = "";
 			if (combs.length > 0) {
-				resultText += `Found ${combs.length} combination(s):\n\n`;
+				resultText += getStr("Found <n> combination(s):", { n: combs.length }) + "\n\n";
 				for (const comb of combs) resultText += comb.toString() + "\n";
-			} else resultText = "No combinations found.";
+			} else resultText = getStr("No combinations found.");
 			resultBox.textContent = resultText;
 		} catch (e) {
 			resultBox.textContent = `Error: ${e.message}`;
@@ -584,36 +617,36 @@ function makeDividerCombinatorUI() {
 	const numElementsInput = makeTextBox("2");
 	const resultBox = document.createElement("pre");
 	const ui = makeDiv([
-		makeH2("分圧抵抗を見つける"),
-		makeParagraph("R1: upper resister, R2: lower resister"),
+		makeH2(getStr("Find Voltage Dividers")),
+		makeParagraph(`R1: ${getStr("Upper Resistor")}, R2: ${getStr("Lower Resistor")}`),
 		makeTable([
 			[
-				"Item",
-				"Value",
-				"Unit"
+				getStr("Item"),
+				getStr("Value"),
+				getStr("Unit")
 			],
 			[
-				"Series",
+				getStr("E Series"),
 				rangeSelector.seriesSelect,
 				""
 			],
 			[
-				"Custom Values",
+				getStr("Custom Values"),
 				rangeSelector.customValuesInput,
 				"Ω"
 			],
 			[
-				"Minimum",
+				getStr("Minimum"),
 				rangeSelector.minResisterInput.inputBox,
 				"Ω"
 			],
 			[
-				"Maximum",
+				getStr("Maximum"),
 				rangeSelector.maxResisterInput.inputBox,
 				"Ω"
 			],
 			[
-				"Max Elements",
+				getStr("Max Elements"),
 				numElementsInput,
 				""
 			],
@@ -646,13 +679,13 @@ function makeDividerCombinatorUI() {
 			const totalMin = totalMinBox.value;
 			const totalMax = totalMaxBox.value;
 			const maxElements = parseInt(numElementsInput.value, 10);
-			if (Math.pow(availableValues.length, 2 * maxElements) > 1e7) throw new Error("Too many value combinations.");
+			if (Math.pow(availableValues.length, 2 * maxElements) > 1e7) throw new Error(getStr("The search space is too large."));
 			const combs = findDividers(ComponentType.Resistor, availableValues, targetValue, totalMin, totalMax, maxElements);
 			let resultText = "";
 			if (combs.length > 0) {
-				resultText += `Found ${combs.length} combination(s):\n\n`;
+				resultText += getStr("Found <n> combination(s):", { n: combs.length }) + "\n\n";
 				for (const comb of combs) resultText += comb.toString() + "\n";
-			} else resultText = "No combinations found.";
+			} else resultText = getStr("No combinations found.");
 			resultBox.textContent = resultText;
 		} catch (e) {
 			resultBox.textContent = `Error: ${e.message}`;
