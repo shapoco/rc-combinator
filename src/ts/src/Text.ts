@@ -3,6 +3,10 @@ const texts: {[key: string]: {[key: string]: string}} = {
     'Find Resistor Combinations': '合成抵抗を見つける',
     'Find Capacitor Combinations': '合成容量を見つける',
     'Find Voltage Dividers': '分圧抵抗を見つける',
+    'Find LED Current Limiting Resistor': 'LEDの電流制限抵抗を見つける',
+    'Power Voltage': '電源電圧',
+    'Forward Voltage': '順方向電圧',
+    'Forward Current': '順方向電流',
     'E Series': 'シリーズ',
     'Item': '項目',
     'Value': '値',
@@ -20,6 +24,8 @@ const texts: {[key: string]: {[key: string]: string}} = {
     'Found <n> combination(s):': '<n> 件の組み合わせが見つかりました。',
     'Parallel': '並列',
     'Series': '直列',
+    'Ideal Value': '理想値',
+    '<s> Approximation': '<s> 近似',
   },
 };
 

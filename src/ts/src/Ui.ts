@@ -44,7 +44,7 @@ export class ValueRangeSelector {
     }
   }
 
-  onChange(callback: () => void) {
+  setOnChange(callback: () => void) {
     this.seriesSelect.addEventListener('change', () => {
       const custom = this.seriesSelect.value === 'custom';
       this.customValuesInput.disabled = !custom;

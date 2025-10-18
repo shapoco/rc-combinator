@@ -3,6 +3,10 @@ const texts = { "ja": {
 	"Find Resistor Combinations": "合成抵抗を見つける",
 	"Find Capacitor Combinations": "合成容量を見つける",
 	"Find Voltage Dividers": "分圧抵抗を見つける",
+	"Find LED Current Limiting Resistor": "LEDの電流制限抵抗を見つける",
+	"Power Voltage": "電源電圧",
+	"Forward Voltage": "順方向電圧",
+	"Forward Current": "順方向電流",
 	"E Series": "シリーズ",
 	"Item": "項目",
 	"Value": "値",
@@ -19,7 +23,9 @@ const texts = { "ja": {
 	"No combinations found.": "組み合わせが見つかりませんでした。",
 	"Found <n> combination(s):": "<n> 件の組み合わせが見つかりました。",
 	"Parallel": "並列",
-	"Series": "直列"
+	"Series": "直列",
+	"Ideal Value": "理想値",
+	"<s> Approximation": "<s> 近似"
 } };
 function getStr(key, vars) {
 	let ret = key;
@@ -318,7 +324,7 @@ function calcValue(cType, values, indices, topo, comb = null) {
 	if (comb) comb.value = val;
 	return val;
 }
-function makeAvaiableValues(series, minValue, maxValue) {
+function makeAvaiableValues(series, minValue = 1e-12, maxValue = 0xe8d4a51000) {
 	const baseValues = SERIESES[series];
 	if (!baseValues) throw new Error(`Unknown series: ${series}`);
 	const values = [];
@@ -653,7 +659,7 @@ var ValueRangeSelector = class {
 			return makeAvaiableValues(series, minValue, maxValue);
 		}
 	}
-	onChange(callback) {
+	setOnChange(callback) {
 		this.seriesSelect.addEventListener("change", () => {
 			const custom = this.seriesSelect.value === "custom";
 			this.customValuesInput.disabled = !custom;
@@ -788,20 +794,22 @@ function setVisible(elem, visible) {
 
 //#endregion
 //#region src/main.ts
+const resCombHeader = makeH2(getStr("Find Resistor Combinations"));
+const resCombInputBox = new ValueBox("5.1k");
 function main() {
 	document.querySelector("#rcCombinator")?.appendChild(makeDiv([
 		makeResistorCombinatorUI(),
 		makeDividerCombinatorUI(),
-		makeCapacitorCombinatorUI()
+		makeCapacitorCombinatorUI(),
+		makeCurrentLimitingUI()
 	]));
 }
 function makeResistorCombinatorUI() {
 	const rangeSelector = new ValueRangeSelector(ComponentType.Resistor);
-	const targetInput = new ValueBox("5.1k");
 	const numElementsInput = new ValueBox("4");
 	const resultBox = document.createElement("pre");
 	const ui = makeDiv([
-		makeH2(getStr("Find Resistor Combinations")),
+		resCombHeader,
 		makeTable([
 			[
 				getStr("Item"),
@@ -835,7 +843,7 @@ function makeResistorCombinatorUI() {
 			],
 			[
 				getStr("Target Value"),
-				targetInput.inputBox,
+				resCombInputBox.inputBox,
 				"Ω"
 			]
 		]),
@@ -847,7 +855,7 @@ function makeResistorCombinatorUI() {
 			setVisible(parentTrOf(rangeSelector.customValuesInput), custom);
 			setVisible(parentTrOf(rangeSelector.minResisterInput.inputBox), !custom);
 			setVisible(parentTrOf(rangeSelector.maxResisterInput.inputBox), !custom);
-			const targetValue = targetInput.value;
+			const targetValue = resCombInputBox.value;
 			const availableValues = rangeSelector.getAvailableValues(targetValue);
 			const maxElements = numElementsInput.value;
 			const combs = findCombinations(ComponentType.Resistor, availableValues, targetValue, maxElements);
@@ -861,8 +869,8 @@ function makeResistorCombinatorUI() {
 			resultBox.textContent = `Error: ${e.message}`;
 		}
 	};
-	rangeSelector.onChange(callback);
-	targetInput.setOnChange(callback);
+	rangeSelector.setOnChange(callback);
+	resCombInputBox.setOnChange(callback);
 	numElementsInput.setOnChange(callback);
 	callback();
 	return ui;
@@ -933,7 +941,7 @@ function makeCapacitorCombinatorUI() {
 			resultBox.textContent = `Error: ${e.message}`;
 		}
 	};
-	rangeSelector.onChange(callback);
+	rangeSelector.setOnChange(callback);
 	targetInput.setOnChange(callback);
 	numElementsInput.setOnChange(callback);
 	callback();
@@ -1020,11 +1028,86 @@ function makeDividerCombinatorUI() {
 			resultBox.textContent = `Error: ${e.message}`;
 		}
 	};
-	rangeSelector.onChange(callback);
+	rangeSelector.setOnChange(callback);
 	targetInput.setOnChange(callback);
 	numElementsInput.setOnChange(callback);
 	totalMinBox.setOnChange(callback);
 	totalMaxBox.setOnChange(callback);
+	callback();
+	return ui;
+}
+function makeCurrentLimitingUI() {
+	const powerVoltageInput = new ValueBox("3.3");
+	const forwardVoltageInput = new ValueBox("2");
+	const forwardCurrentInput = new ValueBox("1m");
+	const resultBox = document.createElement("pre");
+	const ui = makeDiv([
+		makeH2(getStr("Find LED Current Limiting Resistor")),
+		makeTable([
+			[
+				getStr("Item"),
+				getStr("Value"),
+				getStr("Unit")
+			],
+			[
+				getStr("Power Voltage"),
+				powerVoltageInput.inputBox,
+				"V"
+			],
+			[
+				getStr("Forward Voltage"),
+				forwardVoltageInput.inputBox,
+				"V"
+			],
+			[
+				getStr("Forward Current"),
+				forwardCurrentInput.inputBox,
+				"A"
+			]
+		]),
+		resultBox
+	]);
+	const callback = () => {
+		try {
+			const vcc = powerVoltageInput.value;
+			const vForward = forwardVoltageInput.value;
+			const iForward = forwardCurrentInput.value;
+			const rIdeal = (vcc - vForward) / iForward;
+			let results = [{
+				label: getStr("Ideal Value"),
+				r: formatValue(rIdeal, "Ω"),
+				i: formatValue(iForward, "A"),
+				p: formatValue(vcc * iForward, "W")
+			}];
+			let rLast = 0;
+			for (const seriesName in SERIESES) {
+				const series = makeAvaiableValues(seriesName);
+				const combs = findCombinations(ComponentType.Resistor, series, rIdeal, 1);
+				if (combs.length === 0) continue;
+				const rApprox = combs[0].value;
+				if (rApprox !== rLast) {
+					const iApprox = (vcc - vForward) / rApprox;
+					const pApprox = vcc * iApprox;
+					results.push({
+						label: `${getStr("<s> Approximation", { s: seriesName })}`,
+						r: formatValue(rApprox, "Ω"),
+						i: formatValue(iApprox, "A"),
+						p: formatValue(pApprox, "W")
+					});
+					if (Math.abs(rApprox - rIdeal) < rIdeal * 1e-6) break;
+				}
+				rLast = rApprox;
+			}
+			let resultText = "";
+			for (const res of results) resultText += `${res.label}: ${res.r} (${res.i}, ${res.p})\n`;
+			resultBox.textContent = resultText;
+		} catch (e) {
+			resultBox.textContent = `Error: ${e.message}`;
+		}
+	};
+	powerVoltageInput.setOnChange(callback);
+	forwardVoltageInput.setOnChange(callback);
+	forwardCurrentInput.setOnChange(callback);
 	callback();
 	return ui;
 }

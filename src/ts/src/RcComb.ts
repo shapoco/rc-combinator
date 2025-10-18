@@ -379,7 +379,8 @@ function calcValue(
 }
 
 export function makeAvaiableValues(
-    series: string, minValue: number, maxValue: number): number[] {
+    series: string, minValue: number = 1e-12,
+    maxValue: number = 1e12): number[] {
   const baseValues = SERIESES[series];
   if (!baseValues) {
     throw new Error(`Unknown series: ${series}`);
