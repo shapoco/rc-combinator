@@ -45,6 +45,10 @@ const RE_VALUE = /^(\d+(\.\d+)?)([kKmM]?)$/;
 const topologyMemo = new Map<number, TopologyNode[]>();
 
 export function formatValue(value: number, unit: string = ''): string {
+  if (!isFinite(value) || isNaN(value)) {
+    return 'NaN';
+  }
+
   let prefix = '';
   if (unit) {
     if (value >= 1e12) {

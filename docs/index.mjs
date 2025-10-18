@@ -115,6 +115,7 @@ var TopologyNode = class {
 };
 const topologyMemo = /* @__PURE__ */ new Map();
 function formatValue(value, unit = "") {
+	if (!isFinite(value) || isNaN(value)) return "NaN";
 	let prefix = "";
 	if (unit) {
 		if (value >= 0xe8d4a51000) {
