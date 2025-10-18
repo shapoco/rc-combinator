@@ -70,7 +70,7 @@ export function formatValue(value: number, unit: string = ''): string {
       prefix = 'm';
     } else if (value >= 1e-6) {
       value *= 1e6;
-      prefix = 'u';
+      prefix = 'μ';
     } else if (value >= 1e-9) {
       value *= 1e9;
       prefix = 'n';
@@ -127,12 +127,24 @@ export function formatValue(value: number, unit: string = ''): string {
 
 export class Combination {
   constructor(
+      public cType: ComponentType = ComponentType.Resistor,
       public parallel: boolean = false, public children: Combination[] = [],
       public value: number = 0, public complexity: number = -1) {}
 
+  get unit(): string {
+    switch (this.cType) {
+      case ComponentType.Resistor:
+        return 'Ω';
+      case ComponentType.Capacitor:
+        return 'F';
+      default:
+        return '';
+    }
+  }
+
   toString(indent: string = ''): string {
     if (this.children.length === 0) {
-      return `${indent}${formatValue(this.value, 'Ω')}\n`;
+      return `${indent}${formatValue(this.value, this.unit)}\n`;
     } else {
       let ret = '';
       for (const child of this.children) {
@@ -140,7 +152,7 @@ export class Combination {
       }
       ret = `${indent}${
                 this.parallel ? getStr('Parallel') : getStr('Series')}: ` +
-          `${formatValue(this.value, 'Ω')}\n${ret}`;
+          `${formatValue(this.value, this.unit)}\n${ret}`;
       return ret;
     }
   }
@@ -190,19 +202,19 @@ export function findCombinations(
         // console.log(`Value: ${value}`);
         const error = Math.abs(value - targetValue);
 
-        let update = false;
-        if (error < bestError - epsilon) {
-          bestCombinations = [];
-          update = true;
+        if (error - epsilon > bestError) {
+          continue;
         }
 
-        if (update) {
-          // console.log(`Error: ${error}`);
-          bestError = error;
-          const comb = new Combination();
-          calcValue(cType, values, indices, topo, comb);
-          bestCombinations.push(comb);
+        if (error + epsilon < bestError) {
+          bestCombinations = [];
         }
+
+        // console.log(`Error: ${error}`);
+        bestError = error;
+        const comb = new Combination();
+        calcValue(cType, values, indices, topo, comb);
+        bestCombinations.push(comb);
       }
 
       // increment indices
@@ -263,11 +275,11 @@ export function findDividers(
 
         const ratio = lowerValue / (upperCombs[0].value + lowerValue);
         const error = Math.abs(ratio - targetRatio);
-        if (error > bestError + epsilon) {
+        if (error - epsilon > bestError) {
           continue;
         }
 
-        if (error < bestError - epsilon) {
+        if (error + epsilon < bestError) {
           // console.log(`New best error: ${error}`);
           bestCombinations = [];
         }
@@ -315,6 +327,7 @@ function calcValue(
     cType: ComponentType, values: number[], indices: number[],
     topo: TopologyNode, comb: Combination|null = null): number {
   if (comb) {
+    comb.cType = cType;
     comb.parallel = topo.parallel;
     comb.complexity = topo.complexity;
   }
@@ -356,7 +369,7 @@ function calcValue(
     }
   }
 
-  const val = invSum ? 1 / ret : ret;
+  const val = invSum ? (1 / ret) : ret;
   if (comb) comb.value = val;
   return val;
 }
@@ -368,7 +381,7 @@ export function makeAvaiableValues(
     throw new Error(`Unknown series: ${series}`);
   }
   const values = [];
-  for (let exp = -9; exp <= 12; exp++) {
+  for (let exp = -12; exp <= 12; exp++) {
     const multiplier = Math.pow(10, exp);
     for (const base of baseValues) {
       const value = base * multiplier;

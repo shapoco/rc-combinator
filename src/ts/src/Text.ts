@@ -1,6 +1,7 @@
 const texts: {[key: string]: {[key: string]: string}} = {
   'ja': {
     'Find Resistor Combinations': '合成抵抗を見つける',
+    'Find Capacitor Combinations': '合成容量を見つける',
     'Find Voltage Dividers': '分圧抵抗を見つける',
     'E Series': 'シリーズ',
     'Item': '項目',

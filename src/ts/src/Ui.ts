@@ -2,15 +2,24 @@ import {evalExpr} from './Calc';
 import * as RcComb from './RcComb';
 import {getStr} from './Text';
 
-export class ResistorRangeSelector {
+export class ValueRangeSelector {
   seriesSelect = makeSeriesSelector();
   customValuesInput = document.createElement('textarea') as HTMLTextAreaElement;
-  minResisterInput = new ValueBox('100');
-  maxResisterInput = new ValueBox('1M');
+  minResisterInput = new ValueBox();
+  maxResisterInput = new ValueBox();
 
-  constructor() {
-    this.customValuesInput.value = '100, 1k, 10k';
-    this.customValuesInput.placeholder = 'e.g.\n100, 1k, 10k';
+  constructor(public cType: RcComb.ComponentType) {
+    if (cType === RcComb.ComponentType.Resistor) {
+      this.customValuesInput.value = '100, 1k, 10k';
+      this.customValuesInput.placeholder = 'e.g.\n100, 1k, 10k';
+      this.minResisterInput.inputBox.value = '100';
+      this.maxResisterInput.inputBox.value = '1M';
+    } else {
+      this.customValuesInput.value = '1n, 10n, 100n';
+      this.customValuesInput.placeholder = 'e.g.\n1n, 10n, 100n';
+      this.minResisterInput.inputBox.value = '100p';
+      this.maxResisterInput.inputBox.value = '100μ';
+    }
     this.customValuesInput.disabled = true;
   }
 

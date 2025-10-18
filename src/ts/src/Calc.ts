@@ -56,26 +56,28 @@ function operand(sr: StringReader): number {
   let prefix = sr.readIfPrefix();
   switch (prefix) {
     case 'p':
-      return num! * 1e-12;
+      return num * 1e-12;
     case 'n':
-      return num! * 1e-9;
+      return num * 1e-9;
     case 'u':
-      return num! * 1e-6;
+    case 'μ':
+      return num * 1e-6;
     case 'm':
-      return num! * 1e-3;
+      return num * 1e-3;
     case 'k':
-      return num! * 1e3;
+    case 'K':
+      return num * 1e3;
     case 'M':
-      return num! * 1e6;
+      return num * 1e6;
     case 'G':
-      return num! * 1e9;
+      return num * 1e9;
     case 'T':
-      return num! * 1e12;
+      return num * 1e12;
     default:
       if (prefix) {
         sr.back(1);
       }
-      return num!;
+      return num;
   }
 }
 
@@ -183,7 +185,7 @@ class StringReader {
 
   readIfPrefix(): string|null {
     const ch = this.peek();
-    if (ch !== null && /[pnumkMGT]/.test(ch)) {
+    if (ch !== null && /[pnuμmkKMGT]/.test(ch)) {
       return this.read();
     }
     return null;

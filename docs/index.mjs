@@ -1,6 +1,7 @@
 //#region src/Text.ts
 const texts = { "ja": {
 	"Find Resistor Combinations": "合成抵抗を見つける",
+	"Find Capacitor Combinations": "合成容量を見つける",
 	"Find Voltage Dividers": "分圧抵抗を見つける",
 	"E Series": "シリーズ",
 	"Item": "項目",
@@ -136,7 +137,7 @@ function formatValue(value, unit = "") {
 			prefix = "m";
 		} else if (value >= 1e-6) {
 			value *= 1e6;
-			prefix = "u";
+			prefix = "μ";
 		} else if (value >= 1e-9) {
 			value *= 1e9;
 			prefix = "n";
@@ -157,18 +158,26 @@ function formatValue(value, unit = "") {
 	return `${s} ${prefix}${unit}`.trim();
 }
 var Combination = class {
-	constructor(parallel = false, children = [], value = 0, complexity = -1) {
+	constructor(cType = ComponentType.Resistor, parallel = false, children = [], value = 0, complexity = -1) {
+		this.cType = cType;
 		this.parallel = parallel;
 		this.children = children;
 		this.value = value;
 		this.complexity = complexity;
 	}
+	get unit() {
+		switch (this.cType) {
+			case ComponentType.Resistor: return "Ω";
+			case ComponentType.Capacitor: return "F";
+			default: return "";
+		}
+	}
 	toString(indent = "") {
-		if (this.children.length === 0) return `${indent}${formatValue(this.value, "Ω")}\n`;
+		if (this.children.length === 0) return `${indent}${formatValue(this.value, this.unit)}\n`;
 		else {
 			let ret = "";
 			for (const child of this.children) ret += child.toString(indent + "    ");
-			ret = `${indent}${this.parallel ? getStr("Parallel") : getStr("Series")}: ${formatValue(this.value, "Ω")}\n${ret}`;
+			ret = `${indent}${this.parallel ? getStr("Parallel") : getStr("Series")}: ${formatValue(this.value, this.unit)}\n${ret}`;
 			return ret;
 		}
 	}
@@ -204,17 +213,12 @@ function findCombinations(cType, values, targetValue, maxElements) {
 				const value = calcValue(cType, values, indices, topo);
 				if (isNaN(value)) continue;
 				const error = Math.abs(value - targetValue);
-				let update = false;
-				if (error < bestError - epsilon) {
-					bestCombinations = [];
-					update = true;
-				}
-				if (update) {
-					bestError = error;
-					const comb = new Combination();
-					calcValue(cType, values, indices, topo, comb);
-					bestCombinations.push(comb);
-				}
+				if (error - epsilon > bestError) continue;
+				if (error + epsilon < bestError) bestCombinations = [];
+				bestError = error;
+				const comb = new Combination();
+				calcValue(cType, values, indices, topo, comb);
+				bestCombinations.push(comb);
 			}
 			incrementIndices(indices, values);
 		}
@@ -249,8 +253,8 @@ function findDividers(cType, values, targetRatio, totalMin, totalMax, maxElement
 				if (upperCombs.length === 0) continue;
 				const ratio = lowerValue / (upperCombs[0].value + lowerValue);
 				const error = Math.abs(ratio - targetRatio);
-				if (error > bestError + epsilon) continue;
-				if (error < bestError - epsilon) bestCombinations = [];
+				if (error - epsilon > bestError) continue;
+				if (error + epsilon < bestError) bestCombinations = [];
 				bestError = error;
 				const lowerComb = new Combination();
 				calcValue(cType, values, indices, topo, lowerComb);
@@ -279,6 +283,7 @@ function incrementIndices(indices, values) {
 }
 function calcValue(cType, values, indices, topo, comb = null) {
 	if (comb) {
+		comb.cType = cType;
 		comb.parallel = topo.parallel;
 		comb.complexity = topo.complexity;
 	}
@@ -316,7 +321,7 @@ function makeAvaiableValues(series, minValue, maxValue) {
 	const baseValues = SERIESES[series];
 	if (!baseValues) throw new Error(`Unknown series: ${series}`);
 	const values = [];
-	for (let exp = -9; exp <= 12; exp++) {
+	for (let exp = -12; exp <= 12; exp++) {
 		const multiplier = Math.pow(10, exp);
 		for (const base of baseValues) {
 			const value = base * multiplier;
@@ -433,9 +438,11 @@ function operand(sr) {
 	switch (prefix) {
 		case "p": return num * 1e-12;
 		case "n": return num * 1e-9;
-		case "u": return num * 1e-6;
+		case "u":
+		case "μ": return num * 1e-6;
 		case "m": return num * .001;
-		case "k": return num * 1e3;
+		case "k":
+		case "K": return num * 1e3;
 		case "M": return num * 1e6;
 		case "G": return num * 1e9;
 		case "T": return num * 0xe8d4a51000;
@@ -520,7 +527,7 @@ var StringReader = class StringReader {
 	}
 	readIfPrefix() {
 		const ch = this.peek();
-		if (ch !== null && /[pnumkMGT]/.test(ch)) return this.read();
+		if (ch !== null && /[pnuμmkKMGT]/.test(ch)) return this.read();
 		return null;
 	}
 	expect(s) {
@@ -608,14 +615,24 @@ var StringReader = class StringReader {
 
 //#endregion
 //#region src/Ui.ts
-var ResistorRangeSelector = class {
+var ValueRangeSelector = class {
 	seriesSelect = makeSeriesSelector();
 	customValuesInput = document.createElement("textarea");
-	minResisterInput = new ValueBox("100");
-	maxResisterInput = new ValueBox("1M");
-	constructor() {
-		this.customValuesInput.value = "100, 1k, 10k";
-		this.customValuesInput.placeholder = "e.g.\n100, 1k, 10k";
+	minResisterInput = new ValueBox();
+	maxResisterInput = new ValueBox();
+	constructor(cType) {
+		this.cType = cType;
+		if (cType === ComponentType.Resistor) {
+			this.customValuesInput.value = "100, 1k, 10k";
+			this.customValuesInput.placeholder = "e.g.\n100, 1k, 10k";
+			this.minResisterInput.inputBox.value = "100";
+			this.maxResisterInput.inputBox.value = "1M";
+		} else {
+			this.customValuesInput.value = "1n, 10n, 100n";
+			this.customValuesInput.placeholder = "e.g.\n1n, 10n, 100n";
+			this.minResisterInput.inputBox.value = "100p";
+			this.maxResisterInput.inputBox.value = "100μ";
+		}
 		this.customValuesInput.disabled = true;
 	}
 	get availableValues() {
@@ -772,10 +789,14 @@ function setVisible(elem, visible) {
 //#endregion
 //#region src/main.ts
 function main() {
-	document.querySelector("#rcCombinator")?.appendChild(makeDiv([makeCombinatorUI(), makeDividerCombinatorUI()]));
+	document.querySelector("#rcCombinator")?.appendChild(makeDiv([
+		makeResistorCombinatorUI(),
+		makeDividerCombinatorUI(),
+		makeCapacitorCombinatorUI()
+	]));
 }
-function makeCombinatorUI() {
-	const rangeSelector = new ResistorRangeSelector();
+function makeResistorCombinatorUI() {
+	const rangeSelector = new ValueRangeSelector(ComponentType.Resistor);
 	const targetInput = new ValueBox("5.1k");
 	const numElementsInput = new ValueBox("4");
 	const resultBox = document.createElement("pre");
@@ -846,8 +867,80 @@ function makeCombinatorUI() {
 	callback();
 	return ui;
 }
+function makeCapacitorCombinatorUI() {
+	const rangeSelector = new ValueRangeSelector(ComponentType.Capacitor);
+	const targetInput = new ValueBox("3.14μ");
+	const numElementsInput = new ValueBox("4");
+	const resultBox = document.createElement("pre");
+	const ui = makeDiv([
+		makeH2(getStr("Find Capacitor Combinations")),
+		makeTable([
+			[
+				getStr("Item"),
+				getStr("Value"),
+				getStr("Unit")
+			],
+			[
+				getStr("E Series"),
+				rangeSelector.seriesSelect,
+				""
+			],
+			[
+				getStr("Custom Values"),
+				rangeSelector.customValuesInput,
+				"F"
+			],
+			[
+				getStr("Minimum"),
+				rangeSelector.minResisterInput.inputBox,
+				"F"
+			],
+			[
+				getStr("Maximum"),
+				rangeSelector.maxResisterInput.inputBox,
+				"F"
+			],
+			[
+				getStr("Max Elements"),
+				numElementsInput.inputBox,
+				""
+			],
+			[
+				getStr("Target Value"),
+				targetInput.inputBox,
+				"F"
+			]
+		]),
+		resultBox
+	]);
+	const callback = () => {
+		try {
+			const custom = rangeSelector.seriesSelect.value === "custom";
+			setVisible(parentTrOf(rangeSelector.customValuesInput), custom);
+			setVisible(parentTrOf(rangeSelector.minResisterInput.inputBox), !custom);
+			setVisible(parentTrOf(rangeSelector.maxResisterInput.inputBox), !custom);
+			const availableValues = rangeSelector.availableValues;
+			const targetValue = targetInput.value;
+			const maxElements = numElementsInput.value;
+			const combs = findCombinations(ComponentType.Capacitor, availableValues, targetValue, maxElements);
+			let resultText = "";
+			if (combs.length > 0) {
+				resultText += getStr("Found <n> combination(s):", { n: combs.length }) + "\n\n";
+				for (const comb of combs) resultText += comb.toString() + "\n";
+			} else resultText = getStr("No combinations found.");
+			resultBox.textContent = resultText;
+		} catch (e) {
+			resultBox.textContent = `Error: ${e.message}`;
+		}
+	};
+	rangeSelector.onChange(callback);
+	targetInput.setOnChange(callback);
+	numElementsInput.setOnChange(callback);
+	callback();
+	return ui;
+}
 function makeDividerCombinatorUI() {
-	const rangeSelector = new ResistorRangeSelector();
+	const rangeSelector = new ValueRangeSelector(ComponentType.Resistor);
 	const targetInput = new ValueBox("3.3 / 5.0");
 	const totalMinBox = new ValueBox("10k");
 	const totalMaxBox = new ValueBox("100k");
