@@ -113,7 +113,6 @@ var TopologyNode = class {
 		return this.complexity_;
 	}
 };
-const RE_VALUE = /^(\d+(\.\d+)?)([kKmM]?)$/;
 const topologyMemo = /* @__PURE__ */ new Map();
 function formatValue(value, unit) {
 	if (value >= 1e9) return (value / 1e9).toFixed(3) + " G" + unit;
@@ -125,36 +124,6 @@ function formatValue(value, unit) {
 	else if (value >= 1e-9) return (value * 1e9).toFixed(3) + " n" + unit;
 	else if (value >= 1e-12) return (value * 0xe8d4a51000).toFixed(3) + " p" + unit;
 	else return value.toExponential(3) + " " + unit;
-}
-function parseValue(text) {
-	const match = RE_VALUE.exec(text);
-	if (!match) throw new Error(`Invalid resistor value: ${text}`);
-	let value = parseFloat(match[1]);
-	switch (match[3]) {
-		case "n":
-			value *= 1e-9;
-			break;
-		case "u":
-			value *= 1e-6;
-			break;
-		case "m":
-			value *= .001;
-			break;
-		case "k":
-		case "K":
-			value *= 1e3;
-			break;
-		case "M":
-			value *= 1e6;
-			break;
-		case "G":
-			value *= 1e9;
-			break;
-		case "T":
-			value *= 0xe8d4a51000;
-			break;
-	}
-	return value;
 }
 var Combination = class {
 	constructor(parallel = false, children = [], value = 0, complexity = -1) {
@@ -250,10 +219,7 @@ function findDividers(cType, values, targetRatio, totalMin, totalMax, maxElement
 				const ratio = lowerValue / (upperCombs[0].value + lowerValue);
 				const error = Math.abs(ratio - targetRatio);
 				if (error > bestError + epsilon) continue;
-				if (error < bestError - epsilon) {
-					console.log(`New best error: ${error}`);
-					bestCombinations = [];
-				}
+				if (error < bestError - epsilon) bestCombinations = [];
 				bestError = error;
 				const lowerComb = new Combination();
 				calcValue(cType, values, indices, topo, lowerComb);
@@ -386,12 +352,231 @@ function divideElementsRecursive(buff, buffSize, numElems, callback, depth) {
 }
 
 //#endregion
+//#region src/Calc.ts
+function evalExpr(expStr) {
+	const sr = new StringReader(expStr);
+	const ret = expr(sr);
+	sr.skipWhitespace();
+	if (!sr.eof()) throw new Error("Unexpected characters at the end of expression");
+	return ret;
+}
+function expr(sr) {
+	return addSub(sr);
+}
+function addSub(sr) {
+	sr.skipWhitespace();
+	let left = mulDiv(sr);
+	sr.skipWhitespace();
+	while (sr.readIfMatch("+") || sr.readIfMatch("-")) {
+		const op = sr.readIfSymbol();
+		sr.skipWhitespace();
+		const right = mulDiv(sr);
+		sr.skipWhitespace();
+		left = op === "+" ? left + right : left - right;
+	}
+	return left;
+}
+function mulDiv(sr) {
+	sr.skipWhitespace();
+	let left = operand(sr);
+	sr.skipWhitespace();
+	while (sr.readIfMatch("*") || sr.readIfMatch("/")) {
+		const op = sr.readIfSymbol();
+		sr.skipWhitespace();
+		const right = operand(sr);
+		sr.skipWhitespace();
+		left = op === "*" ? left * right : left / right;
+	}
+	return left;
+}
+function operand(sr) {
+	sr.skipWhitespace();
+	if (sr.readIfMatch("(")) {
+		const val = expr(sr);
+		sr.skipWhitespace();
+		sr.expect(")");
+		return val;
+	}
+	const num = sr.readIfNumber();
+	let prefix = sr.readIfPrefix();
+	switch (prefix) {
+		case "p": return num * 1e-12;
+		case "n": return num * 1e-9;
+		case "u": return num * 1e-6;
+		case "m": return num * .001;
+		case "k": return num * 1e3;
+		case "M": return num * 1e6;
+		case "G": return num * 1e9;
+		case "T": return num * 0xe8d4a51000;
+		default:
+			if (prefix) sr.back(1);
+			return num;
+	}
+}
+var StringReader = class StringReader {
+	static RE_CHARS_TO_BE_QUOTED = /[\{\}\[\]:,\\]/;
+	static KEYWORDS = [
+		"true",
+		"false",
+		"null"
+	];
+	pos = 0;
+	constructor(str) {
+		this.str = str;
+	}
+	peek(length = 1) {
+		if (this.pos + length > this.str.length) return null;
+		return this.str.substring(this.pos, this.pos + length);
+	}
+	read(length = 1) {
+		const s = this.peek(length);
+		if (s === null) throw new Error("Unexpected end of string");
+		this.pos += length;
+		return s;
+	}
+	back(length = 1) {
+		this.pos -= length;
+		if (this.pos < 0) throw new Error("Position out of range");
+	}
+	readIfMatch(s) {
+		const len = s.length;
+		if (this.peek(len) === s) {
+			this.pos += len;
+			return true;
+		}
+		return false;
+	}
+	readDecimalString() {
+		let numStr = "";
+		while (true) {
+			const ch = this.peek();
+			if (ch !== null && /[0-9]/.test(ch)) numStr += this.read();
+			else break;
+		}
+		if (numStr.length === 0) throw new Error("Decimal number expected");
+		return numStr;
+	}
+	readIfNumber() {
+		let numStr = "";
+		if (this.readIfMatch("-")) numStr += "-";
+		else if (this.readIfMatch("+")) numStr += "+";
+		else {
+			const first = this.peek();
+			if (first === null || !/[0-9]/.test(first)) return null;
+		}
+		numStr += this.readDecimalString();
+		if (this.readIfMatch(".")) {
+			numStr += ".";
+			numStr += this.readDecimalString();
+		}
+		if (this.readIfMatch("e") || this.readIfMatch("E")) {
+			numStr += "e";
+			if (this.readIfMatch("+")) numStr += "+";
+			else if (this.readIfMatch("-")) numStr += "-";
+			numStr += this.readDecimalString();
+		}
+		return Number(numStr);
+	}
+	readIfSymbol() {
+		const ch = this.peek();
+		if (ch !== null && /[\(\)\/\*\+\-]/.test(ch)) return this.read();
+		return null;
+	}
+	readIfPrefix() {
+		const ch = this.peek();
+		if (ch !== null && /[pnumkMGT]/.test(ch)) return this.read();
+		return null;
+	}
+	expect(s) {
+		if (this.readIfMatch(s)) return;
+		throw new Error(`Keyword "${s}" expected`);
+	}
+	readIfStringChar(quotation) {
+		const ch = this.peek();
+		if (ch === null) throw new Error("Unexpected end of string");
+		else if (quotation && ch === quotation) return null;
+		else if (!quotation && StringReader.RE_CHARS_TO_BE_QUOTED.test(ch)) return null;
+		else if (ch === "\\") {
+			this.read();
+			switch (this.read()) {
+				case "\"": return "\"";
+				case "\\": return "\\";
+				case "/": return "/";
+				case "b": return "\b";
+				case "f": return "\f";
+				case "n": return "\n";
+				case "r": return "\r";
+				case "t": return "	";
+				case "u":
+					let hex = "";
+					for (let i = 0; i < 4; i++) {
+						const h = this.read();
+						if (!/[0-9a-fA-F]/.test(h)) throw new Error("Invalid Unicode escape");
+						hex += h;
+					}
+					return String.fromCharCode(parseInt(hex, 16));
+				default: throw new Error("Invalid escape character");
+			}
+		} else return this.read();
+	}
+	readIfString() {
+		const next = this.peek();
+		if (next === null) return null;
+		if (next === "\"" || next === "'") {
+			const quotation = this.read();
+			let str = "";
+			while (true) {
+				const ch = this.readIfStringChar(quotation);
+				if (ch === null) break;
+				str += ch;
+			}
+			this.expect(quotation);
+			return str;
+		}
+		if (next && !StringReader.RE_CHARS_TO_BE_QUOTED.test(next) || !/[0-9]/.test(next)) {
+			let str = "";
+			while (true) {
+				const ch = this.readIfStringChar(null);
+				if (ch === null) break;
+				str += ch;
+			}
+			if (StringReader.KEYWORDS.includes(str)) {
+				this.back(str.length);
+				return null;
+			}
+			return str;
+		}
+		return null;
+	}
+	readString() {
+		const str = this.readIfString();
+		if (str === null) throw new Error("String expected");
+		return str;
+	}
+	readIfBoolean() {
+		if (this.readIfMatch("true")) return true;
+		if (this.readIfMatch("false")) return false;
+		return null;
+	}
+	skipWhitespace() {
+		while (true) {
+			const ch = this.peek();
+			if (ch !== null && /\s/.test(ch)) this.read();
+			else break;
+		}
+	}
+	eof() {
+		return this.pos >= this.str.length;
+	}
+};
+
+//#endregion
 //#region src/Ui.ts
 var ResistorRangeSelector = class {
 	seriesSelect = makeSeriesSelector();
 	customValuesInput = document.createElement("textarea");
-	minResisterInput = new ResistorInput("100");
-	maxResisterInput = new ResistorInput("1M");
+	minResisterInput = new ValueBox("100");
+	maxResisterInput = new ValueBox("1M");
 	constructor() {
 		this.customValuesInput.value = "100, 1k, 10k";
 		this.customValuesInput.placeholder = "e.g.\n100, 1k, 10k";
@@ -405,7 +590,7 @@ var ResistorRangeSelector = class {
 			for (let str of valueStrs) {
 				str = str.trim();
 				if (str === "") continue;
-				const val = parseValue(str);
+				const val = evalExpr(str);
 				if (!isNaN(val) && !values.includes(val)) values.push(val);
 			}
 			return values;
@@ -429,7 +614,7 @@ var ResistorRangeSelector = class {
 		this.maxResisterInput.onChange(callback);
 	}
 };
-var ResistorInput = class {
+var ValueBox = class {
 	inputBox = makeTextBox();
 	constructor(value = null) {
 		if (value) this.inputBox.value = value;
@@ -437,7 +622,7 @@ var ResistorInput = class {
 	get value() {
 		let text = this.inputBox.value.trim();
 		if (text === "") text = this.inputBox.placeholder.trim();
-		return parseValue(text);
+		return evalExpr(text);
 	}
 	onChange(callback) {
 		this.inputBox.addEventListener("input", () => callback());
@@ -542,8 +727,8 @@ function main() {
 }
 function makeCombinatorUI() {
 	const rangeSelector = new ResistorRangeSelector();
-	const targetInput = new ResistorInput("5.1k");
-	const numElementsInput = makeTextBox("4");
+	const targetInput = new ValueBox("5.1k");
+	const numElementsInput = new ValueBox("4");
 	const resultBox = document.createElement("pre");
 	const ui = makeDiv([
 		makeH2(getStr("Find Resistor Combinations")),
@@ -575,7 +760,7 @@ function makeCombinatorUI() {
 			],
 			[
 				getStr("Max Elements"),
-				numElementsInput,
+				numElementsInput.inputBox,
 				""
 			],
 			[
@@ -594,7 +779,7 @@ function makeCombinatorUI() {
 			setVisible(parentTrOf(rangeSelector.maxResisterInput.inputBox), !custom);
 			const availableValues = rangeSelector.availableValues;
 			const targetValue = targetInput.value;
-			const maxElements = parseInt(numElementsInput.value, 10);
+			const maxElements = numElementsInput.value;
 			const combs = findCombinations(ComponentType.Resistor, availableValues, targetValue, maxElements);
 			let resultText = "";
 			if (combs.length > 0) {
@@ -608,21 +793,20 @@ function makeCombinatorUI() {
 	};
 	rangeSelector.onChange(callback);
 	targetInput.onChange(callback);
-	numElementsInput.addEventListener("change", () => callback());
-	numElementsInput.addEventListener("input", () => callback());
+	numElementsInput.onChange(callback);
 	callback();
 	return ui;
 }
 function makeDividerCombinatorUI() {
 	const rangeSelector = new ResistorRangeSelector();
-	const targetInput = makeTextBox("0.3");
-	const totalMinBox = new ResistorInput("10k");
-	const totalMaxBox = new ResistorInput("100k");
-	const numElementsInput = makeTextBox("2");
+	const targetInput = new ValueBox("3.3 / 5.0");
+	const totalMinBox = new ValueBox("10k");
+	const totalMaxBox = new ValueBox("100k");
+	const numElementsInput = new ValueBox("2");
 	const resultBox = document.createElement("pre");
 	const ui = makeDiv([
 		makeH2(getStr("Find Voltage Dividers")),
-		makeParagraph(`R1: ${getStr("Upper Resistor")}, R2: ${getStr("Lower Resistor")}`),
+		makeParagraph(`R1: ${getStr("Upper Resistor")}, R2: ${getStr("Lower Resistor")}, Vout / Vin = R2 / (R1 + R2)`),
 		makeTable([
 			[
 				getStr("Item"),
@@ -651,7 +835,7 @@ function makeDividerCombinatorUI() {
 			],
 			[
 				getStr("Max Elements"),
-				numElementsInput,
+				numElementsInput.inputBox,
 				""
 			],
 			[
@@ -666,7 +850,7 @@ function makeDividerCombinatorUI() {
 			],
 			[
 				"R2 / (R1 + R2)",
-				targetInput,
+				targetInput.inputBox,
 				""
 			]
 		]),
@@ -679,10 +863,10 @@ function makeDividerCombinatorUI() {
 			setVisible(parentTrOf(rangeSelector.minResisterInput.inputBox), !custom);
 			setVisible(parentTrOf(rangeSelector.maxResisterInput.inputBox), !custom);
 			const availableValues = rangeSelector.availableValues;
-			const targetValue = parseFloat(targetInput.value);
+			const targetValue = targetInput.value;
 			const totalMin = totalMinBox.value;
 			const totalMax = totalMaxBox.value;
-			const maxElements = parseInt(numElementsInput.value, 10);
+			const maxElements = numElementsInput.value;
 			const combs = findDividers(ComponentType.Resistor, availableValues, targetValue, totalMin, totalMax, maxElements);
 			let resultText = "";
 			if (combs.length > 0) {
@@ -695,10 +879,8 @@ function makeDividerCombinatorUI() {
 		}
 	};
 	rangeSelector.onChange(callback);
-	targetInput.addEventListener("change", () => callback());
-	targetInput.addEventListener("input", () => callback());
-	numElementsInput.addEventListener("change", () => callback());
-	numElementsInput.addEventListener("input", () => callback());
+	targetInput.onChange(callback);
+	numElementsInput.onChange(callback);
 	totalMinBox.onChange(callback);
 	totalMaxBox.onChange(callback);
 	callback();

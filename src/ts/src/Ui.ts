@@ -1,11 +1,12 @@
+import { evalExpr } from './Calc';
 import * as RcComb from './RcComb';
 import {getStr} from './Text';
 
 export class ResistorRangeSelector {
   seriesSelect = makeSeriesSelector();
   customValuesInput = document.createElement('textarea') as HTMLTextAreaElement;
-  minResisterInput = new ResistorInput('100');
-  maxResisterInput = new ResistorInput('1M');
+  minResisterInput = new ValueBox('100');
+  maxResisterInput = new ValueBox('1M');
 
   constructor() {
     this.customValuesInput.value = '100, 1k, 10k';
@@ -21,7 +22,7 @@ export class ResistorRangeSelector {
       for (let str of valueStrs) {
         str = str.trim();
         if (str === '') continue;
-        const val = RcComb.parseValue(str);
+        const val = evalExpr(str);
         if (!isNaN(val) && !values.includes(val)) {
           values.push(val);
         }
@@ -49,7 +50,7 @@ export class ResistorRangeSelector {
   }
 }
 
-export class ResistorInput {
+export class ValueBox {
   inputBox = makeTextBox();
 
   constructor(value: string|null = null) {
@@ -63,7 +64,7 @@ export class ResistorInput {
     if (text === '') {
       text = this.inputBox.placeholder.trim();
     }
-    return RcComb.parseValue(text);
+    return evalExpr(text);
   }
 
   onChange(callback: () => void) {
@@ -112,7 +113,7 @@ export function makeParagraph(
   return elm;
 }
 
-export function makeTable(rows: Array<Array<string|Node>>): HTMLTableElement {
+export function makeTable(rows: Array<Array<string|Node|Array<string|Node>>>): HTMLTableElement {
   let head = true;
   const table = document.createElement('table');
   for (const rowData of rows) {

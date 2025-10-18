@@ -1,5 +1,5 @@
 import * as RcComb from './RcComb';
-import { getStr } from './Text';
+import {getStr} from './Text';
 import * as Ui from './Ui';
 
 export function main() {
@@ -11,8 +11,8 @@ export function main() {
 
 function makeCombinatorUI(): HTMLDivElement {
   const rangeSelector = new Ui.ResistorRangeSelector();
-  const targetInput = new Ui.ResistorInput('5.1k');
-  const numElementsInput = Ui.makeTextBox('4');
+  const targetInput = new Ui.ValueBox('5.1k');
+  const numElementsInput = new Ui.ValueBox('4');
   const resultBox = document.createElement('pre') as HTMLPreElement;
 
   const ui = Ui.makeDiv([
@@ -23,7 +23,7 @@ function makeCombinatorUI(): HTMLDivElement {
       [getStr('Custom Values'), rangeSelector.customValuesInput, 'Ω'],
       [getStr('Minimum'), rangeSelector.minResisterInput.inputBox, 'Ω'],
       [getStr('Maximum'), rangeSelector.maxResisterInput.inputBox, 'Ω'],
-      [getStr('Max Elements'), numElementsInput, ''],
+      [getStr('Max Elements'), numElementsInput.inputBox, ''],
       [getStr('Target Value'), targetInput.inputBox, 'Ω'],
     ]),
     resultBox,
@@ -40,7 +40,7 @@ function makeCombinatorUI(): HTMLDivElement {
 
       const availableValues = rangeSelector.availableValues;
       const targetValue = targetInput.value;
-      const maxElements = parseInt(numElementsInput.value, 10);
+      const maxElements = numElementsInput.value;
 
       const combs = RcComb.findCombinations(
           RcComb.ComponentType.Resistor, availableValues, targetValue,
@@ -48,7 +48,8 @@ function makeCombinatorUI(): HTMLDivElement {
 
       let resultText = '';
       if (combs.length > 0) {
-        resultText += getStr('Found <n> combination(s):', { n: combs.length }) + '\n\n';
+        resultText +=
+            getStr('Found <n> combination(s):', {n: combs.length}) + '\n\n';
         for (const comb of combs) {
           resultText += comb.toString() + '\n';
         }
@@ -62,8 +63,7 @@ function makeCombinatorUI(): HTMLDivElement {
   };
   rangeSelector.onChange(callback);
   targetInput.onChange(callback);
-  numElementsInput.addEventListener('change', () => callback());
-  numElementsInput.addEventListener('input', () => callback());
+  numElementsInput.onChange(callback);
 
   callback();
 
@@ -73,26 +73,26 @@ function makeCombinatorUI(): HTMLDivElement {
 
 function makeDividerCombinatorUI(): HTMLDivElement {
   const rangeSelector = new Ui.ResistorRangeSelector();
-  const targetInput = Ui.makeTextBox('0.3');
-  const totalMinBox = new Ui.ResistorInput('10k');
-  const totalMaxBox = new Ui.ResistorInput('100k');
-  const numElementsInput = Ui.makeTextBox('2');
+  const targetInput = new Ui.ValueBox('3.3 / 5.0');
+  const totalMinBox = new Ui.ValueBox('10k');
+  const totalMaxBox = new Ui.ValueBox('100k');
+  const numElementsInput = new Ui.ValueBox('2');
   const resultBox = document.createElement('pre') as HTMLPreElement;
 
   const ui = Ui.makeDiv([
     Ui.makeH2(getStr('Find Voltage Dividers')),
     Ui.makeParagraph(
-        `R1: ${getStr('Upper Resistor')}, R2: ${getStr('Lower Resistor')}`),
+        `R1: ${getStr('Upper Resistor')}, R2: ${getStr('Lower Resistor')}, Vout / Vin = R2 / (R1 + R2)`),
     Ui.makeTable([
       [getStr('Item'), getStr('Value'), getStr('Unit')],
       [getStr('E Series'), rangeSelector.seriesSelect, ''],
       [getStr('Custom Values'), rangeSelector.customValuesInput, 'Ω'],
       [getStr('Minimum'), rangeSelector.minResisterInput.inputBox, 'Ω'],
       [getStr('Maximum'), rangeSelector.maxResisterInput.inputBox, 'Ω'],
-      [getStr('Max Elements'), numElementsInput, ''],
+      [getStr('Max Elements'), numElementsInput.inputBox, ''],
       ['R1 + R2 (min)', totalMinBox.inputBox, 'Ω'],
       ['R1 + R2 (max)', totalMaxBox.inputBox, 'Ω'],
-      ['R2 / (R1 + R2)', targetInput, ''],
+      ['R2 / (R1 + R2)', targetInput.inputBox, ''],
     ]),
     resultBox,
   ]);
@@ -107,10 +107,10 @@ function makeDividerCombinatorUI(): HTMLDivElement {
           Ui.parentTrOf(rangeSelector.maxResisterInput.inputBox)!, !custom);
 
       const availableValues = rangeSelector.availableValues;
-      const targetValue = parseFloat(targetInput.value);
+      const targetValue = targetInput.value;
       const totalMin = totalMinBox.value;
       const totalMax = totalMaxBox.value;
-      const maxElements = parseInt(numElementsInput.value, 10);
+      const maxElements = numElementsInput.value;
 
       const combs = RcComb.findDividers(
           RcComb.ComponentType.Resistor, availableValues, targetValue, totalMin,
@@ -118,7 +118,8 @@ function makeDividerCombinatorUI(): HTMLDivElement {
 
       let resultText = '';
       if (combs.length > 0) {
-        resultText += getStr('Found <n> combination(s):', { n: combs.length }) + '\n\n';
+        resultText +=
+            getStr('Found <n> combination(s):', {n: combs.length}) + '\n\n';
         for (const comb of combs) {
           resultText += comb.toString() + '\n';
         }
@@ -131,10 +132,8 @@ function makeDividerCombinatorUI(): HTMLDivElement {
     }
   };
   rangeSelector.onChange(callback);
-  targetInput.addEventListener('change', () => callback());
-  targetInput.addEventListener('input', () => callback());
-  numElementsInput.addEventListener('change', () => callback());
-  numElementsInput.addEventListener('input', () => callback());
+  targetInput.onChange(callback);
+  numElementsInput.onChange(callback);
   totalMinBox.onChange(callback);
   totalMaxBox.onChange(callback);
 

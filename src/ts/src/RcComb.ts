@@ -66,39 +66,39 @@ export function formatValue(value: number, unit: string): string {
   }
 }
 
-export function parseValue(text: string): number {
-  const match = RE_VALUE.exec(text);
-  if (!match) {
-    throw new Error(`Invalid resistor value: ${text}`);
-  }
-  let value = parseFloat(match[1]);
-  const unit = match[3];
-  switch (unit) {
-    case 'n':
-      value *= 1e-9;
-      break;
-    case 'u':
-      value *= 1e-6;
-      break;
-    case 'm':
-      value *= 1e-3;
-      break;
-    case 'k':
-    case 'K':
-      value *= 1e3;
-      break;
-    case 'M':
-      value *= 1e6;
-      break;
-    case 'G':
-      value *= 1e9;
-      break;
-    case 'T':
-      value *= 1e12;
-      break;
-  }
-  return value;
-}
+// export function parseValue(text: string): number {
+//   const match = RE_VALUE.exec(text);
+//   if (!match) {
+//     throw new Error(`Invalid resistor value: ${text}`);
+//   }
+//   let value = parseFloat(match[1]);
+//   const unit = match[3];
+//   switch (unit) {
+//     case 'n':
+//       value *= 1e-9;
+//       break;
+//     case 'u':
+//       value *= 1e-6;
+//       break;
+//     case 'm':
+//       value *= 1e-3;
+//       break;
+//     case 'k':
+//     case 'K':
+//       value *= 1e3;
+//       break;
+//     case 'M':
+//       value *= 1e6;
+//       break;
+//     case 'G':
+//       value *= 1e9;
+//       break;
+//     case 'T':
+//       value *= 1e12;
+//       break;
+//   }
+//   return value;
+// }
 
 export class Combination {
   constructor(
@@ -243,7 +243,7 @@ export function findDividers(
         }
 
         if (error < bestError - epsilon) {
-          console.log(`New best error: ${error}`);
+          // console.log(`New best error: ${error}`);
           bestCombinations = [];
         }
 

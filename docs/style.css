@@ -158,3 +158,8 @@ code {
 .hidden {
   display: none;
 }
+
+span.note {
+  font-size: smaller;
+  color: #666;
+}
