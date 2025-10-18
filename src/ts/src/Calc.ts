@@ -52,7 +52,7 @@ function operand(sr: StringReader): number {
     return val;
   }
 
-  const num = sr.readIfNumber();
+  const num = sr.readNumber();
   let prefix = sr.readIfPrefix();
   switch (prefix) {
     case 'p':
@@ -163,6 +163,14 @@ class StringReader {
       numStr += this.readDecimalString();
     }
     return Number(numStr);
+  }
+
+  readNumber(): number {
+    const num = this.readIfNumber();
+    if (num === null) {
+      throw new Error('Number expected');
+    }
+    return num;
   }
 
   readIfSymbol(): string|null {

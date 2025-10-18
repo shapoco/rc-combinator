@@ -427,7 +427,7 @@ function operand(sr) {
 		sr.expect(")");
 		return val;
 	}
-	const num = sr.readIfNumber();
+	const num = sr.readNumber();
 	let prefix = sr.readIfPrefix();
 	switch (prefix) {
 		case "p": return num * 1e-12;
@@ -506,6 +506,11 @@ var StringReader = class StringReader {
 			numStr += this.readDecimalString();
 		}
 		return Number(numStr);
+	}
+	readNumber() {
+		const num = this.readIfNumber();
+		if (num === null) throw new Error("Number expected");
+		return num;
 	}
 	readIfSymbol() {
 		const ch = this.peek();
