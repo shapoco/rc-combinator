@@ -144,6 +144,7 @@ pre,
 }
 
 pre {
+  border: solid 1px #ccc;
   overflow: scroll;
 }
 
