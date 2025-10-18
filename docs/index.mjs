@@ -7,8 +7,8 @@ const texts = { "ja": {
 	"Item": "項目",
 	"Value": "値",
 	"Unit": "単位",
-	"Minimum": "最小値",
-	"Maximum": "最大値",
+	"Minimum": "素子最小値",
+	"Maximum": "素子最大値",
 	"Custom": "カスタム",
 	"Custom Values": "カスタム値",
 	"Max Elements": "最大素子数",
@@ -115,10 +115,11 @@ var TopologyNode = class {
 	}
 };
 const topologyMemo = /* @__PURE__ */ new Map();
-function formatValue(value, unit = "") {
+function formatValue(value, unit = "", usePrefix = null) {
 	if (!isFinite(value) || isNaN(value)) return "NaN";
+	if (usePrefix === null) usePrefix = unit !== "";
 	let prefix = "";
-	if (unit) {
+	if (usePrefix) {
 		if (value >= 0xe8d4a51000) {
 			value /= 0xe8d4a51000;
 			prefix = "T";
@@ -177,7 +178,7 @@ var Combination = class {
 		else {
 			let ret = "";
 			for (const child of this.children) ret += child.toString(indent + "    ");
-			ret = `${indent}${this.parallel ? getStr("Parallel") : getStr("Series")}: ${formatValue(this.value, this.unit)}\n${ret}`;
+			ret = `${indent}${getStr(this.parallel ? "Parallel" : "Series")} (${formatValue(this.value, this.unit)}):\n${ret}`;
 			return ret;
 		}
 	}
@@ -192,9 +193,9 @@ var DividerCombination = class {
 		const up = this.upper[0];
 		const lo = this.lower[0];
 		let ret = `R2 / (R1 + R2) = ${this.ratio.toFixed(6)}\nR1 + R2 = ${formatValue(up.value + lo.value, "Ω")}\n`;
-		ret += "  R1:\n";
+		ret += "R1:\n";
 		ret += up.toString("    ");
-		ret += "  R2:\n";
+		ret += "R2:\n";
 		ret += lo.toString("    ");
 		return ret;
 	}
@@ -434,6 +435,7 @@ function operand(sr) {
 		return val;
 	}
 	const num = sr.readNumber();
+	sr.skipWhitespace();
 	let prefix = sr.readIfPrefix();
 	switch (prefix) {
 		case "p": return num * 1e-12;
@@ -625,17 +627,13 @@ var ValueRangeSelector = class {
 		if (cType === ComponentType.Resistor) {
 			this.customValuesInput.value = "100, 1k, 10k";
 			this.customValuesInput.placeholder = "e.g.\n100, 1k, 10k";
-			this.minResisterInput.inputBox.value = "100";
-			this.maxResisterInput.inputBox.value = "1M";
 		} else {
 			this.customValuesInput.value = "1n, 10n, 100n";
 			this.customValuesInput.placeholder = "e.g.\n1n, 10n, 100n";
-			this.minResisterInput.inputBox.value = "100p";
-			this.maxResisterInput.inputBox.value = "100μ";
 		}
 		this.customValuesInput.disabled = true;
 	}
-	get availableValues() {
+	getAvailableValues(targetValue) {
 		const series = this.seriesSelect.value;
 		if (series === "custom") {
 			const valueStrs = this.customValuesInput.value.split(",");
@@ -648,6 +646,8 @@ var ValueRangeSelector = class {
 			}
 			return values;
 		} else {
+			this.minResisterInput.inputBox.placeholder = `(${formatValue(targetValue / 100, "", true)})`;
+			this.maxResisterInput.inputBox.placeholder = `(${formatValue(targetValue * 100, "", true)})`;
 			const minValue = this.minResisterInput.value;
 			const maxValue = this.maxResisterInput.value;
 			return makeAvaiableValues(series, minValue, maxValue);
@@ -847,8 +847,8 @@ function makeResistorCombinatorUI() {
 			setVisible(parentTrOf(rangeSelector.customValuesInput), custom);
 			setVisible(parentTrOf(rangeSelector.minResisterInput.inputBox), !custom);
 			setVisible(parentTrOf(rangeSelector.maxResisterInput.inputBox), !custom);
-			const availableValues = rangeSelector.availableValues;
 			const targetValue = targetInput.value;
+			const availableValues = rangeSelector.getAvailableValues(targetValue);
 			const maxElements = numElementsInput.value;
 			const combs = findCombinations(ComponentType.Resistor, availableValues, targetValue, maxElements);
 			let resultText = "";
@@ -919,8 +919,8 @@ function makeCapacitorCombinatorUI() {
 			setVisible(parentTrOf(rangeSelector.customValuesInput), custom);
 			setVisible(parentTrOf(rangeSelector.minResisterInput.inputBox), !custom);
 			setVisible(parentTrOf(rangeSelector.maxResisterInput.inputBox), !custom);
-			const availableValues = rangeSelector.availableValues;
 			const targetValue = targetInput.value;
+			const availableValues = rangeSelector.getAvailableValues(targetValue);
 			const maxElements = numElementsInput.value;
 			const combs = findCombinations(ComponentType.Capacitor, availableValues, targetValue, maxElements);
 			let resultText = "";
@@ -1004,10 +1004,10 @@ function makeDividerCombinatorUI() {
 			setVisible(parentTrOf(rangeSelector.customValuesInput), custom);
 			setVisible(parentTrOf(rangeSelector.minResisterInput.inputBox), !custom);
 			setVisible(parentTrOf(rangeSelector.maxResisterInput.inputBox), !custom);
-			const availableValues = rangeSelector.availableValues;
 			const targetValue = targetInput.value;
 			const totalMin = totalMinBox.value;
 			const totalMax = totalMaxBox.value;
+			const availableValues = rangeSelector.getAvailableValues((totalMin + totalMax) / 2);
 			const maxElements = numElementsInput.value;
 			const combs = findDividers(ComponentType.Resistor, availableValues, targetValue, totalMin, totalMax, maxElements);
 			let resultText = "";

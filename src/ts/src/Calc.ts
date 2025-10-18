@@ -53,6 +53,7 @@ function operand(sr: StringReader): number {
   }
 
   const num = sr.readNumber();
+  sr.skipWhitespace();
   let prefix = sr.readIfPrefix();
   switch (prefix) {
     case 'p':

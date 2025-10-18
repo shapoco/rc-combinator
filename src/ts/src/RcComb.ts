@@ -44,13 +44,18 @@ const RE_VALUE = /^(\d+(\.\d+)?)([kKmM]?)$/;
 
 const topologyMemo = new Map<number, TopologyNode[]>();
 
-export function formatValue(value: number, unit: string = ''): string {
+export function formatValue(
+    value: number, unit: string = '', usePrefix: boolean|null = null): string {
   if (!isFinite(value) || isNaN(value)) {
     return 'NaN';
   }
 
+  if (usePrefix === null) {
+    usePrefix = unit !== '';
+  }
+
   let prefix = '';
-  if (unit) {
+  if (usePrefix) {
     if (value >= 1e12) {
       value /= 1e12;
       prefix = 'T';
@@ -150,9 +155,8 @@ export class Combination {
       for (const child of this.children) {
         ret += child.toString(indent + '    ');
       }
-      ret = `${indent}${
-                this.parallel ? getStr('Parallel') : getStr('Series')}: ` +
-          `${formatValue(this.value, this.unit)}\n${ret}`;
+      ret = `${indent}${getStr(this.parallel ? 'Parallel' : 'Series')} ` +
+          `(${formatValue(this.value, this.unit)}):\n${ret}`;
       return ret;
     }
   }
@@ -168,9 +172,9 @@ export class DividerCombination {
     const lo = this.lower[0];
     let ret = `R2 / (R1 + R2) = ${this.ratio.toFixed(6)}\n` +
         `R1 + R2 = ${formatValue(up.value + lo.value, 'Ω')}\n`;
-    ret += '  R1:\n';
+    ret += 'R1:\n';
     ret += up.toString('    ');
-    ret += '  R2:\n';
+    ret += 'R2:\n';
     ret += lo.toString('    ');
     return ret;
   }

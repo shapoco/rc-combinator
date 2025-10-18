@@ -12,18 +12,14 @@ export class ValueRangeSelector {
     if (cType === RcComb.ComponentType.Resistor) {
       this.customValuesInput.value = '100, 1k, 10k';
       this.customValuesInput.placeholder = 'e.g.\n100, 1k, 10k';
-      this.minResisterInput.inputBox.value = '100';
-      this.maxResisterInput.inputBox.value = '1M';
     } else {
       this.customValuesInput.value = '1n, 10n, 100n';
       this.customValuesInput.placeholder = 'e.g.\n1n, 10n, 100n';
-      this.minResisterInput.inputBox.value = '100p';
-      this.maxResisterInput.inputBox.value = '100μ';
     }
     this.customValuesInput.disabled = true;
   }
 
-  get availableValues() {
+  getAvailableValues(targetValue: number) {
     const series = this.seriesSelect.value;
     if (series === 'custom') {
       const valueStrs = this.customValuesInput.value.split(',');
@@ -38,6 +34,10 @@ export class ValueRangeSelector {
       }
       return values;
     } else {
+      this.minResisterInput.inputBox.placeholder =
+          `(${RcComb.formatValue(targetValue / 100, '', true)})`;
+      this.maxResisterInput.inputBox.placeholder =
+          `(${RcComb.formatValue(targetValue * 100, '', true)})`;
       const minValue = this.minResisterInput.value;
       const maxValue = this.maxResisterInput.value;
       return RcComb.makeAvaiableValues(series, minValue, maxValue);

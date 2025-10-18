@@ -40,8 +40,8 @@ function makeResistorCombinatorUI(): HTMLDivElement {
       Ui.setVisible(
           Ui.parentTrOf(rangeSelector.maxResisterInput.inputBox)!, !custom);
 
-      const availableValues = rangeSelector.availableValues;
       const targetValue = targetInput.value;
+      const availableValues = rangeSelector.getAvailableValues(targetValue);
       const maxElements = numElementsInput.value;
 
       const combs = RcComb.findCombinations(
@@ -103,8 +103,8 @@ function makeCapacitorCombinatorUI(): HTMLDivElement {
       Ui.setVisible(
           Ui.parentTrOf(rangeSelector.maxResisterInput.inputBox)!, !custom);
 
-      const availableValues = rangeSelector.availableValues;
       const targetValue = targetInput.value;
+      const availableValues = rangeSelector.getAvailableValues(targetValue);
       const maxElements = numElementsInput.value;
 
       const combs = RcComb.findCombinations(
@@ -172,10 +172,11 @@ function makeDividerCombinatorUI(): HTMLDivElement {
       Ui.setVisible(
           Ui.parentTrOf(rangeSelector.maxResisterInput.inputBox)!, !custom);
 
-      const availableValues = rangeSelector.availableValues;
       const targetValue = targetInput.value;
       const totalMin = totalMinBox.value;
       const totalMax = totalMaxBox.value;
+      const availableValues =
+          rangeSelector.getAvailableValues((totalMin + totalMax) / 2);
       const maxElements = numElementsInput.value;
 
       const combs = RcComb.findDividers(
