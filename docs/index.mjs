@@ -160,6 +160,7 @@ function getStr(key, vars) {
 //#endregion
 //#region src/RcComb.ts
 const SERIESES = {
+	"E1": [100],
 	"E3": [
 		100,
 		220,

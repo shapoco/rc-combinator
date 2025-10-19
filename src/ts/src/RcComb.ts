@@ -2,6 +2,7 @@ import * as Svg from './Svg';
 import {getStr} from './Text';
 
 export const SERIESES: Record<string, number[]> = {
+  'E1': [100],
   'E3': [100, 220, 470],
   'E6': [100, 150, 220, 330, 470, 680],
   'E12': [100, 120, 150, 180, 220, 270, 330, 390, 470, 560, 680, 820],
