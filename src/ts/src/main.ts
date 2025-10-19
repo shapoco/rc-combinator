@@ -1,4 +1,5 @@
 import * as RcComb from './RcComb';
+import * as Svg from './Svg';
 import {getStr} from './Text';
 import * as Ui from './Ui';
 
@@ -17,8 +18,8 @@ export function main() {
 function makeResistorCombinatorUI(): HTMLDivElement {
   const rangeSelector =
       new Ui.ValueRangeSelector(RcComb.ComponentType.Resistor);
-  const numElementsInput = new Ui.ValueBox('4');
-  const resultBox = document.createElement('pre') as HTMLPreElement;
+  const numElementsInput = new Ui.ValueBox('3');
+  const resultBox = Ui.makeDiv();
 
   const ui = Ui.makeDiv([
     resCombHeader,
@@ -35,6 +36,7 @@ function makeResistorCombinatorUI(): HTMLDivElement {
   ]);
 
   const callback = () => {
+    resultBox.innerHTML = '';
     try {
       const custom = rangeSelector.seriesSelect.value === 'custom';
       Ui.setVisible(Ui.parentTrOf(rangeSelector.customValuesInput)!, custom);
@@ -51,19 +53,19 @@ function makeResistorCombinatorUI(): HTMLDivElement {
           RcComb.ComponentType.Resistor, availableValues, targetValue,
           maxElements);
 
-      let resultText = '';
       if (combs.length > 0) {
-        resultText +=
-            getStr('Found <n> combination(s):', {n: combs.length}) + '\n\n';
+        resultBox.appendChild(
+            Ui.makeP(getStr('Found <n> combination(s):', {n: combs.length})))
         for (const comb of combs) {
-          resultText += comb.toString() + '\n';
+          // resultText += comb.toString() + '\n';
+          resultBox.appendChild(comb.generateSvg(targetValue));
+          resultBox.appendChild(document.createTextNode(' '));
         }
       } else {
-        resultText = getStr('No combinations found.');
+        resultBox.appendChild(Ui.makeP(getStr('No combinations found.')))
       }
-      resultBox.textContent = resultText;
     } catch (e) {
-      resultBox.textContent = `Error: ${(e as Error).message}`;
+      resultBox.appendChild(Ui.makeP(`Error: ${(e as Error).message}`));
     }
   };
   rangeSelector.setOnChange(callback);
@@ -79,8 +81,8 @@ function makeCapacitorCombinatorUI(): HTMLDivElement {
   const rangeSelector =
       new Ui.ValueRangeSelector(RcComb.ComponentType.Capacitor);
   const targetInput = new Ui.ValueBox('3.14μ');
-  const numElementsInput = new Ui.ValueBox('4');
-  const resultBox = document.createElement('pre') as HTMLPreElement;
+  const numElementsInput = new Ui.ValueBox('3');
+  const resultBox = Ui.makeDiv();
 
   const ui = Ui.makeDiv([
     Ui.makeH2(getStr('Find Capacitor Combinations')),
@@ -97,6 +99,7 @@ function makeCapacitorCombinatorUI(): HTMLDivElement {
   ]);
 
   const callback = () => {
+    resultBox.innerHTML = '';
     try {
       const custom = rangeSelector.seriesSelect.value === 'custom';
       Ui.setVisible(Ui.parentTrOf(rangeSelector.customValuesInput)!, custom);
@@ -113,19 +116,19 @@ function makeCapacitorCombinatorUI(): HTMLDivElement {
           RcComb.ComponentType.Capacitor, availableValues, targetValue,
           maxElements);
 
-      let resultText = '';
       if (combs.length > 0) {
-        resultText +=
-            getStr('Found <n> combination(s):', {n: combs.length}) + '\n\n';
+        resultBox.appendChild(
+            Ui.makeP(getStr('Found <n> combination(s):', {n: combs.length})))
         for (const comb of combs) {
-          resultText += comb.toString() + '\n';
+          // resultText += comb.toString() + '\n';
+          resultBox.appendChild(comb.generateSvg(targetValue));
+          resultBox.appendChild(document.createTextNode(' '));
         }
       } else {
-        resultText = getStr('No combinations found.');
+        resultBox.appendChild(Ui.makeP(getStr('No combinations found.')))
       }
-      resultBox.textContent = resultText;
     } catch (e) {
-      resultBox.textContent = `Error: ${(e as Error).message}`;
+      resultBox.appendChild(Ui.makeP(`Error: ${(e as Error).message}`));
     }
   };
   rangeSelector.setOnChange(callback);
@@ -144,11 +147,11 @@ function makeDividerCombinatorUI(): HTMLDivElement {
   const totalMinBox = new Ui.ValueBox('10k');
   const totalMaxBox = new Ui.ValueBox('100k');
   const numElementsInput = new Ui.ValueBox('2');
-  const resultBox = document.createElement('pre') as HTMLPreElement;
+  const resultBox = Ui.makeDiv();
 
   const ui = Ui.makeDiv([
     Ui.makeH2(getStr('Find Voltage Dividers')),
-    Ui.makeParagraph(`R1: ${getStr('Upper Resistor')}, R2: ${
+    Ui.makeP(`R1: ${getStr('Upper Resistor')}, R2: ${
         getStr('Lower Resistor')}, Vout / Vin = R2 / (R1 + R2)`),
     Ui.makeTable([
       [getStr('Item'), getStr('Value'), getStr('Unit')],
@@ -165,6 +168,7 @@ function makeDividerCombinatorUI(): HTMLDivElement {
   ]);
 
   const callback = () => {
+    resultBox.innerHTML = '';
     try {
       const custom = rangeSelector.seriesSelect.value === 'custom';
       Ui.setVisible(Ui.parentTrOf(rangeSelector.customValuesInput)!, custom);
@@ -184,19 +188,19 @@ function makeDividerCombinatorUI(): HTMLDivElement {
           RcComb.ComponentType.Resistor, availableValues, targetValue, totalMin,
           totalMax, maxElements);
 
-      let resultText = '';
       if (combs.length > 0) {
-        resultText +=
-            getStr('Found <n> combination(s):', {n: combs.length}) + '\n\n';
+        resultBox.appendChild(
+            Ui.makeP(getStr('Found <n> combination(s):', {n: combs.length})))
         for (const comb of combs) {
-          resultText += comb.toString() + '\n';
+          // resultText += comb.toString() + '\n';
+          resultBox.appendChild(comb.generateSvg(targetValue));
+          resultBox.appendChild(document.createTextNode(' '));
         }
       } else {
-        resultText = getStr('No combinations found.');
+        resultBox.appendChild(Ui.makeP(getStr('No combinations found.')))
       }
-      resultBox.textContent = resultText;
     } catch (e) {
-      resultBox.textContent = `Error: ${(e as Error).message}`;
+      resultBox.appendChild(Ui.makeP(`Error: ${(e as Error).message}`));
     }
   };
   rangeSelector.setOnChange(callback);

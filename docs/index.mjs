@@ -1,3 +1,120 @@
+//#region src/Svg.ts
+var State = class State {
+	x = 0;
+	y = 0;
+	backColor = "white";
+	foreColor = "black";
+	textColor = "black";
+	fontSize = 12;
+	clone() {
+		const state = new State();
+		state.x = this.x;
+		state.y = this.y;
+		state.backColor = this.backColor;
+		state.foreColor = this.foreColor;
+		state.textColor = this.textColor;
+		state.fontSize = this.fontSize;
+		return state;
+	}
+};
+var SvgCanvas = class {
+	svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+	xMin = 0;
+	yMin = 0;
+	xMax = 1;
+	yMax = 1;
+	stack = [new State()];
+	constructor() {
+		this.svg.setAttribute("viewBox", "0 0 100 100");
+	}
+	get state() {
+		return this.stack[this.stack.length - 1];
+	}
+	pushState() {
+		this.stack.push(this.state.clone());
+	}
+	popState() {
+		if (this.stack.length > 1) this.stack.pop();
+		else throw new Error("State stack underflow");
+	}
+	offsetState(dx, dy) {
+		this.state.x += dx;
+		this.state.y += dy;
+	}
+	setBackColor(color = "transparent") {
+		this.state.backColor = color;
+	}
+	setForeColor(color = "black") {
+		this.state.foreColor = color;
+	}
+	setTextColor(color = "black") {
+		this.state.textColor = color;
+	}
+	setFontSize(size) {
+		this.state.fontSize = size;
+	}
+	drawFillRect(x, y, w, h) {
+		x += this.state.x;
+		y += this.state.y;
+		const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+		rect.setAttribute("x", x.toString());
+		rect.setAttribute("y", y.toString());
+		rect.setAttribute("width", w.toString());
+		rect.setAttribute("height", h.toString());
+		if (this.state.backColor !== "transparent") rect.setAttribute("fill", this.state.backColor);
+		if (this.state.foreColor !== "transparent") rect.setAttribute("stroke", this.state.foreColor);
+		this.svg.appendChild(rect);
+		this.xMin = Math.min(this.xMin, x);
+		this.yMin = Math.min(this.yMin, y);
+		this.xMax = Math.max(this.xMax, x + w);
+		this.yMax = Math.max(this.yMax, y + h);
+	}
+	drawLine(x1, y1, x2, y2) {
+		x1 += this.state.x;
+		y1 += this.state.y;
+		x2 += this.state.x;
+		y2 += this.state.y;
+		const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+		line.setAttribute("x1", x1.toString());
+		line.setAttribute("y1", y1.toString());
+		line.setAttribute("x2", x2.toString());
+		line.setAttribute("y2", y2.toString());
+		line.setAttribute("stroke", this.state.foreColor);
+		this.svg.appendChild(line);
+		this.xMin = Math.min(this.xMin, x1);
+		this.yMin = Math.min(this.yMin, y1);
+		this.xMax = Math.max(this.xMax, x2);
+		this.yMax = Math.max(this.yMax, y2);
+	}
+	drawText(x, y, text) {
+		x += this.state.x;
+		y += this.state.y;
+		const textElem = document.createElementNS("http://www.w3.org/2000/svg", "text");
+		textElem.setAttribute("x", x.toString());
+		textElem.setAttribute("y", y.toString());
+		textElem.setAttribute("fill", this.state.textColor);
+		textElem.setAttribute("font-size", this.state.fontSize.toString());
+		textElem.setAttribute("font-family", "Arial, sans-serif");
+		textElem.setAttribute("text-anchor", "middle");
+		textElem.textContent = text;
+		this.svg.appendChild(textElem);
+		const w = text.length * (this.state.fontSize * .6);
+		this.xMin = Math.min(this.xMin, x - w / 2);
+		this.yMin = Math.min(this.yMin, y - this.state.fontSize);
+		this.xMax = Math.max(this.xMax, x + w / 2);
+		this.yMax = Math.max(this.yMax, y);
+	}
+	build() {
+		const x = this.xMin - 10;
+		const y = this.yMin - 10;
+		const w = this.xMax - this.xMin + 20;
+		const h = this.yMax - this.yMin + 20;
+		this.svg.setAttribute("viewBox", `${x} ${y} ${w} ${h}`);
+		return this.svg;
+	}
+};
+
+//#endregion
 //#region src/Text.ts
 const texts = { "ja": {
 	"Find Resistor Combinations": "合成抵抗を見つける",
@@ -25,7 +142,9 @@ const texts = { "ja": {
 	"Parallel": "並列",
 	"Series": "直列",
 	"Ideal Value": "理想値",
-	"<s> Approximation": "<s> 近似"
+	"<s> Approximation": "<s> 近似",
+	"Error": "誤差",
+	"No Error": "誤差なし"
 } };
 function getStr(key, vars) {
 	let ret = key;
@@ -153,24 +272,32 @@ function formatValue(value, unit = "", usePrefix = null) {
 			prefix = "p";
 		}
 	}
-	value = Math.round(value * 1e6);
+	const minDigits = usePrefix ? 3 : 6;
+	value = Math.round(value * pow10(minDigits));
 	let s = "";
-	while (s.length <= 7 || value > 0) {
+	while (s.length <= minDigits + 1 || value > 0) {
 		const digit = value % 10;
 		value = Math.floor(value / 10);
 		s = digit.toString() + s;
-		if (s.length === 6) s = "." + s;
+		if (s.length === minDigits) s = "." + s;
 	}
 	s = s.replace(/\.?0+$/, "");
 	return `${s} ${prefix}${unit}`.trim();
 }
+const FIGURE_SCALE = 10;
 var Combination = class {
-	constructor(cType = ComponentType.Resistor, parallel = false, children = [], value = 0, complexity = -1) {
-		this.cType = cType;
-		this.parallel = parallel;
-		this.children = children;
-		this.value = value;
-		this.complexity = complexity;
+	cType = ComponentType.Resistor;
+	parallel = false;
+	children = [];
+	value = 0;
+	complexity = -1;
+	x = 0;
+	y = 0;
+	width = 0;
+	height = 0;
+	constructor() {}
+	get isLeaf() {
+		return this.children.length === 0;
 	}
 	get unit() {
 		switch (this.cType) {
@@ -179,8 +306,109 @@ var Combination = class {
 			default: return "";
 		}
 	}
+	layout() {
+		let maxChildWidth = 0;
+		let maxChildHeight = 0;
+		for (const child of this.children) {
+			child.layout();
+			maxChildWidth = Math.max(maxChildWidth, child.width);
+			maxChildHeight = Math.max(maxChildHeight, child.height);
+		}
+		if (this.isLeaf) {
+			this.width = FIGURE_SCALE * 2;
+			this.height = FIGURE_SCALE * 2;
+		} else if (this.parallel) {
+			let y = 0;
+			this.width = maxChildWidth + FIGURE_SCALE * 2;
+			for (const child of this.children) {
+				child.x = (this.width - child.width) / 2;
+				child.y = y;
+				y += child.height + FIGURE_SCALE;
+			}
+			this.height = y - FIGURE_SCALE;
+		} else {
+			let x = 0;
+			this.height = maxChildHeight + FIGURE_SCALE * 2;
+			for (const child of this.children) {
+				child.x = x;
+				child.y = (this.height - child.height) / 2;
+				x += child.width + FIGURE_SCALE * 1.5;
+			}
+			this.width = x - FIGURE_SCALE * 1.5;
+		}
+	}
+	paint(svg) {
+		svg.pushState();
+		svg.offsetState(this.x, this.y);
+		if (this.isLeaf) if (this.cType === ComponentType.Resistor) {
+			const h = this.height / 3;
+			const y = (this.height - h) / 2;
+			svg.setBackColor("white");
+			svg.drawFillRect(0, y, this.width, h);
+			svg.setFontSize(9);
+			svg.drawText(this.width / 2, y - FIGURE_SCALE / 4, formatValue(this.value, this.unit));
+		} else {
+			const w = this.width / 3;
+			const h = this.height * 2 / 3;
+			const x0 = this.width / 2 - w / 2;
+			const x1 = this.width / 2 + w / 2;
+			const y = (this.height - h) / 2;
+			svg.setForeColor("transparent");
+			svg.drawFillRect(x0, y, w, h);
+			svg.setForeColor("black");
+			svg.drawLine(x0, y, x0, y + h);
+			svg.drawLine(x1, y, x1, y + h);
+			svg.setFontSize(9);
+			svg.drawText(this.width / 2, y - FIGURE_SCALE / 3, formatValue(this.value, this.unit));
+		}
+		else if (this.parallel) {
+			svg.setForeColor("transparent");
+			svg.drawFillRect(0, 0, this.width, this.height);
+			svg.setForeColor("black");
+			let y0 = -1;
+			let y1 = this.height;
+			for (const child of this.children) {
+				const y = child.y + child.height / 2;
+				svg.drawLine(0, y, this.width, y);
+				if (y0 < 0) y0 = y;
+				y1 = y;
+			}
+			svg.drawLine(0, y0, 0, y1);
+			svg.drawLine(this.width, y0, this.width, y1);
+		}
+		for (const child of this.children) child.paint(svg);
+		svg.popState();
+	}
+	generateSvg(target) {
+		const canvas = new SvgCanvas();
+		this.layout();
+		{
+			const x0 = this.x - 20;
+			const x1 = x0 + this.width + 40;
+			const y = this.y + this.height / 2;
+			canvas.drawLine(x0, y, x1, y);
+		}
+		this.paint(canvas);
+		{
+			const x = this.x + this.width / 2;
+			const y = this.y + this.height + 12;
+			canvas.setFontSize(12);
+			canvas.drawText(x, y, formatValue(this.value, this.unit));
+			canvas.setFontSize(9);
+			const error = (this.value - target) / target;
+			let errorText = `(${getStr("No Error")})`;
+			if (Math.abs(error) > 1e-6) errorText = `(${getStr("Error")}: ${error > 0 ? "+" : ""}${(error * 100).toFixed(3)}%)`;
+			canvas.drawText(x, y + 15, errorText);
+		}
+		const svg = canvas.build();
+		svg.style.backgroundColor = "white";
+		svg.style.border = "1px solid black";
+		svg.style.width = "300px";
+		svg.style.height = "300px";
+		return svg;
+	}
 	toString(indent = "") {
-		if (this.children.length === 0) return `${indent}${formatValue(this.value, this.unit)}\n`;
+		if (this.isLeaf) return `${indent}${formatValue(this.value, this.unit)}\n`;
 		else {
 			let ret = "";
 			for (const child of this.children) ret += child.toString(indent + "    ");
@@ -190,6 +418,10 @@ var Combination = class {
 	}
 };
 var DividerCombination = class {
+	x = 0;
+	y = 0;
+	width = 0;
+	height = 0;
 	constructor(upper, lower, ratio) {
 		this.upper = upper;
 		this.lower = lower;
@@ -204,6 +436,61 @@ var DividerCombination = class {
 		ret += "R2:\n";
 		ret += lo.toString("    ");
 		return ret;
+	}
+	layout() {
+		const upper = this.upper[0];
+		const lower = this.lower[0];
+		upper.layout();
+		lower.layout();
+		const padding = FIGURE_SCALE * 4;
+		this.width = upper.width + lower.width + padding;
+		this.height = Math.max(upper.height, lower.height);
+		lower.x += upper.width + padding;
+		upper.y += (this.height - upper.height) / 2;
+		lower.y += (this.height - lower.height) / 2;
+	}
+	generateSvg(target) {
+		const upper = this.upper[0];
+		const lower = this.lower[0];
+		const canvas = new SvgCanvas();
+		this.layout();
+		{
+			const x0 = this.x - 20;
+			const x1 = x0 + this.width + 40;
+			const y = this.y + this.height / 2;
+			canvas.drawLine(x0, y, x1, y);
+		}
+		upper.paint(canvas);
+		{
+			const x = upper.x + upper.width / 2;
+			const y = this.y + this.height + 9;
+			canvas.setFontSize(9);
+			canvas.drawText(x, y, "R1 = " + formatValue(upper.value, upper.unit));
+		}
+		lower.paint(canvas);
+		{
+			const x = lower.x + lower.width / 2;
+			const y = this.y + this.height + 9;
+			canvas.setFontSize(9);
+			canvas.drawText(x, y, "R2 = " + formatValue(lower.value, lower.unit));
+		}
+		{
+			const x = this.x + this.width / 2;
+			const y = this.y + this.height + 32;
+			canvas.setFontSize(12);
+			canvas.drawText(x, y, "R2 / (R1 + R2) = " + formatValue(this.ratio, ""));
+			canvas.setFontSize(9);
+			const error = (this.ratio - target) / target;
+			let errorText = `(${getStr("No Error")})`;
+			if (Math.abs(error) > 1e-6) errorText = `(${getStr("Error")}: ${error > 0 ? "+" : ""}${(error * 100).toFixed(3)}%)`;
+			canvas.drawText(x, y + 15, errorText);
+		}
+		const svg = canvas.build();
+		svg.style.backgroundColor = "white";
+		svg.style.border = "1px solid black";
+		svg.style.width = "400px";
+		svg.style.height = "200px";
+		return svg;
 	}
 };
 function findCombinations(cType, values, targetValue, maxElements) {
@@ -661,9 +948,13 @@ var ValueRangeSelector = class {
 		if (cType === ComponentType.Resistor) {
 			this.customValuesInput.value = "100, 1k, 10k";
 			this.customValuesInput.placeholder = "e.g.\n100, 1k, 10k";
+			this.minResisterInput.inputBox.value = "100";
+			this.maxResisterInput.inputBox.value = "1M";
 		} else {
 			this.customValuesInput.value = "1n, 10n, 100n";
 			this.customValuesInput.placeholder = "e.g.\n1n, 10n, 100n";
+			this.minResisterInput.inputBox.value = "100p";
+			this.maxResisterInput.inputBox.value = "100u";
 		}
 		this.customValuesInput.disabled = true;
 	}
@@ -736,14 +1027,14 @@ function makeH2(label) {
 	elm.textContent = label;
 	return elm;
 }
-function makeDiv(children, className = null, center = false) {
+function makeDiv(children = [], className = null, center = false) {
 	const elm = document.createElement("div");
 	toElementArray(children).forEach((child) => elm.appendChild(child));
 	if (className) elm.classList.add(className);
 	if (center) elm.style.textAlign = "center";
 	return elm;
 }
-function makeParagraph(children, className = null, center = false) {
+function makeP(children, className = null, center = false) {
 	const elm = document.createElement("p");
 	toElementArray(children).forEach((child) => elm.appendChild(child));
 	if (className) elm.classList.add(className);
@@ -836,8 +1127,8 @@ function main() {
 }
 function makeResistorCombinatorUI() {
 	const rangeSelector = new ValueRangeSelector(ComponentType.Resistor);
-	const numElementsInput = new ValueBox("4");
-	const resultBox = document.createElement("pre");
+	const numElementsInput = new ValueBox("3");
+	const resultBox = makeDiv();
 	const ui = makeDiv([
 		resCombHeader,
 		makeTable([
@@ -880,6 +1171,7 @@ function makeResistorCombinatorUI() {
 		resultBox
 	]);
 	const callback = () => {
+		resultBox.innerHTML = "";
 		try {
 			const custom = rangeSelector.seriesSelect.value === "custom";
 			setVisible(parentTrOf(rangeSelector.customValuesInput), custom);
@@ -889,14 +1181,15 @@ function makeResistorCombinatorUI() {
 			const availableValues = rangeSelector.getAvailableValues(targetValue);
 			const maxElements = numElementsInput.value;
 			const combs = findCombinations(ComponentType.Resistor, availableValues, targetValue, maxElements);
-			let resultText = "";
 			if (combs.length > 0) {
-				resultText += getStr("Found <n> combination(s):", { n: combs.length }) + "\n\n";
-				for (const comb of combs) resultText += comb.toString() + "\n";
-			} else resultText = getStr("No combinations found.");
-			resultBox.textContent = resultText;
+				resultBox.appendChild(makeP(getStr("Found <n> combination(s):", { n: combs.length })));
+				for (const comb of combs) {
+					resultBox.appendChild(comb.generateSvg(targetValue));
+					resultBox.appendChild(document.createTextNode(" "));
+				}
+			} else resultBox.appendChild(makeP(getStr("No combinations found.")));
 		} catch (e) {
-			resultBox.textContent = `Error: ${e.message}`;
+			resultBox.appendChild(makeP(`Error: ${e.message}`));
 		}
 	};
 	rangeSelector.setOnChange(callback);
@@ -908,8 +1201,8 @@ function makeResistorCombinatorUI() {
 function makeCapacitorCombinatorUI() {
 	const rangeSelector = new ValueRangeSelector(ComponentType.Capacitor);
 	const targetInput = new ValueBox("3.14μ");
-	const numElementsInput = new ValueBox("4");
-	const resultBox = document.createElement("pre");
+	const numElementsInput = new ValueBox("3");
+	const resultBox = makeDiv();
 	const ui = makeDiv([
 		makeH2(getStr("Find Capacitor Combinations")),
 		makeTable([
@@ -952,6 +1245,7 @@ function makeCapacitorCombinatorUI() {
 		resultBox
 	]);
 	const callback = () => {
+		resultBox.innerHTML = "";
 		try {
 			const custom = rangeSelector.seriesSelect.value === "custom";
 			setVisible(parentTrOf(rangeSelector.customValuesInput), custom);
@@ -961,14 +1255,15 @@ function makeCapacitorCombinatorUI() {
 			const availableValues = rangeSelector.getAvailableValues(targetValue);
 			const maxElements = numElementsInput.value;
 			const combs = findCombinations(ComponentType.Capacitor, availableValues, targetValue, maxElements);
-			let resultText = "";
 			if (combs.length > 0) {
-				resultText += getStr("Found <n> combination(s):", { n: combs.length }) + "\n\n";
-				for (const comb of combs) resultText += comb.toString() + "\n";
-			} else resultText = getStr("No combinations found.");
-			resultBox.textContent = resultText;
+				resultBox.appendChild(makeP(getStr("Found <n> combination(s):", { n: combs.length })));
+				for (const comb of combs) {
+					resultBox.appendChild(comb.generateSvg(targetValue));
+					resultBox.appendChild(document.createTextNode(" "));
+				}
+			} else resultBox.appendChild(makeP(getStr("No combinations found.")));
 		} catch (e) {
-			resultBox.textContent = `Error: ${e.message}`;
+			resultBox.appendChild(makeP(`Error: ${e.message}`));
 		}
 	};
 	rangeSelector.setOnChange(callback);
@@ -983,10 +1278,10 @@ function makeDividerCombinatorUI() {
 	const totalMinBox = new ValueBox("10k");
 	const totalMaxBox = new ValueBox("100k");
 	const numElementsInput = new ValueBox("2");
-	const resultBox = document.createElement("pre");
+	const resultBox = makeDiv();
 	const ui = makeDiv([
 		makeH2(getStr("Find Voltage Dividers")),
-		makeParagraph(`R1: ${getStr("Upper Resistor")}, R2: ${getStr("Lower Resistor")}, Vout / Vin = R2 / (R1 + R2)`),
+		makeP(`R1: ${getStr("Upper Resistor")}, R2: ${getStr("Lower Resistor")}, Vout / Vin = R2 / (R1 + R2)`),
 		makeTable([
 			[
 				getStr("Item"),
@@ -1037,6 +1332,7 @@ function makeDividerCombinatorUI() {
 		resultBox
 	]);
 	const callback = () => {
+		resultBox.innerHTML = "";
 		try {
 			const custom = rangeSelector.seriesSelect.value === "custom";
 			setVisible(parentTrOf(rangeSelector.customValuesInput), custom);
@@ -1048,14 +1344,15 @@ function makeDividerCombinatorUI() {
 			const availableValues = rangeSelector.getAvailableValues((totalMin + totalMax) / 2);
 			const maxElements = numElementsInput.value;
 			const combs = findDividers(ComponentType.Resistor, availableValues, targetValue, totalMin, totalMax, maxElements);
-			let resultText = "";
 			if (combs.length > 0) {
-				resultText += getStr("Found <n> combination(s):", { n: combs.length }) + "\n\n";
-				for (const comb of combs) resultText += comb.toString() + "\n";
-			} else resultText = getStr("No combinations found.");
-			resultBox.textContent = resultText;
+				resultBox.appendChild(makeP(getStr("Found <n> combination(s):", { n: combs.length })));
+				for (const comb of combs) {
+					resultBox.appendChild(comb.generateSvg(targetValue));
+					resultBox.appendChild(document.createTextNode(" "));
+				}
+			} else resultBox.appendChild(makeP(getStr("No combinations found.")));
 		} catch (e) {
-			resultBox.textContent = `Error: ${e.message}`;
+			resultBox.appendChild(makeP(`Error: ${e.message}`));
 		}
 	};
 	rangeSelector.setOnChange(callback);

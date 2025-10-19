@@ -26,6 +26,8 @@ const texts: {[key: string]: {[key: string]: string}} = {
     'Series': '直列',
     'Ideal Value': '理想値',
     '<s> Approximation': '<s> 近似',
+    'Error': '誤差',
+    'No Error': '誤差なし',
   },
 };
 

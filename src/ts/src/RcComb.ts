@@ -1,3 +1,4 @@
+import * as Svg from './Svg';
 import {getStr} from './Text';
 
 export const SERIESES: Record<string, number[]> = {
@@ -84,23 +85,41 @@ export function formatValue(
       prefix = 'p';
     }
   }
-  value = Math.round(value * 1000000);
+
+  const minDigits = usePrefix ? 3 : 6;
+
+  value = Math.round(value * pow10(minDigits));
   let s = '';
-  while (s.length <= 7 || value > 0) {
+  while (s.length <= (minDigits + 1) || value > 0) {
     const digit = value % 10;
     value = Math.floor(value / 10);
     s = digit.toString() + s;
-    if (s.length === 6) s = '.' + s;
+    if (s.length === minDigits) s = '.' + s;
   }
   s = s.replace(/\.?0+$/, '');
   return `${s} ${prefix}${unit}`.trim();
 }
 
+const FIGURE_SCALE = 10;
+
+
 export class Combination {
-  constructor(
-      public cType: ComponentType = ComponentType.Resistor,
-      public parallel: boolean = false, public children: Combination[] = [],
-      public value: number = 0, public complexity: number = -1) {}
+  cType = ComponentType.Resistor;
+  parallel = false;
+  children: Combination[] = [];
+  value = 0;
+  complexity = -1;
+
+  x = 0;
+  y = 0;
+  width = 0;
+  height = 0;
+
+  constructor() {}
+
+  get isLeaf(): boolean {
+    return this.children.length === 0;
+  }
 
   get unit(): string {
     switch (this.cType) {
@@ -113,8 +132,123 @@ export class Combination {
     }
   }
 
+  layout(): void {
+    let maxChildWidth = 0;
+    let maxChildHeight = 0;
+    for (const child of this.children) {
+      child.layout();
+      maxChildWidth = Math.max(maxChildWidth, child.width);
+      maxChildHeight = Math.max(maxChildHeight, child.height);
+    }
+
+    if (this.isLeaf) {
+      this.width = FIGURE_SCALE * 2;
+      this.height = FIGURE_SCALE * 2;
+    } else if (this.parallel) {
+      let y = 0;
+      this.width = maxChildWidth + FIGURE_SCALE * 2;
+      for (const child of this.children) {
+        child.x = (this.width - child.width) / 2;
+        child.y = y;
+        y += child.height + FIGURE_SCALE;
+      }
+      this.height = y - FIGURE_SCALE;
+    } else {
+      let x = 0;
+      this.height = maxChildHeight + FIGURE_SCALE * 2;
+      for (const child of this.children) {
+        child.x = x;
+        child.y = (this.height - child.height) / 2;
+        x += child.width + FIGURE_SCALE * 1.5;
+      }
+      this.width = x - FIGURE_SCALE * 1.5;
+    }
+  }
+
+  paint(svg: Svg.SvgCanvas): void {
+    svg.pushState();
+    svg.offsetState(this.x, this.y);
+    if (this.isLeaf) {
+      if (this.cType === ComponentType.Resistor) {
+        const h = this.height / 3;
+        const y = (this.height - h) / 2;
+        svg.setBackColor('white');
+        svg.drawFillRect(0, y, this.width, h);
+        svg.setFontSize(9);
+        svg.drawText(
+            this.width / 2, y - FIGURE_SCALE / 4,
+            formatValue(this.value, this.unit));
+      } else {
+        const w = this.width / 3;
+        const h = this.height * 2 / 3;
+        const x0 = this.width / 2 - w / 2;
+        const x1 = this.width / 2 + w / 2;
+        const y = (this.height - h) / 2;
+        svg.setForeColor('transparent');
+        svg.drawFillRect(x0, y, w, h);
+        svg.setForeColor('black');
+        svg.drawLine(x0, y, x0, y + h);
+        svg.drawLine(x1, y, x1, y + h);
+        svg.setFontSize(9);
+        svg.drawText(
+            this.width / 2, y - FIGURE_SCALE / 3,
+            formatValue(this.value, this.unit));
+      }
+    } else if (this.parallel) {
+      svg.setForeColor('transparent');
+      svg.drawFillRect(0, 0, this.width, this.height);
+      svg.setForeColor('black');
+      let y0 = -1;
+      let y1 = this.height;
+      for (const child of this.children) {
+        const y = child.y + child.height / 2;
+        svg.drawLine(0, y, this.width, y);
+        if (y0 < 0) y0 = y;
+        y1 = y;
+      }
+      svg.drawLine(0, y0, 0, y1);
+      svg.drawLine(this.width, y0, this.width, y1);
+    }
+    for (const child of this.children) {
+      child.paint(svg);
+    }
+    svg.popState();
+  }
+
+  generateSvg(target: number): SVGSVGElement {
+    const canvas = new Svg.SvgCanvas();
+    this.layout();
+    {
+      const x0 = this.x - 20;
+      const x1 = x0 + this.width + 40;
+      const y = this.y + this.height / 2;
+      canvas.drawLine(x0, y, x1, y);
+    }
+    this.paint(canvas);
+    {
+      const x = this.x + this.width / 2;
+      const y = this.y + this.height + 12;
+      canvas.setFontSize(12);
+      canvas.drawText(x, y, formatValue(this.value, this.unit));
+
+      canvas.setFontSize(9);
+      const error = (this.value - target) / target;
+      let errorText = `(${getStr('No Error')})`;
+      if (Math.abs(error) > 1e-6) {
+        errorText = `(${getStr('Error')}: ${error > 0 ? '+' : ''}${(error * 100).toFixed(3)}%)`;
+      }
+      canvas.drawText(x, y + 15, errorText);
+    }
+    const svg = canvas.build();
+    svg.style.backgroundColor = 'white';
+    svg.style.border = '1px solid black';
+    svg.style.width = '300px';
+    svg.style.height = '300px';
+    return svg;
+  }
+
   toString(indent: string = ''): string {
-    if (this.children.length === 0) {
+    if (this.isLeaf) {
       return `${indent}${formatValue(this.value, this.unit)}\n`;
     } else {
       let ret = '';
@@ -129,6 +263,11 @@ export class Combination {
 }
 
 export class DividerCombination {
+  x = 0;
+  y = 0;
+  width = 0;
+  height = 0;
+
   constructor(
       public upper: Combination[], public lower: Combination[],
       public ratio: number) {}
@@ -143,6 +282,66 @@ export class DividerCombination {
     ret += 'R2:\n';
     ret += lo.toString('    ');
     return ret;
+  }
+
+  layout(): void {
+    const upper = this.upper[0];
+    const lower = this.lower[0];
+    upper.layout();
+    lower.layout();
+    const padding = FIGURE_SCALE * 4;
+    this.width = upper.width + lower.width + padding;
+    this.height = Math.max(upper.height, lower.height);
+    lower.x += upper.width + padding;
+    upper.y += (this.height - upper.height) / 2;
+    lower.y += (this.height - lower.height) / 2;
+  }
+
+  generateSvg(target: number): SVGSVGElement {
+    const upper = this.upper[0];
+    const lower = this.lower[0];
+    const canvas = new Svg.SvgCanvas();
+    this.layout();
+    {
+      const x0 = this.x - 20;
+      const x1 = x0 + this.width + 40;
+      const y = this.y + this.height / 2;
+      canvas.drawLine(x0, y, x1, y);
+    }
+    upper.paint(canvas);
+    {
+      const x = upper.x + upper.width / 2;
+      const y = this.y + this.height + 9;
+      canvas.setFontSize(9);
+      canvas.drawText(x, y, 'R1 = ' + formatValue(upper.value, upper.unit));
+    }
+    lower.paint(canvas);
+    {
+      const x = lower.x + lower.width / 2;
+      const y = this.y + this.height + 9;
+      canvas.setFontSize(9);
+      canvas.drawText(x, y, 'R2 = ' + formatValue(lower.value, lower.unit));
+    }
+    {
+      const x = this.x + this.width / 2;
+      const y = this.y + this.height + 32;
+      canvas.setFontSize(12);
+      canvas.drawText(x, y, 'R2 / (R1 + R2) = ' + formatValue(this.ratio, ''));
+
+      canvas.setFontSize(9);
+      const error = (this.ratio - target) / target;
+      let errorText = `(${getStr('No Error')})`;
+      if (Math.abs(error) > 1e-6) {
+        errorText = `(${getStr('Error')}: ${error > 0 ? '+' : ''}${(error * 100).toFixed(3)}%)`;
+      }
+      canvas.drawText(x, y + 15, errorText);
+    }
+    const svg = canvas.build();
+    svg.style.backgroundColor = 'white';
+    svg.style.border = '1px solid black';
+    svg.style.width = '400px';
+    svg.style.height = '200px';
+    return svg;
   }
 }
 

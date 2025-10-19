@@ -12,9 +12,13 @@ export class ValueRangeSelector {
     if (cType === RcComb.ComponentType.Resistor) {
       this.customValuesInput.value = '100, 1k, 10k';
       this.customValuesInput.placeholder = 'e.g.\n100, 1k, 10k';
+      this.minResisterInput.inputBox.value = '100';
+      this.maxResisterInput.inputBox.value = '1M';
     } else {
       this.customValuesInput.value = '1n, 10n, 100n';
       this.customValuesInput.placeholder = 'e.g.\n1n, 10n, 100n';
+      this.minResisterInput.inputBox.value = '100p';
+      this.maxResisterInput.inputBox.value = '100u';
     }
     this.customValuesInput.disabled = true;
   }
@@ -107,7 +111,7 @@ export function makeH2(label: string): HTMLHeadingElement {
 }
 
 export function makeDiv(
-    children: string|Node|Array<string|Node>|null,
+    children: string|Node|Array<string|Node>|null = [],
     className: string|null = null, center: boolean = false): HTMLDivElement {
   const elm = document.createElement('div');
   toElementArray(children).forEach(child => elm.appendChild(child));
@@ -120,7 +124,7 @@ export function makeDiv(
   return elm;
 }
 
-export function makeParagraph(
+export function makeP(
     children: string|Node|Array<string|Node>|null,
     className: string|null = null,
     center: boolean = false): HTMLParagraphElement {
