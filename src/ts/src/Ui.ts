@@ -34,10 +34,12 @@ export class ValueRangeSelector {
       }
       return values;
     } else {
+      const defaultMin = Math.max(1e-12, targetValue / 100);
+      const defaultMax = Math.min(1e15, targetValue * 100);
       this.minResisterInput.inputBox.placeholder =
-          `(${RcComb.formatValue(targetValue / 100, '', true)})`;
+          `(${RcComb.formatValue(defaultMin, '', true)})`;
       this.maxResisterInput.inputBox.placeholder =
-          `(${RcComb.formatValue(targetValue * 100, '', true)})`;
+          `(${RcComb.formatValue(defaultMax, '', true)})`;
       const minValue = this.minResisterInput.value;
       const maxValue = this.maxResisterInput.value;
       return RcComb.makeAvaiableValues(series, minValue, maxValue);

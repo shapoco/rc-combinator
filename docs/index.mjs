@@ -126,29 +126,29 @@ function formatValue(value, unit = "", usePrefix = null) {
 	if (usePrefix === null) usePrefix = unit !== "";
 	let prefix = "";
 	if (usePrefix) {
-		if (value >= 0xe8d4a51000) {
+		if (value >= 999999e6) {
 			value /= 0xe8d4a51000;
 			prefix = "T";
-		} else if (value >= 1e9) {
+		} else if (value >= 999999e3) {
 			value /= 1e9;
 			prefix = "G";
-		} else if (value >= 1e6) {
+		} else if (value >= 999999) {
 			value /= 1e6;
 			prefix = "M";
-		} else if (value >= 1e3) {
+		} else if (value >= 999.999) {
 			value /= 1e3;
 			prefix = "k";
-		} else if (value >= 1) prefix = "";
-		else if (value >= .001) {
+		} else if (value >= .999999) prefix = "";
+		else if (value >= 999999e-9) {
 			value *= 1e3;
 			prefix = "m";
-		} else if (value >= 1e-6) {
+		} else if (value >= 9.99999e-7) {
 			value *= 1e6;
 			prefix = "μ";
-		} else if (value >= 1e-9) {
+		} else if (value >= 999999e-15) {
 			value *= 1e9;
 			prefix = "n";
-		} else if (value >= 1e-12) {
+		} else if (value >= 999999e-18) {
 			value *= 0xe8d4a51000;
 			prefix = "p";
 		}
@@ -324,12 +324,40 @@ function calcValue(cType, values, indices, topo, comb = null) {
 	if (comb) comb.value = val;
 	return val;
 }
+function pow10(exp) {
+	let ret = 1;
+	const neg = exp < 0;
+	if (neg) exp = -exp;
+	if (exp >= 16) {
+		ret *= 0x2386f26fc10000;
+		exp -= 16;
+	}
+	if (exp >= 8) {
+		ret *= 1e8;
+		exp -= 8;
+	}
+	if (exp >= 4) {
+		ret *= 1e4;
+		exp -= 4;
+	}
+	if (exp >= 2) {
+		ret *= 100;
+		exp -= 2;
+	}
+	if (exp >= 1) {
+		ret *= 10;
+		exp -= 1;
+	}
+	ret *= Math.pow(10, exp);
+	if (neg) ret = 1 / ret;
+	return ret;
+}
 function makeAvaiableValues(series, minValue = 1e-12, maxValue = 0xe8d4a51000) {
 	const baseValues = SERIESES[series];
 	if (!baseValues) throw new Error(`Unknown series: ${series}`);
 	const values = [];
-	for (let exp = -12; exp <= 12; exp++) {
-		const multiplier = Math.pow(10, exp);
+	for (let exp = -11; exp <= 15; exp++) {
+		const multiplier = pow10(exp - 3);
 		for (const base of baseValues) {
 			const value = base * multiplier;
 			if (value >= minValue && value <= maxValue) values.push(value);
@@ -652,8 +680,10 @@ var ValueRangeSelector = class {
 			}
 			return values;
 		} else {
-			this.minResisterInput.inputBox.placeholder = `(${formatValue(targetValue / 100, "", true)})`;
-			this.maxResisterInput.inputBox.placeholder = `(${formatValue(targetValue * 100, "", true)})`;
+			const defaultMin = Math.max(1e-12, targetValue / 100);
+			const defaultMax = Math.min(0x38d7ea4c68000, targetValue * 100);
+			this.minResisterInput.inputBox.placeholder = `(${formatValue(defaultMin, "", true)})`;
+			this.maxResisterInput.inputBox.placeholder = `(${formatValue(defaultMax, "", true)})`;
 			const minValue = this.minResisterInput.value;
 			const maxValue = this.maxResisterInput.value;
 			return makeAvaiableValues(series, minValue, maxValue);
@@ -1069,25 +1099,36 @@ function makeCurrentLimitingUI() {
 	]);
 	const callback = () => {
 		try {
-			const vcc = powerVoltageInput.value;
-			const vForward = forwardVoltageInput.value;
-			const iForward = forwardCurrentInput.value;
-			const rIdeal = (vcc - vForward) / iForward;
+			const vCC = powerVoltageInput.value;
+			const vF = forwardVoltageInput.value;
+			const iF = forwardCurrentInput.value;
+			const vR = vCC - vF;
+			const rIdeal = vR / iF;
 			let results = [{
 				label: getStr("Ideal Value"),
 				r: formatValue(rIdeal, "Ω"),
-				i: formatValue(iForward, "A"),
-				p: formatValue(vcc * iForward, "W")
+				i: formatValue(iF, "A"),
+				p: formatValue(vR * iF, "W")
 			}];
 			let rLast = 0;
 			for (const seriesName in SERIESES) {
 				const series = makeAvaiableValues(seriesName);
-				const combs = findCombinations(ComponentType.Resistor, series, rIdeal, 1);
-				if (combs.length === 0) continue;
-				const rApprox = combs[0].value;
+				let rApprox = 0;
+				{
+					const epsilon = iF * 1e-6;
+					let bestDiff = Infinity;
+					for (const r of series) {
+						const i = (vCC - vF) / r;
+						const diff = Math.abs(iF - i);
+						if (diff - epsilon < bestDiff) {
+							bestDiff = diff;
+							rApprox = r;
+						}
+					}
+				}
 				if (rApprox !== rLast) {
-					const iApprox = (vcc - vForward) / rApprox;
-					const pApprox = vcc * iApprox;
+					const iApprox = (vCC - vF) / rApprox;
+					const pApprox = vR * iApprox;
 					results.push({
 						label: `${getStr("<s> Approximation", { s: seriesName })}`,
 						r: formatValue(rApprox, "Ω"),

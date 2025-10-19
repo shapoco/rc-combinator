@@ -229,31 +229,43 @@ function makeCurrentLimitingUI(): HTMLDivElement {
 
   const callback = () => {
     try {
-      const vcc = powerVoltageInput.value;
-      const vForward = forwardVoltageInput.value;
-      const iForward = forwardCurrentInput.value;
+      const vCC = powerVoltageInput.value;
+      const vF = forwardVoltageInput.value;
+      const iF = forwardCurrentInput.value;
 
-      const rIdeal = (vcc - vForward) / iForward;
+      const vR = vCC - vF;
+      const rIdeal = vR / iF;
 
       let results = [
         {
           label: getStr('Ideal Value'),
           r: RcComb.formatValue(rIdeal, 'Ω'),
-          i: RcComb.formatValue(iForward, 'A'),
-          p: RcComb.formatValue(vcc * iForward, 'W'),
+          i: RcComb.formatValue(iF, 'A'),
+          p: RcComb.formatValue(vR * iF, 'W'),
         },
       ];
 
       let rLast = 0;
       for (const seriesName in RcComb.SERIESES) {
         const series = RcComb.makeAvaiableValues(seriesName);
-        const combs = RcComb.findCombinations(
-            RcComb.ComponentType.Resistor, series, rIdeal, 1);
-        if (combs.length === 0) continue;
-        const rApprox = combs[0].value;
+
+        let rApprox = 0;
+        {
+          const epsilon = iF * 1e-6;
+          let bestDiff = Infinity;
+          for (const r of series) {
+            const i = (vCC - vF) / r;
+            const diff = Math.abs(iF - i);
+            if (diff - epsilon < bestDiff) {
+              bestDiff = diff;
+              rApprox = r;
+            }
+          }
+        }
+
         if (rApprox !== rLast) {
-          const iApprox = (vcc - vForward) / rApprox;
-          const pApprox = vcc * iApprox;
+          const iApprox = (vCC - vF) / rApprox;
+          const pApprox = vR * iApprox;
           results.push({
             label: `${getStr('<s> Approximation', {s: seriesName})}`,
             r: RcComb.formatValue(rApprox, 'Ω'),

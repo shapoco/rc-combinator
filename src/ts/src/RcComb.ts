@@ -56,30 +56,30 @@ export function formatValue(
 
   let prefix = '';
   if (usePrefix) {
-    if (value >= 1e12) {
+    if (value >= 0.999999e12) {
       value /= 1e12;
       prefix = 'T';
-    } else if (value >= 1e9) {
+    } else if (value >= 0.999999e9) {
       value /= 1e9;
       prefix = 'G';
-    } else if (value >= 1e6) {
+    } else if (value >= 0.999999e6) {
       value /= 1e6;
       prefix = 'M';
-    } else if (value >= 1e3) {
+    } else if (value >= 0.999999e3) {
       value /= 1e3;
       prefix = 'k';
-    } else if (value >= 1) {
+    } else if (value >= 0.999999) {
       prefix = '';
-    } else if (value >= 1e-3) {
+    } else if (value >= 0.999999e-3) {
       value *= 1e3;
       prefix = 'm';
-    } else if (value >= 1e-6) {
+    } else if (value >= 0.999999e-6) {
       value *= 1e6;
       prefix = 'μ';
-    } else if (value >= 1e-9) {
+    } else if (value >= 0.999999e-9) {
       value *= 1e9;
       prefix = 'n';
-    } else if (value >= 1e-12) {
+    } else if (value >= 0.999999e-12) {
       value *= 1e12;
       prefix = 'p';
     }
@@ -95,40 +95,6 @@ export function formatValue(
   s = s.replace(/\.?0+$/, '');
   return `${s} ${prefix}${unit}`.trim();
 }
-
-// export function parseValue(text: string): number {
-//   const match = RE_VALUE.exec(text);
-//   if (!match) {
-//     throw new Error(`Invalid resistor value: ${text}`);
-//   }
-//   let value = parseFloat(match[1]);
-//   const unit = match[3];
-//   switch (unit) {
-//     case 'n':
-//       value *= 1e-9;
-//       break;
-//     case 'u':
-//       value *= 1e-6;
-//       break;
-//     case 'm':
-//       value *= 1e-3;
-//       break;
-//     case 'k':
-//     case 'K':
-//       value *= 1e3;
-//       break;
-//     case 'M':
-//       value *= 1e6;
-//       break;
-//     case 'G':
-//       value *= 1e9;
-//       break;
-//     case 'T':
-//       value *= 1e12;
-//       break;
-//   }
-//   return value;
-// }
 
 export class Combination {
   constructor(
@@ -378,6 +344,37 @@ function calcValue(
   return val;
 }
 
+function pow10(exp: number): number {
+  let ret = 1;
+  const neg = exp < 0;
+  if (neg) exp = -exp;
+  if (exp >= 16) {
+    ret *= 1e16;
+    exp -= 16;
+  }
+  if (exp >= 8) {
+    ret *= 1e8;
+    exp -= 8;
+  }
+  if (exp >= 4) {
+    ret *= 1e4;
+    exp -= 4;
+  }
+  if (exp >= 2) {
+    ret *= 1e2;
+    exp -= 2;
+  }
+  if (exp >= 1) {
+    ret *= 1e1;
+    exp -= 1;
+  }
+  ret *= Math.pow(10, exp);
+  if (neg) {
+    ret = 1 / ret;
+  }
+  return ret;
+}
+
 export function makeAvaiableValues(
     series: string, minValue: number = 1e-12,
     maxValue: number = 1e12): number[] {
@@ -386,8 +383,8 @@ export function makeAvaiableValues(
     throw new Error(`Unknown series: ${series}`);
   }
   const values = [];
-  for (let exp = -12; exp <= 12; exp++) {
-    const multiplier = Math.pow(10, exp);
+  for (let exp = -11; exp <= 15; exp++) {
+    const multiplier = pow10(exp - 3);
     for (const base of baseValues) {
       const value = base * multiplier;
       if (value >= minValue && value <= maxValue) {
