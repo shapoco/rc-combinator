@@ -593,7 +593,6 @@ function calcValue(cType, values, indices, topo, comb = null) {
 	else invSum = !topo.parallel;
 	let ret = 0;
 	let lastLeafVal = Number.POSITIVE_INFINITY;
-	let lastCombVal = Number.POSITIVE_INFINITY;
 	for (const childTopo of topo.children) {
 		const childComb = comb ? new Combination() : null;
 		const childVal = calcValue(cType, values, indices, childTopo, childComb);
@@ -601,9 +600,6 @@ function calcValue(cType, values, indices, topo, comb = null) {
 		if (childTopo.isLeaf) {
 			if (childVal > lastLeafVal) return NaN;
 			lastLeafVal = childVal;
-		} else {
-			if (childVal > lastCombVal) return NaN;
-			lastCombVal = childVal;
 		}
 		if (comb) comb.children.push(childComb);
 		if (invSum) ret += 1 / childVal;
@@ -702,8 +698,9 @@ function searchTopologiesRecursive(iLeft, iRight, parallel) {
 function divideElementsRecursive(buff, buffSize, numElems, callback, depth) {
 	if (numElems === 0) callback(buff, buffSize);
 	else {
-		let wMax = buffSize == 0 ? numElems - 1 : numElems;
-		if (buffSize > 0 && buff[buffSize - 1] < wMax) wMax = buff[buffSize - 1];
+		let wMax = numElems;
+		if (buffSize == 0) wMax = numElems - 1;
+		else if (buffSize > 0 && buff[buffSize - 1] < wMax) wMax = buff[buffSize - 1];
 		for (let w = 1; w <= wMax; w++) {
 			buff[buffSize] = w;
 			divideElementsRecursive(buff, buffSize + 1, numElems - w, callback, depth + 1);
