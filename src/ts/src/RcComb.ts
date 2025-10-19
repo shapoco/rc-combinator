@@ -215,7 +215,7 @@ export class Combination {
     svg.popState();
   }
 
-  generateSvg(target: number): SVGSVGElement {
+  generateSvg(target: number): HTMLImageElement {
     const canvas = new Svg.SvgCanvas();
     this.layout();
     {
@@ -235,16 +235,19 @@ export class Combination {
       const error = (this.value - target) / target;
       let errorText = `(${getStr('No Error')})`;
       if (Math.abs(error) > 1e-6) {
-        errorText = `(${getStr('Error')}: ${error > 0 ? '+' : ''}${(error * 100).toFixed(3)}%)`;
+        errorText = `(${getStr('Error')}: ${error > 0 ? '+' : ''}${
+            (error * 100).toFixed(3)}%)`;
       }
       canvas.drawText(x, y + 15, errorText);
     }
-    const svg = canvas.build();
-    svg.style.backgroundColor = 'white';
-    svg.style.border = '1px solid black';
-    svg.style.width = '300px';
-    svg.style.height = '300px';
-    return svg;
+    const img = new Image();
+    const svgData = new XMLSerializer().serializeToString(canvas.build());
+    img.src = 'data:image/svg+xml;base64,' + bytesToBase64(svgData);
+    img.style.backgroundColor = 'white';
+    img.style.border = '1px solid black';
+    img.style.width = '300px';
+    img.style.height = '300px';
+    return img;
   }
 
   toString(indent: string = ''): string {
@@ -297,7 +300,7 @@ export class DividerCombination {
     lower.y += (this.height - lower.height) / 2;
   }
 
-  generateSvg(target: number): SVGSVGElement {
+  generateSvg(target: number): HTMLImageElement {
     const upper = this.upper[0];
     const lower = this.lower[0];
     const canvas = new Svg.SvgCanvas();
@@ -332,16 +335,20 @@ export class DividerCombination {
       const error = (this.ratio - target) / target;
       let errorText = `(${getStr('No Error')})`;
       if (Math.abs(error) > 1e-6) {
-        errorText = `(${getStr('Error')}: ${error > 0 ? '+' : ''}${(error * 100).toFixed(3)}%)`;
+        errorText = `(${getStr('Error')}: ${error > 0 ? '+' : ''}${
+            (error * 100).toFixed(3)}%)`;
       }
       canvas.drawText(x, y + 15, errorText);
     }
-    const svg = canvas.build();
-    svg.style.backgroundColor = 'white';
-    svg.style.border = '1px solid black';
-    svg.style.width = '400px';
-    svg.style.height = '200px';
-    return svg;
+
+    const img = new Image();
+    const svgData = new XMLSerializer().serializeToString(canvas.build());
+    img.src = 'data:image/svg+xml;base64,' + bytesToBase64(svgData);
+    img.style.backgroundColor = 'white';
+    img.style.border = '1px solid black';
+    img.style.width = '400px';
+    img.style.height = '200px';
+    return img;
   }
 }
 
@@ -687,4 +694,15 @@ function divideElementsRecursive(
           buff, buffSize + 1, numElems - w, callback, depth + 1);
     }
   }
+}
+
+function bytesToBase64(s: string): string {
+  const bytes = new TextEncoder().encode(s);
+  const binString = Array
+                        .from(
+                            bytes,
+                            (byte) => String.fromCodePoint(byte),
+                            )
+                        .join('');
+  return btoa(binString);
 }

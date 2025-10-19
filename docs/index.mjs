@@ -400,12 +400,13 @@ var Combination = class {
 			if (Math.abs(error) > 1e-6) errorText = `(${getStr("Error")}: ${error > 0 ? "+" : ""}${(error * 100).toFixed(3)}%)`;
 			canvas.drawText(x, y + 15, errorText);
 		}
-		const svg = canvas.build();
-		svg.style.backgroundColor = "white";
-		svg.style.border = "1px solid black";
-		svg.style.width = "300px";
-		svg.style.height = "300px";
-		return svg;
+		const img = new Image();
+		img.src = "data:image/svg+xml;base64," + bytesToBase64(new XMLSerializer().serializeToString(canvas.build()));
+		img.style.backgroundColor = "white";
+		img.style.border = "1px solid black";
+		img.style.width = "300px";
+		img.style.height = "300px";
+		return img;
 	}
 	toString(indent = "") {
 		if (this.isLeaf) return `${indent}${formatValue(this.value, this.unit)}\n`;
@@ -485,12 +486,13 @@ var DividerCombination = class {
 			if (Math.abs(error) > 1e-6) errorText = `(${getStr("Error")}: ${error > 0 ? "+" : ""}${(error * 100).toFixed(3)}%)`;
 			canvas.drawText(x, y + 15, errorText);
 		}
-		const svg = canvas.build();
-		svg.style.backgroundColor = "white";
-		svg.style.border = "1px solid black";
-		svg.style.width = "400px";
-		svg.style.height = "200px";
-		return svg;
+		const img = new Image();
+		img.src = "data:image/svg+xml;base64," + bytesToBase64(new XMLSerializer().serializeToString(canvas.build()));
+		img.style.backgroundColor = "white";
+		img.style.border = "1px solid black";
+		img.style.width = "400px";
+		img.style.height = "200px";
+		return img;
 	}
 };
 function findCombinations(cType, values, targetValue, maxElements) {
@@ -707,6 +709,11 @@ function divideElementsRecursive(buff, buffSize, numElems, callback, depth) {
 			divideElementsRecursive(buff, buffSize + 1, numElems - w, callback, depth + 1);
 		}
 	}
+}
+function bytesToBase64(s) {
+	const bytes = new TextEncoder().encode(s);
+	const binString = Array.from(bytes, (byte) => String.fromCodePoint(byte)).join("");
+	return btoa(binString);
 }
 
 //#endregion
