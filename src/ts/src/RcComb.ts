@@ -1,12 +1,6 @@
 import * as Svg from './Svg';
 import {getStr} from './Text';
 
-let nextObjectId = 1;
-
-function getObjectId(): number {
-  return nextObjectId++;
-}
-
 export const SERIESES: Record<string, number[]> = {
   'E1': [100],
   'E3': [100, 220, 470],
@@ -25,11 +19,26 @@ export const enum ComponentType {
 
 export class TopologyNode {
   private complexity_: number = -1;
-  public id: number = getObjectId();
+  public hash: number = -1;
 
   constructor(
       public iLeft: number, public iRight: number, public parallel: boolean,
-      public children: Array<TopologyNode>) {}
+      public children: Array<TopologyNode>) {
+    if (children.length === 0) {
+      this.hash = 1;
+    } else {
+      const POLY = 0x80200003;
+      let lfsr = parallel ? 0xAAAAAAAA : 0x55555555;
+      for (const child of children) {
+        lfsr ^= child.hash;
+        const msb = (lfsr & 0x80000000) !== 0;
+        lfsr = (lfsr & 0x7FFFFFFF) << 1;
+        if (msb) lfsr ^= POLY;
+      }
+      this.hash = lfsr;
+    }
+  }
+
   get isLeaf(): boolean {
     return this.iLeft + 1 >= this.iRight;
   }
@@ -365,6 +374,8 @@ export function findCombinations(
     cType: ComponentType, values: number[], targetValue: number,
     maxElements: number): Combination[] {
   const epsilon = targetValue * 1e-6;
+  const retMin = targetValue / 2;
+  const retMax = targetValue * 2;
 
   const numComb = Math.pow(values.length, maxElements);
   if (maxElements > 10 || numComb > 1e6) {
@@ -380,7 +391,8 @@ export function findCombinations(
     const indices = new Array<number>(numElem).fill(0);
     while (indices[numElem - 1] < values.length) {
       for (const topo of topos) {
-        const value = calcValue(cType, values, indices, topo);
+        const value =
+            calcValue(cType, values, indices, topo, null, retMin, retMax);
         if (isNaN(value)) {
           continue;
         }
@@ -434,7 +446,8 @@ export function findDividers(
     const indices = new Array<number>(numElem).fill(0);
     while (indices[numElem - 1] < values.length) {
       for (const topo of topos) {
-        const lowerValue = calcValue(cType, values, indices, topo);
+        const lowerValue =
+            calcValue(cType, values, indices, topo, null, 0, totalMax);
         if (isNaN(lowerValue)) {
           continue;
         }
@@ -510,7 +523,8 @@ function incrementIndices(indices: number[], values: number[]) {
 
 function calcValue(
     cType: ComponentType, values: number[], indices: number[],
-    topo: TopologyNode, comb: Combination|null = null): number {
+    topo: TopologyNode, comb: Combination|null = null, min = 0,
+    max = Number.POSITIVE_INFINITY): number {
   if (comb) {
     comb.cType = cType;
     comb.parallel = topo.parallel;
@@ -519,7 +533,12 @@ function calcValue(
 
   if (topo.isLeaf) {
     const val = values[indices[topo.iLeft]];
-    if (comb) comb.value = val;
+    if (val < min || max < val) {
+      return NaN;
+    }
+    if (comb) {
+      comb.value = val;
+    }
     return val;
   }
 
@@ -530,33 +549,56 @@ function calcValue(
     invSum = !topo.parallel;
   }
 
-  let ret = 0;
-  let lastLeafVal = Number.POSITIVE_INFINITY;
-  let lastCombId = -1;
-  let lastCombVal = Number.POSITIVE_INFINITY;
-  for (const childTopo of topo.children) {
+
+  let accum = 0;
+  let lastVal = Number.POSITIVE_INFINITY;
+  let lastTopo = -1;
+  for (let iChild = 0; iChild < topo.children.length; iChild++) {
+    const childTopo = topo.children[iChild];
     const childComb = comb ? new Combination() : null;
-    const childVal = calcValue(cType, values, indices, childTopo, childComb);
+    const first = (iChild === 0);
+    const last = (iChild + 1 >= topo.children.length);
+
+    let childMin = 0;
+    let childMax = Number.POSITIVE_INFINITY;
+    if (invSum) {
+      if (last) {
+        const tmp = 1 / accum;
+        childMin = tmp * min / (tmp - min);
+        childMax = tmp * max / (tmp - max);
+        if (childMax < childMin) childMax = Number.POSITIVE_INFINITY;
+      } else {
+        childMin = min;
+      }
+    } else {
+      if (last) {
+        childMin = min - accum;
+      }
+      childMax = max - accum;
+    }
+
+    const childVal = calcValue(
+        cType, values, indices, childTopo, childComb, childMin, childMax);
+
     if (isNaN(childVal)) {
       return NaN;
     }
-    if (childTopo.isLeaf) {
-      if (childVal > lastLeafVal) return NaN;
-      lastLeafVal = childVal;
-    } else if (lastCombId === childTopo.id) {
-      if (childVal > lastCombVal) return NaN;
-      lastCombId = childTopo.id;
-      lastCombVal = childVal;
+    if (lastTopo === childTopo.hash) {
+      // 重複を避けるため、同一のトポロジーが連続している場合は
+      // 値が小さい順に並んでいることを要求する
+      if (childVal > lastVal) return NaN;
     }
+    lastTopo = childTopo.hash;
+    lastVal = childVal;
     if (comb) comb.children.push(childComb!);
     if (invSum) {
-      ret += 1 / childVal;
+      accum += 1 / childVal;
     } else {
-      ret += childVal;
+      accum += childVal;
     }
   }
 
-  const val = invSum ? (1 / ret) : ret;
+  const val = invSum ? (1 / accum) : accum;
   if (comb) comb.value = val;
   return val;
 }

@@ -222,11 +222,24 @@ let ComponentType = /* @__PURE__ */ function(ComponentType$1) {
 }({});
 var TopologyNode = class {
 	complexity_ = -1;
+	hash = -1;
 	constructor(iLeft, iRight, parallel, children) {
 		this.iLeft = iLeft;
 		this.iRight = iRight;
 		this.parallel = parallel;
 		this.children = children;
+		if (children.length === 0) this.hash = 1;
+		else {
+			const POLY = 2149580803;
+			let lfsr = parallel ? 2863311530 : 1431655765;
+			for (const child of children) {
+				lfsr ^= child.hash;
+				const msb = (lfsr & 2147483648) !== 0;
+				lfsr = (lfsr & 2147483647) << 1;
+				if (msb) lfsr ^= POLY;
+			}
+			this.hash = lfsr;
+		}
 	}
 	get isLeaf() {
 		return this.iLeft + 1 >= this.iRight;
@@ -498,6 +511,8 @@ var DividerCombination = class {
 };
 function findCombinations(cType, values, targetValue, maxElements) {
 	const epsilon = targetValue * 1e-6;
+	const retMin = targetValue / 2;
+	const retMax = targetValue * 2;
 	const numComb = Math.pow(values.length, maxElements);
 	if (maxElements > 10 || numComb > 1e6) throw new Error(getStr("The search space is too large."));
 	let bestError = Number.POSITIVE_INFINITY;
@@ -507,7 +522,7 @@ function findCombinations(cType, values, targetValue, maxElements) {
 		const indices = new Array(numElem).fill(0);
 		while (indices[numElem - 1] < values.length) {
 			for (const topo of topos) {
-				const value = calcValue(cType, values, indices, topo);
+				const value = calcValue(cType, values, indices, topo, null, retMin, retMax);
 				if (isNaN(value)) continue;
 				const error = Math.abs(value - targetValue);
 				if (error - epsilon > bestError) continue;
@@ -535,7 +550,7 @@ function findDividers(cType, values, targetRatio, totalMin, totalMax, maxElement
 		const indices = new Array(numElem).fill(0);
 		while (indices[numElem - 1] < values.length) {
 			for (const topo of topos) {
-				const lowerValue = calcValue(cType, values, indices, topo);
+				const lowerValue = calcValue(cType, values, indices, topo, null, 0, totalMax);
 				if (isNaN(lowerValue)) continue;
 				const totalTargetValue = lowerValue / targetRatio;
 				const upperTargetValue = totalTargetValue - lowerValue;
@@ -578,7 +593,7 @@ function incrementIndices(indices, values) {
 		else indices[i] = 0;
 	}
 }
-function calcValue(cType, values, indices, topo, comb = null) {
+function calcValue(cType, values, indices, topo, comb = null, min = 0, max = Number.POSITIVE_INFINITY) {
 	if (comb) {
 		comb.cType = cType;
 		comb.parallel = topo.parallel;
@@ -586,27 +601,44 @@ function calcValue(cType, values, indices, topo, comb = null) {
 	}
 	if (topo.isLeaf) {
 		const val$1 = values[indices[topo.iLeft]];
+		if (val$1 < min || max < val$1) return NaN;
 		if (comb) comb.value = val$1;
 		return val$1;
 	}
 	let invSum = false;
 	if (cType === ComponentType.Resistor) invSum = topo.parallel;
 	else invSum = !topo.parallel;
-	let ret = 0;
-	let lastLeafVal = Number.POSITIVE_INFINITY;
-	for (const childTopo of topo.children) {
+	let accum = 0;
+	let lastVal = Number.POSITIVE_INFINITY;
+	let lastTopo = -1;
+	for (let iChild = 0; iChild < topo.children.length; iChild++) {
+		const childTopo = topo.children[iChild];
 		const childComb = comb ? new Combination() : null;
-		const childVal = calcValue(cType, values, indices, childTopo, childComb);
-		if (isNaN(childVal)) return NaN;
-		if (childTopo.isLeaf) {
-			if (childVal > lastLeafVal) return NaN;
-			lastLeafVal = childVal;
+		const last = iChild + 1 >= topo.children.length;
+		let childMin = 0;
+		let childMax = Number.POSITIVE_INFINITY;
+		if (invSum) if (last) {
+			const tmp = 1 / accum;
+			childMin = tmp * min / (tmp - min);
+			childMax = tmp * max / (tmp - max);
+			if (childMax < childMin) childMax = Number.POSITIVE_INFINITY;
+		} else childMin = min;
+		else {
+			if (last) childMin = min - accum;
+			childMax = max - accum;
 		}
+		const childVal = calcValue(cType, values, indices, childTopo, childComb, childMin, childMax);
+		if (isNaN(childVal)) return NaN;
+		if (lastTopo === childTopo.hash) {
+			if (childVal > lastVal) return NaN;
+		}
+		lastTopo = childTopo.hash;
+		lastVal = childVal;
 		if (comb) comb.children.push(childComb);
-		if (invSum) ret += 1 / childVal;
-		else ret += childVal;
+		if (invSum) accum += 1 / childVal;
+		else accum += childVal;
 	}
-	const val = invSum ? 1 / ret : ret;
+	const val = invSum ? 1 / accum : accum;
 	if (comb) comb.value = val;
 	return val;
 }
