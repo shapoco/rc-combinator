@@ -17,6 +17,7 @@ input[type="text"],
 textarea,
 select {
   width: 100px;
+  ime-mode: inactive;
 }
 
 input[type="text"] {

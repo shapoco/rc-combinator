@@ -1,6 +1,12 @@
 import * as Svg from './Svg';
 import {getStr} from './Text';
 
+let nextObjectId = 1;
+
+function getObjectId(): number {
+  return nextObjectId++;
+}
+
 export const SERIESES: Record<string, number[]> = {
   'E1': [100],
   'E3': [100, 220, 470],
@@ -18,7 +24,9 @@ export const enum ComponentType {
 }
 
 export class TopologyNode {
-  complexity_: number = -1;
+  private complexity_: number = -1;
+  public id: number = getObjectId();
+
   constructor(
       public iLeft: number, public iRight: number, public parallel: boolean,
       public children: Array<TopologyNode>) {}
@@ -524,7 +532,8 @@ function calcValue(
 
   let ret = 0;
   let lastLeafVal = Number.POSITIVE_INFINITY;
-  // let lastCombVal = Number.POSITIVE_INFINITY;
+  let lastCombId = -1;
+  let lastCombVal = Number.POSITIVE_INFINITY;
   for (const childTopo of topo.children) {
     const childComb = comb ? new Combination() : null;
     const childVal = calcValue(cType, values, indices, childTopo, childComb);
@@ -534,10 +543,11 @@ function calcValue(
     if (childTopo.isLeaf) {
       if (childVal > lastLeafVal) return NaN;
       lastLeafVal = childVal;
-    } /*else {
-       if (childVal > lastCombVal) return NaN;
-       lastCombVal = childVal;
-     }*/
+    } else if (lastCombId === childTopo.id) {
+      if (childVal > lastCombVal) return NaN;
+      lastCombId = childTopo.id;
+      lastCombVal = childVal;
+    }
     if (comb) comb.children.push(childComb!);
     if (invSum) {
       ret += 1 / childVal;
