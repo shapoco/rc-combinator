@@ -75,17 +75,22 @@ function makeResistorCombinatorUI(): HTMLDivElement {
   callback();
 
   if (false) {
-    const availableValues = RcComb.makeAvaiableValues('E12', 100, 1000000);
+    const availableValues = RcComb.makeAvaiableValues('E3', 100, 100000);
     console.log(availableValues.join(', '));
-    const retJson = [];
+    const retJson = [0];
     for (let t = 1; t <= 59; t++) {
+      const r = t * 1000;
       const combs = RcComb.findCombinations(
-          RcComb.ComponentType.Resistor, availableValues, t * 1000, 3);
+          RcComb.ComponentType.Resistor, availableValues, r, 6);
       let bestComb: RcComb.Combination|null = null;
-      let bestNumSeries = -1;
+      let bestNumSeries = Number.POSITIVE_INFINITY;
       for (const comb of combs) {
         const numSeries = comb.parallel ? 1 : comb.children.length;
-        if (numSeries > bestNumSeries) {
+        const error = Math.abs(comb.value - r);
+        if (error > r * 1e-9) {
+          continue;
+        }
+        if (numSeries < bestNumSeries) {
           bestNumSeries = numSeries;
           bestComb = comb;
         }

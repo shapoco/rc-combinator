@@ -517,7 +517,7 @@ var DividerCombination = class {
 	}
 };
 function findCombinations(cType, values, targetValue, maxElements) {
-	const epsilon = targetValue * 1e-6;
+	const epsilon = targetValue * 1e-9;
 	const retMin = targetValue / 2;
 	const retMax = targetValue * 2;
 	const numComb = Math.pow(values.length, maxElements);
@@ -546,7 +546,7 @@ function findCombinations(cType, values, targetValue, maxElements) {
 	return selectSimplestCombinations(bestCombinations);
 }
 function findDividers(cType, values, targetRatio, totalMin, totalMax, maxElements) {
-	const epsilon = 1e-6;
+	const epsilon = 1e-9;
 	const numComb = Math.pow(values.length, 2 * maxElements);
 	if (maxElements > 10 || numComb > 1e7) throw new Error(getStr("The search space is too large."));
 	let bestError = Number.POSITIVE_INFINITY;

@@ -1,11 +1,13 @@
+'use strict;'
 
 /** @type {HTMLCanvasElement} */
-let canvas;
+const canvas = document.createElement('canvas');
+
+const eSeriesSelector = document.createElement('select');
 
 const SCALE = 20;
 const R_WIDTH = 2.5 * SCALE;
 const R_HEIGHT = SCALE;
-const N_WIDTH = 10 * SCALE;
 const N_PADDING = SCALE;
 
 const COLOR_CODE_TABLE = [
@@ -279,23 +281,43 @@ class Node {
 /**
  * @type {Node[]}
  */
-let topologies = [];
+const eSerieses = {
+  'e3': { topologies: [], blockWidth: 16 * SCALE, blockHeight: 14 * SCALE },
+  'e6': { topologies: [], blockWidth: 13 * SCALE, blockHeight: 11 * SCALE },
+  'e12': { topologies: [], blockWidth: 10 * SCALE, blockHeight: 8 * SCALE },
+};
 
 /**
  * @param {HTMLCanvasElement} canvas
  */
-export async function main(c) {
-  canvas = c;
+export async function main(container) {
   canvas.width = 800;
   canvas.height = 600;
+  container.appendChild(canvas);
 
-  const resp = await fetch('./topologies.json');
-  const topos = await resp.json();
-  for (const topo of topos) {
-    const tree = generateTree(topo);
-    tree.offset(-tree.x, -tree.y);
-    topologies.push(tree);
+  for (const key in eSerieses) {
+    const option = document.createElement('option');
+    option.value = key;
+    option.textContent = key.toUpperCase();
+    if (key === 'e12') {
+      option.selected = true;
+    }
+    eSeriesSelector.appendChild(option);
+
+    const resp = await fetch(`./topologies_${key}.json?20251022234000`);
+    const topos = await resp.json();
+    for (const topo of topos) {
+      const tree = generateTree(topo);
+      tree.offset(-tree.x, -tree.y);
+      eSerieses[key].topologies.push(tree);
+    }
   }
+
+  const p = document.createElement('p');
+  p.textContent = 'E-Series: ';
+  p.appendChild(eSeriesSelector);
+  p.style.textAlign = 'center';
+  container.appendChild(p);
 
   window.addEventListener('resize', resize);
 
@@ -306,7 +328,7 @@ export async function main(c) {
 
 function resize() {
   canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight - 100;
+  canvas.height = window.innerHeight - 150;
   tick();
 }
 
@@ -333,6 +355,9 @@ function tick() {
     now.getSeconds(),
   ];
 
+  const eSeriesStr = eSeriesSelector.value || 'e12';
+  const eSeries = eSerieses[eSeriesStr];
+
   const w = canvas.width;
   const h = canvas.height;
 
@@ -340,12 +365,15 @@ function tick() {
   ctx.save();
   ctx.clearRect(0, 0, w, h);
 
-  const clockWidth = numbers.length * N_WIDTH + (numbers.length - 1) * N_PADDING;
+  const bw = eSeries.blockWidth;
+  const bh = eSeries.blockHeight;
+
+  const clockWidth = numbers.length * bw + (numbers.length - 1) * N_PADDING;
 
   const digitHeight = SCALE * 2;
 
   const worldWidth = clockWidth + N_PADDING * 2;
-  const worldHeight = (N_WIDTH + digitHeight) + N_PADDING * 2;
+  const worldHeight = (bh + digitHeight) + N_PADDING * 2;
   const scale = Math.min(w / worldWidth, h / worldHeight);
   ctx.scale(scale, scale);
   ctx.translate((w / scale - worldWidth) / 2, (h / scale - worldHeight) / 2);
@@ -356,18 +384,18 @@ function tick() {
   /** @type {Array<{x: number, y: number, topo: Node}>} */
   const drawQueue = [];
 
-  const yCenter = y + N_WIDTH / 2;
+  const yCenter = y + bh / 2;
   let lastX = -1000;
   for (const n of numbers) {
-    const topo = topologies[n];
+    const topo = eSeries.topologies[n];
     ctx.save();
-    const x0 = x + (N_WIDTH - topo.width) / 2;
-    const y0 = y + (N_WIDTH - topo.height) / 2;
-    drawWire(ctx, lastX, yCenter, x0, y + N_WIDTH / 2);
+    const x0 = x + (bw - topo.width) / 2;
+    const y0 = y + (bh - topo.height) / 2;
+    drawWire(ctx, lastX, yCenter, x0, y + bh / 2);
     drawQueue.push({ x: x0, y: y0, topo });
     ctx.restore();
     lastX = x0 + topo.width;
-    x += N_WIDTH + N_PADDING;
+    x += bw + N_PADDING;
   }
   drawWire(ctx, lastX, yCenter, lastX + 1000, yCenter);
 
@@ -382,8 +410,8 @@ function tick() {
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#ccc";
   ctx.font = `${SCALE * 1.5}px sans-serif`;
-  x = N_PADDING + N_WIDTH / 2;
-  y = N_PADDING + N_WIDTH + SCALE;
+  x = N_PADDING + bw / 2;
+  y = N_PADDING + bh + SCALE;
   for (const n of numbers) {
     if (n === 0) {
       ctx.fillText('0 Ω', x, y);
@@ -391,7 +419,7 @@ function tick() {
     else {
       ctx.fillText(n.toString() + ' kΩ', x, y);
     }
-    x += N_WIDTH + N_PADDING;
+    x += bw + N_PADDING;
   }
 
   ctx.restore();

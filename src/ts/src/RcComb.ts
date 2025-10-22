@@ -384,7 +384,7 @@ export class DividerCombination {
 export function findCombinations(
     cType: ComponentType, values: number[], targetValue: number,
     maxElements: number): Combination[] {
-  const epsilon = targetValue * 1e-6;
+  const epsilon = targetValue * 1e-9;
   const retMin = targetValue / 2;
   const retMax = targetValue * 2;
 
@@ -441,7 +441,7 @@ export function findDividers(
     cType: ComponentType, values: number[], targetRatio: number,
     totalMin: number, totalMax: number,
     maxElements: number): DividerCombination[] {
-  const epsilon = 1e-6;
+  const epsilon = 1e-9;
 
   const numComb = Math.pow(values.length, 2 * maxElements);
   if (maxElements > 10 || numComb > 1e7) {
