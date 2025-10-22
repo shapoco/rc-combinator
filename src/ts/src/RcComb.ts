@@ -281,6 +281,17 @@ export class Combination {
       return ret;
     }
   }
+
+  toJson(): any {
+    if (this.isLeaf) {
+      return this.value;
+    } else {
+      return {
+        parallel: this.parallel,
+        children: this.children.map(child => child.toJson()),
+      };
+    }
+  }
 }
 
 export class DividerCombination {
@@ -646,7 +657,8 @@ export function makeAvaiableValues(
     const multiplier = pow10(exp - 3);
     for (const base of baseValues) {
       const value = base * multiplier;
-      if (value >= minValue && value <= maxValue) {
+      const epsilon = value / 1e6;
+      if ((minValue - epsilon) < value && value < (maxValue + epsilon)) {
         values.push(value);
       }
     }

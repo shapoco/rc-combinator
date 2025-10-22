@@ -6,8 +6,8 @@ import * as Ui from './Ui';
 const resCombHeader = Ui.makeH2(getStr('Find Resistor Combinations'));
 const resCombInputBox = new Ui.ValueBox('5.1k');
 
-export function main() {
-  document.querySelector('#rcCombinator')?.appendChild(Ui.makeDiv([
+export function main(container: HTMLElement) {
+  container.appendChild(Ui.makeDiv([
     makeResistorCombinatorUI(),
     makeDividerCombinatorUI(),
     makeCapacitorCombinatorUI(),
@@ -73,6 +73,27 @@ function makeResistorCombinatorUI(): HTMLDivElement {
   numElementsInput.setOnChange(callback);
 
   callback();
+
+  if (false) {
+    const availableValues = RcComb.makeAvaiableValues('E12', 100, 1000000);
+    console.log(availableValues.join(', '));
+    const retJson = [];
+    for (let t = 1; t <= 59; t++) {
+      const combs = RcComb.findCombinations(
+          RcComb.ComponentType.Resistor, availableValues, t * 1000, 3);
+      let bestComb: RcComb.Combination|null = null;
+      let bestNumSeries = -1;
+      for (const comb of combs) {
+        const numSeries = comb.parallel ? 1 : comb.children.length;
+        if (numSeries > bestNumSeries) {
+          bestNumSeries = numSeries;
+          bestComb = comb;
+        }
+      }
+      retJson.push(bestComb!.toJson());
+    }
+    console.log(JSON.stringify(retJson));
+  }
 
   return ui;
 }

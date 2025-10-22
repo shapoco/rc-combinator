@@ -431,6 +431,13 @@ var Combination = class {
 			return ret;
 		}
 	}
+	toJson() {
+		if (this.isLeaf) return this.value;
+		else return {
+			parallel: this.parallel,
+			children: this.children.map((child) => child.toJson())
+		};
+	}
 };
 var DividerCombination = class {
 	x = 0;
@@ -678,7 +685,8 @@ function makeAvaiableValues(series, minValue = 1e-12, maxValue = 0xe8d4a51000) {
 		const multiplier = pow10(exp - 3);
 		for (const base of baseValues) {
 			const value = base * multiplier;
-			if (value >= minValue && value <= maxValue) values.push(value);
+			const epsilon = value / 1e6;
+			if (minValue - epsilon < value && value < maxValue + epsilon) values.push(value);
 		}
 	}
 	values.sort((a, b) => a - b);
@@ -1154,8 +1162,8 @@ function setVisible(elem, visible) {
 //#region src/main.ts
 const resCombHeader = makeH2(getStr("Find Resistor Combinations"));
 const resCombInputBox = new ValueBox("5.1k");
-function main() {
-	document.querySelector("#rcCombinator")?.appendChild(makeDiv([
+function main(container) {
+	container.appendChild(makeDiv([
 		makeResistorCombinatorUI(),
 		makeDividerCombinatorUI(),
 		makeCapacitorCombinatorUI(),
@@ -1488,8 +1496,4 @@ function makeCurrentLimitingUI() {
 }
 
 //#endregion
-//#region src/index.ts
-main();
-
-//#endregion
-export {  };
+export { main };
