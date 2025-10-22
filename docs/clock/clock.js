@@ -291,8 +291,6 @@ const eSerieses = {
  * @param {HTMLCanvasElement} canvas
  */
 export async function main(container) {
-  canvas.width = 800;
-  canvas.height = 600;
   container.appendChild(canvas);
 
   for (const key in eSerieses) {
@@ -304,7 +302,7 @@ export async function main(container) {
     }
     eSeriesSelector.appendChild(option);
 
-    const resp = await fetch(`./topologies_${key}.json?20251022234000`);
+    const resp = await fetch(`./topologies_${key}.json?20251022235100`);
     const topos = await resp.json();
     for (const topo of topos) {
       const tree = generateTree(topo);
@@ -328,7 +326,7 @@ export async function main(container) {
 
 function resize() {
   canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight - 150;
+  canvas.height = window.innerHeight - 200;
   tick();
 }
 
