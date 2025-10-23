@@ -75,9 +75,9 @@
   <div id="clockContainer"></div>
   <script type="module">
     import * as Clock from './clock.js?20251022235100';
-    window.onload = async () => {
+    window.addEventListener('DOMContentLoaded', async () => {
       await Clock.main(document.querySelector('#clockContainer'));
-    };
+    });
   </script>
 
   <p id="shpcstamp_wrap" style="text-align: center;"></p>
