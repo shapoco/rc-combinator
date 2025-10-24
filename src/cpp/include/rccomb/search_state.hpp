@@ -18,19 +18,25 @@ using SearchState = std::shared_ptr<SearchStateClass>;
 
 class SearchStateClass {
  public:
+  const uint32_t id;
   const TopologyNode node;
   SearchState parent = nullptr;
   SearchState first_child = nullptr;
   SearchState next_brother = nullptr;
   bool inv_sum;
   value_t value = 0;
+  value_t min = 0;
+  value_t max = VALUE_POSITIVE_INFINITY;
 
   SearchStateClass(const TopologyNode& node, bool inv_sum)
-      : node(node), inv_sum(inv_sum) {}
+      : id(generate_object_id()), node(node), inv_sum(inv_sum) {}
 
   inline bool is_leaf() const { return !first_child; }
-  inline bool is_last() const { return !next_brother; }
+  inline bool is_younguest() const { return !next_brother; }
   inline bool is_root() const { return !parent; }
+
+  value_t sum(uint32_t end_id = 0) const;
+  void update_min_max(value_t min, value_t max);
 
   Combination bake(ComponentType type) const;
 
@@ -52,7 +58,7 @@ class SearchStateClass {
         }
         child = child->next_brother;
       }
-      s += "-->" + std::to_string(value);
+      s += "==>" + std::to_string(value);
       return s;
     }
   }
@@ -80,15 +86,14 @@ SearchState build_search_state_tree(ComponentType type,
   } else {
     inv_sum = !node->parallel;
   }
+
   SearchState st = create_search_state(node, inv_sum);
 
   if (node->is_leaf()) {
-    // RCCOMB_DEBUG_PRINT("leaf\n");
     leafs.push_back(st);
   } else {
     SearchState prev_brother = nullptr;
     for (const auto& child_node : node->children) {
-      // RCCOMB_DEBUG_PRINT("child: topo.hash = %08X\n", child_node->hash);
       auto child_st = build_search_state_tree(type, leafs, child_node);
       child_st->parent = st;
 
@@ -104,6 +109,40 @@ SearchState build_search_state_tree(ComponentType type,
   }
 
   return st;
+}
+
+value_t SearchStateClass::sum(uint32_t end_id) const {
+  value_t accum = 0;
+  auto child = this->first_child;
+  while (child) {
+    if (inv_sum) {
+      accum += 1.0 / child->value;
+    } else {
+      accum += child->value;
+    }
+    if (child->id == end_id) {
+      break;
+    }
+    child = child->next_brother;
+  }
+  return inv_sum ? (1.0 / accum) : accum;
+}
+
+void SearchStateClass::update_min_max(value_t min, value_t max) {
+  this->min = min;
+  this->max = max;
+
+  const auto child = this->first_child;
+  if (child) {
+    value_t child_min = 0;
+    value_t child_max = VALUE_POSITIVE_INFINITY;
+    if (inv_sum) {
+      child_min = min;
+    } else {
+      child_max = max;
+    }
+    child->update_min_max(child_min, child_max);
+  }
 }
 
 // 検索結果を Combination に変換

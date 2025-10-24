@@ -39,21 +39,6 @@ std::vector<Combination> search_combinations(ValueSearchOptions& options);
 
 struct ValueSearchContext;
 
-// using value_search_callback_t = void (*)(void* ctx, value_t value);
-
-// struct ValueSearchState {
-//   TopologyNode node;
-//   int i_child;
-//   value_t min_value;
-//   value_t max_value;
-//   bool invSum;
-//   value_t accum = 0;
-//
-//   inline bool is_last() const {
-//     return i_child + 1 >= static_cast<int>(node->children.size());
-//   }
-// };
-
 struct ValueSearchContext {
   const ComponentType type;
   const ValueList& available_values;
@@ -61,83 +46,104 @@ struct ValueSearchContext {
 
   SearchState root_state = nullptr;
   std::vector<SearchState> leaf_states;
-  // std::vector<TopologyNode> topos;
-  // std::vector<value_t> buffer;
-  // std::vector<ValueSearchState> stack;
   int num_elements;
   bool aborted = false;
 
   ValueSearchContext(ComponentType type, const ValueList& values,
-                     TopologyNode topology, value_t target = VALUE_NONE)
+                     TopologyNode topology, value_t min = 0,
+                     value_t max = VALUE_POSITIVE_INFINITY,
+                     value_t target = VALUE_NONE)
       : type(type), available_values(values), target(target) {
     root_state = build_search_state_tree(type, leaf_states, topology);
-    // RCCOMB_DEBUG_PRINT("root_state.size()=%zu\n", leaf_states.size());
+    root_state->update_min_max(min, max);
     num_elements = topology->num_leafs;
   }
 
   void abort() { aborted = true; }
 };
 
+static void update_min_max_of_next_brother_of(SearchState st);
+
 template <class callback_t>
 void search_combinations_recursive(ValueSearchContext& ctx, int pos,
                                    const callback_t& callback) {
-  // const value_t POSI_INFINITY = std::numeric_limits<value_t>::infinity();
-  // const value_t NEGA_INFINITY = -POSI_INFINITY;
-
-  // RCCOMB_DEBUG_PRINT("pos=%d\n", pos);
-
   auto& st = ctx.leaf_states[pos];
 
-  int count = 0;
-  const auto* values = ctx.available_values.get_values(0, 1e30, &count);
-  // RCCOMB_DEBUG_PRINT("pos=%d, count=%d\n", pos, count);
-  for (int i = 0; i < count; i++) {
-    // RCCOMB_DEBUG_PRINT("\n");
-    st->value = values[i];
-    // RCCOMB_DEBUG_PRINT("st->value=%lf\n", st->value);
+  value_t min = st->min;
+  value_t max = st->max;
 
-    auto parent = st->parent;
-    // RCCOMB_DEBUG_PRINT("pos=%d, st->node->hash=%08X\n", pos, st->node->hash);
-    while (parent) {
-      // RCCOMB_DEBUG_PRINT("parent->node->hash=%08X\n", parent->node->hash);
-      value_t accum = 0;
-      auto child = parent->first_child;
-      while (child) {
-        // RCCOMB_DEBUG_PRINT("accum=%lf <-- value=%lf\n", accum, child->value);
-        if (parent->inv_sum) {
-          accum += 1.0 / child->value;
-        } else {
-          accum += child->value;
-        }
-        child = child->next_brother;
-      }
-      parent->value = parent->inv_sum ? (1.0 / accum) : accum;
-      // RCCOMB_DEBUG_PRINT(
-      //     "pos=%d, parent.hash=%08X, parent->value=%lf, is_root=%d\n", pos,
-      //     parent->node->hash, parent->value, parent->is_root());
-      if (!parent->is_last()) {
-        break;
-      }
-      parent = parent->parent;
+  if (min > max) return;
+
+  int count = 0;
+  const auto* values = ctx.available_values.get_values(min, max, &count);
+  for (int i = 0; i < count; i++) {
+    // 葉に値を設定
+    st->value = values[i];
+
+    // 親ノードを辿って値を更新
+    auto younguest = st;
+    while (!younguest->is_root() && younguest->is_younguest()) {
+      younguest = younguest->parent;
+      younguest->value = younguest->sum();
     }
 
+    // 枝刈り
+    // (次の葉ノードとそれを含む親ノードの min/max を更新)
+    update_min_max_of_next_brother_of(younguest);
+
     if (pos + 1 < ctx.num_elements) {
-      // RCCOMB_DEBUG_PRINT("\n");
+      // 次の葉へ
       search_combinations_recursive(ctx, pos + 1, callback);
     } else {
-      // #ifdef RCCOMB_DEBUG
-      //       RCCOMB_DEBUG_PRINT("combination: %s\n",
-      //                          ctx.root_state->to_string().c_str());
-      // #endif
+      // 全ての葉が埋まったらコールバック
       callback(ctx, ctx.root_state->value);
     }
 
     if (ctx.aborted) {
-      RCCOMB_DEBUG_PRINT("aborting...\n");
+      // 中止
       return;
     }
-    // RCCOMB_DEBUG_PRINT("\n");
   }
+}
+
+static void update_min_max_of_next_brother_of(SearchState st) {
+  if (st->is_root() || st->is_younguest()) {
+    return;
+  }
+
+  auto brother = st->next_brother;
+  auto parent = st->parent;
+
+  value_t parent_min = parent->min;
+  value_t parent_max = parent->max;
+
+  value_t partial_val = parent->sum(st->id);
+  value_t brother_min = 0;
+  value_t brother_max = VALUE_POSITIVE_INFINITY;
+  if (parent->inv_sum) {
+    if (brother->is_younguest()) {
+      brother_min = partial_val * parent_min / (partial_val - parent_min);
+      brother_max = partial_val * parent_max / (partial_val - parent_max);
+      if (brother_max < brother_min) {
+        brother_max = VALUE_POSITIVE_INFINITY;
+      }
+    } else {
+      brother_min = parent->min;
+    }
+  } else {
+    if (st->is_younguest()) {
+      brother_min = parent->min - partial_val;
+    }
+    brother_max = parent->max - partial_val;
+  }
+
+  if (st->node->hash == brother->node->hash) {
+    if (brother_max > st->value) {
+      brother_max = st->value;
+    }
+  }
+
+  brother->update_min_max(brother_min, brother_max);
 }
 
 std::vector<Combination> search_combinations(ValueSearchOptions& options) {
@@ -152,15 +158,13 @@ std::vector<Combination> search_combinations(ValueSearchOptions& options) {
 
   // 素子数が少ない順に試す
   for (int n = 1; n <= options.max_elements; n++) {
-    // RCCOMB_DEBUG_PRINT("num_elements=%d\n", n);
     //  並列・直列パターンを全部試す
     for (bool parallel : parallels) {
       const auto topos = get_topologies(n, parallel);
       // 全トポロジーを試す
       for (const auto& topo : topos) {
-        // RCCOMB_DEBUG_PRINT("topo hash=%08X, leafs=%d\n", topo->hash,
-        //                           topo->num_leafs);
         ValueSearchContext ctx(options.type, options.available_values, topo,
+                               options.min_value, options.max_value,
                                options.target);
         const auto cb = [&](ValueSearchContext& ctx, value_t value) {
           const auto error = std::abs(value - ctx.target);
@@ -170,7 +174,6 @@ std::vector<Combination> search_combinations(ValueSearchOptions& options) {
           if (error < best_error + epsilon) {
             best_error = error;
             best_combs.push_back(ctx.root_state->bake(options.type));
-            RCCOMB_DEBUG_PRINT("value=%lf error=%lf\n", value, error);
           }
         };
         search_combinations_recursive(ctx, 0, cb);

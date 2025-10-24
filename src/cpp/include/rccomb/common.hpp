@@ -3,19 +3,20 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <limits>
 #include <vector>
 
 #ifdef RCCOMB_DEBUG
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 #endif
 
 namespace rccomb {
 
 #ifdef RCCOMB_DEBUG
-#define RCCOMB_DEBUG_PRINT(fmt, ...)                                \
-  do {                                                              \
-    printf("[%s:%d] " fmt, __FILE_NAME__, __LINE__, ##__VA_ARGS__); \
+#define RCCOMB_DEBUG_PRINT(fmt, ...)                                     \
+  do {                                                                   \
+    std::printf("[%s:%d] " fmt, __FILE_NAME__, __LINE__, ##__VA_ARGS__); \
   } while (0)
 #else
 #define RCCOMB_DEBUG_PRINT(fmt, ...) \
@@ -31,8 +32,16 @@ enum class ComponentType {
 using value_t = double;
 
 static constexpr value_t VALUE_NONE = -1;
+static constexpr value_t VALUE_POSITIVE_INFINITY =
+    std::numeric_limits<value_t>::infinity();
+static constexpr value_t VALUE_NEGATIVE_INFINITY = -VALUE_POSITIVE_INFINITY;
 
 using hash_t = uint32_t;
+
+extern uint32_t next_object_id;
+inline uint32_t generate_object_id() {
+  return next_object_id++;
+}
 
 static inline std::vector<value_t> sort_values(
     const std::vector<value_t>& values) {
@@ -58,6 +67,8 @@ static inline hash_t crc32_add_u32(hash_t h, uint32_t data) {
 }
 
 #ifdef RCCOMB_IMPLEMENTATION
+
+uint32_t next_object_id = 1;
 
 static constexpr uint32_t POLY = 0xEDB88320;
 
