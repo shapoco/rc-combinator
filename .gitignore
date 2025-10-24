@@ -1,4 +1,4 @@
-.vscode/
+.vscode/settings.json
 tmp.*
 tmp.*/
 .build/
@@ -6,6 +6,7 @@ build/
 *Zone.Identifier*
 settings.json
 *.o
+*.out
 node_modules/
 src/ts/dist/
 package-lock.json
