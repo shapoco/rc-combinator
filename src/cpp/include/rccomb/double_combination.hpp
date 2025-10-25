@@ -47,6 +47,7 @@ inline DoubleCombination create_double_combination(value_t ratio) {
 
 std::string DoubleCombinationClass::to_json_string() const {
   std::string s = "{";
+  s += std::string("\"ratio\":\"") + value_to_json_string(ratio) + "\",";
   s += std::string("\"uppers\":[");
   for (size_t i = 0; i < uppers.size(); i++) {
     s += uppers[i]->to_json_string();
@@ -62,7 +63,7 @@ std::string DoubleCombinationClass::to_json_string() const {
       s += ",";
     }
   }
-  s += "],";
+  s += "]";
   s += "}";
   return s;
 }

@@ -170,3 +170,20 @@ span.note {
   font-size: smaller;
   color: #666;
 }
+
+a.mode-button {
+  padding: 5px 20px;
+  margin: 0px 5px;
+  border-radius: 5px;
+  text-decoration: none !important;
+}
+
+a.active {
+  background: #4285f4;
+  color: white;
+}
+
+a.inactive {
+  background: #ccc;
+  color: #666;
+}

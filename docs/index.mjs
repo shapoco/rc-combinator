@@ -455,7 +455,7 @@ var Combination = class Combination {
 		};
 	}
 };
-var DividerCombination = class {
+var DividerCombination = class DividerCombination {
 	x = 0;
 	y = 0;
 	width = 0;
@@ -530,6 +530,14 @@ var DividerCombination = class {
 		img.style.width = "400px";
 		img.style.height = "200px";
 		return img;
+	}
+	static fromJson(cType, obj) {
+		const ratio = obj.ratio;
+		let uppers = [];
+		let lowers = [];
+		for (const childObj of obj.uppers) uppers.push(Combination.fromJson(cType, childObj));
+		for (const childObj of obj.lowers) lowers.push(Combination.fromJson(cType, childObj));
+		return new DividerCombination(uppers, lowers, ratio);
 	}
 };
 function findCombinations(cType, values, targetValue, maxElements) {
@@ -1432,7 +1440,20 @@ function makeDividerCombinatorUI() {
 			const totalMax = totalMaxBox.value;
 			const availableValues = rangeSelector.getAvailableValues((totalMin + totalMax) / 2);
 			const maxElements = numElementsInput.value;
-			const combs = findDividers(ComponentType.Resistor, availableValues, targetValue, totalMin, totalMax, maxElements);
+			const start = performance.now();
+			let combs = [];
+			if (core) {
+				const valueVector = new core.VectorDouble();
+				for (const v of availableValues) valueVector.push_back(v);
+				const retJson = JSON.parse(core.find_dividers(valueVector, targetValue, totalMin, totalMax, maxElements));
+				for (const combJson of retJson.result) {
+					const comb = DividerCombination.fromJson(ComponentType.Resistor, combJson);
+					combs.push(comb);
+				}
+				valueVector.delete();
+			} else combs = findDividers(ComponentType.Resistor, availableValues, targetValue, totalMin, totalMax, maxElements);
+			const end = performance.now();
+			console.log(`Computation time: ${(end - start).toFixed(2)} ms`);
 			if (combs.length > 0) {
 				resultBox.appendChild(makeP(getStr("Found <n> combination(s):", { n: combs.length })));
 				for (const comb of combs) {

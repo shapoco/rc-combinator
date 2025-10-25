@@ -201,7 +201,7 @@ static void update_target_of_next_brother_of(SearchState st) {
   }
 }
 
-static void filter_unnormalized_combinations(std::vector<Combination> combs);
+static void filter_unnormalized_combinations(std::vector<Combination>& combs);
 
 std::vector<Combination> search_combinations(ValueSearchOptions& options) {
   // 探索空間の大きさをチェック
@@ -272,10 +272,13 @@ std::vector<DoubleCombination> search_dividers(DividerSearchOptions& options) {
   std::vector<DoubleCombination> best_combs;
   std::map<value_t, DoubleCombination> result_memo;
 
-  const value_t lower_min = options.total_min * options.target_ratio;
-  const value_t lower_max = options.total_max * options.target_ratio;
-  const value_t upper_min = options.total_min * (1.0 - options.target_ratio);
-  const value_t upper_max = options.total_max * (1.0 - options.target_ratio);
+  const value_t ratio_min = options.target_ratio / 2;
+  const value_t ratio_max = 1.0 - (1.0 - options.target_ratio) / 2;
+
+  const value_t lower_min = options.total_min * ratio_min;
+  const value_t lower_max = options.total_max * ratio_max;
+  const value_t upper_min = options.total_min * (1.0 - ratio_max);
+  const value_t upper_max = options.total_max * (1.0 - ratio_min);
 
   std::vector<bool> parallels = {false, true};
   for (int num_lowers = 1; num_lowers <= options.max_elements; num_lowers++) {
@@ -348,7 +351,8 @@ std::vector<DoubleCombination> search_dividers(DividerSearchOptions& options) {
   return best_combs;
 }
 
-static void filter_unnormalized_combinations(std::vector<Combination> combs) {
+// 正規化されていないトポロジを削除 (重複回避)
+static void filter_unnormalized_combinations(std::vector<Combination>& combs) {
   for (size_t i = 0; i < combs.size();) {
     if (combs[i]->is_normalized()) {
       i++;

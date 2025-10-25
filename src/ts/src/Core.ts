@@ -10,9 +10,12 @@ declare interface RccombCore {
       (ident: string, returnType: string|null,
        argTypes: string[]|null) => (...args: any[]) => any;
   find_combinations:
-      (capacitor: boolean, values: VectorDouble, targetValue: number,
-       maxElements: number) => string;
-  VectorDouble: new () => VectorDouble;
+      (capacitor: boolean, values: VectorDouble, target_value: number,
+       max_elements: number) => string;
+  find_dividers:
+      (values: VectorDouble, target_ratio: number, total_min: number,
+       total_max: number, max_elements: number) => string;
+  VectorDouble: new() => VectorDouble;
   //_malloc: (size: number) => number;
   //_free: (ptr: number) => void;
   // HEAPU8: Uint8Array;

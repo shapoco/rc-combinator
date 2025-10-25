@@ -398,6 +398,19 @@ export class DividerCombination {
     img.style.height = '200px';
     return img;
   }
+
+  static fromJson(cType: ComponentType, obj: any): DividerCombination {
+    const ratio = obj.ratio!;
+    let uppers: Combination[] = [];
+    let lowers: Combination[] = [];
+    for (const childObj of obj.uppers!) {
+      uppers.push(Combination.fromJson(cType, childObj));
+    }
+    for (const childObj of obj.lowers!) {
+      lowers.push(Combination.fromJson(cType, childObj));
+    }
+    return new DividerCombination(uppers, lowers, ratio);
+  }
 }
 
 export function findCombinations(

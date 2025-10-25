@@ -10,7 +10,8 @@ const resCombInputBox = new Ui.ValueBox('5.1k');
 
 let core: Core.RccombCore|null = null;
 
-export async function main(container: HTMLElement, wasmCore: Core.RccombCore|null) {
+export async function main(
+    container: HTMLElement, wasmCore: Core.RccombCore|null) {
   if (wasmCore) {
     core = wasmCore;
   }
@@ -62,7 +63,7 @@ function makeResistorCombinatorUI(): HTMLDivElement {
       let combs: RcComb.Combination[] = [];
       if (core) {
         const valueVector = new core.VectorDouble();
-        //let valueVector: core.VectorDouble ;
+        // let valueVector: core.VectorDouble ;
         for (const v of availableValues) {
           valueVector.push_back(v);
         }
@@ -173,7 +174,7 @@ function makeCapacitorCombinatorUI(): HTMLDivElement {
       let combs: RcComb.Combination[] = [];
       if (core) {
         const valueVector = new core.VectorDouble();
-        //let valueVector: core.VectorDouble ;
+        // let valueVector: core.VectorDouble ;
         for (const v of availableValues) {
           valueVector.push_back(v);
         }
@@ -262,9 +263,32 @@ function makeDividerCombinatorUI(): HTMLDivElement {
           rangeSelector.getAvailableValues((totalMin + totalMax) / 2);
       const maxElements = numElementsInput.value;
 
-      const combs = RcComb.findDividers(
-          RcComb.ComponentType.Resistor, availableValues, targetValue, totalMin,
-          totalMax, maxElements);
+      const start = performance.now();
+
+      let combs: RcComb.DividerCombination[] = [];
+      if (core) {
+        const valueVector = new core.VectorDouble();
+        // let valueVector: core.VectorDouble ;
+        for (const v of availableValues) {
+          valueVector.push_back(v);
+        }
+        const retJson = JSON.parse(core.find_dividers(
+            valueVector, targetValue, totalMin, totalMax, maxElements));
+        for (const combJson of retJson.result) {
+          const comb = RcComb.DividerCombination.fromJson(
+              RcComb.ComponentType.Resistor, combJson);
+          combs.push(comb);
+        }
+        valueVector.delete();
+      } else {
+        combs = RcComb.findDividers(
+            RcComb.ComponentType.Resistor, availableValues, targetValue,
+            totalMin, totalMax, maxElements);
+      }
+
+      const end = performance.now();
+      console.log(`Computation time: ${(end - start).toFixed(2)} ms`);
+
 
       if (combs.length > 0) {
         resultBox.appendChild(
