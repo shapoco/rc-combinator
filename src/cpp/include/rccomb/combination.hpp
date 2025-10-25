@@ -24,6 +24,8 @@ class CombinationClass {
 
   inline int num_leafs() const { return topology->num_leafs; }
 
+  std::string to_json_string() const;
+
 #ifdef RCCOMB_DEBUG
   inline std::string to_string() const {
     if (is_leaf()) {
@@ -53,6 +55,30 @@ static inline Combination create_combination(
     const std::vector<Combination> &children, value_t value) {
   return std::make_shared<CombinationClass>(topology, type, children, value);
 }
+
+#ifdef RCCOMB_IMPLEMENTATION
+
+std::string CombinationClass::to_json_string() const {
+  if (is_leaf()) {
+    return value_to_json_string(value);
+  } else {
+    std::string s = "{";
+    s += std::string("\"parallel\":") +
+         (topology->parallel ? "true" : "false") + ",";
+    s += std::string("\"value\":\"") + value_to_json_string(value) + "\",";
+    s += "\"children\":[";
+    for (size_t i = 0; i < children.size(); i++) {
+      s += children[i]->to_json_string();
+      if (i + 1 < children.size()) {
+        s += ",";
+      }
+    }
+    s += "]}";
+    return s;
+  }
+}
+
+#endif
 
 }  // namespace rccomb
 

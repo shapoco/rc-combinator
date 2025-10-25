@@ -282,6 +282,25 @@ export class Combination {
     }
   }
 
+  static fromJson(cType: ComponentType, obj: any): Combination {
+    const comb = new Combination();
+    comb.cType = cType;
+    if (typeof obj === 'number') {
+      comb.parallel = false;
+      comb.value = obj;
+    } else {
+      comb.parallel = !!obj.parallel;
+      comb.value = obj.value!;
+      if (obj.children) {
+        for (const childObj of obj.children) {
+          const childComb = Combination.fromJson(cType, childObj);
+          comb.children.push(childComb);
+        }
+      }
+    }
+    return comb;
+  }
+
   toJson(): any {
     if (this.isLeaf) {
       return this.value;

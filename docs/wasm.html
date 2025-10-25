@@ -61,7 +61,8 @@
       <script type="module">
         import { main } from './index.mjs?20251025134700';
         window.addEventListener('DOMContentLoaded', async () => {
-          await main(document.querySelector('#rcCombinator'), null);
+          let wasmCore = await createModule();
+          await main(document.querySelector('#rcCombinator'), wasmCore);
         });
       </script>
 

@@ -2,6 +2,7 @@
 #define RCCOMB_COMMON_HPP
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <limits>
 #include <vector>
@@ -14,9 +15,10 @@
 namespace rccomb {
 
 #ifdef RCCOMB_DEBUG
-#define RCCOMB_DEBUG_PRINT(fmt, ...)                                     \
-  do {                                                                   \
-    std::printf("[%s:%d] " fmt, __FILE_NAME__, __LINE__, ##__VA_ARGS__); \
+#define RCCOMB_DEBUG_PRINT(fmt, ...)                              \
+  do {                                                            \
+    std::fprintf(stderr, "[%s:%d] " fmt, __FILE_NAME__, __LINE__, \
+                 ##__VA_ARGS__);                                  \
   } while (0)
 #else
 #define RCCOMB_DEBUG_PRINT(fmt, ...) \
@@ -39,9 +41,7 @@ static constexpr value_t VALUE_NEGATIVE_INFINITY = -VALUE_POSITIVE_INFINITY;
 using hash_t = uint32_t;
 
 extern uint32_t next_object_id;
-inline uint32_t generate_object_id() {
-  return next_object_id++;
-}
+inline uint32_t generate_object_id() { return next_object_id++; }
 
 static inline std::vector<value_t> sort_values(
     const std::vector<value_t>& values) {
@@ -66,6 +66,9 @@ static inline hash_t crc32_add_u32(hash_t h, uint32_t data) {
   return h;
 }
 
+value_t pow10(float exp);
+std::string value_to_json_string(value_t value);
+
 #ifdef RCCOMB_IMPLEMENTATION
 
 uint32_t next_object_id = 1;
@@ -82,6 +85,35 @@ hash_t crc32_add_u8(hash_t h, uint8_t data) {
     }
   }
   return h;
+}
+
+value_t pow10(float exp) {
+  int exp_i = std::floor(exp);
+  int exp_u = std::abs(exp_i);
+  value_t ret = 1;
+  value_t mul = 10.0;
+  while (exp_u != 0) {
+    if (exp_u & 1) {
+      ret *= mul;
+    }
+    mul *= mul;
+    exp_u >>= 1;
+  }
+  if (exp_i < 0) {
+    ret = 1.0 / ret;
+  }
+  ret *= pow(10.0, exp - exp_i);
+  return ret;
+}
+
+std::string value_to_json_string(value_t value) {
+  int exp = std::floor(std::log10(value) + 1e-6);
+  if (exp >= -3 && exp <= 6) {
+    return std::to_string(value);
+  } else {
+    value /= pow10(exp);
+    return std::to_string(value) + "e" + std::to_string(exp);
+  }
 }
 
 #endif

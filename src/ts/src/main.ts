@@ -1,3 +1,5 @@
+import * as Core from './Core';
+import createModule from './Core';
 import * as RcComb from './RcComb';
 import * as Svg from './Svg';
 import {getStr} from './Text';
@@ -6,7 +8,13 @@ import * as Ui from './Ui';
 const resCombHeader = Ui.makeH2(getStr('Find Resistor Combinations'));
 const resCombInputBox = new Ui.ValueBox('5.1k');
 
-export function main(container: HTMLElement) {
+let core: Core.RccombCore|null = null;
+
+export async function main(container: HTMLElement, wasmCore: Core.RccombCore|null) {
+  if (wasmCore) {
+    core = wasmCore;
+  }
+
   container.appendChild(Ui.makeDiv([
     makeResistorCombinatorUI(),
     makeDividerCombinatorUI(),
@@ -49,9 +57,31 @@ function makeResistorCombinatorUI(): HTMLDivElement {
       const availableValues = rangeSelector.getAvailableValues(targetValue);
       const maxElements = numElementsInput.value;
 
-      const combs = RcComb.findCombinations(
-          RcComb.ComponentType.Resistor, availableValues, targetValue,
-          maxElements);
+      const start = performance.now();
+
+      let combs: RcComb.Combination[] = [];
+      if (core) {
+        const valueVector = new core.VectorDouble();
+        //let valueVector: core.VectorDouble ;
+        for (const v of availableValues) {
+          valueVector.push_back(v);
+        }
+        const retJson = JSON.parse(core.find_combinations(
+            false, valueVector, targetValue, maxElements));
+        for (const combJson of retJson.result) {
+          const comb = RcComb.Combination.fromJson(
+              RcComb.ComponentType.Resistor, combJson);
+          combs.push(comb);
+        }
+        valueVector.delete();
+      } else {
+        combs = RcComb.findCombinations(
+            RcComb.ComponentType.Resistor, availableValues, targetValue,
+            maxElements);
+      }
+
+      const end = performance.now();
+      console.log(`Computation time: ${(end - start).toFixed(2)} ms`);
 
       if (combs.length > 0) {
         resultBox.appendChild(

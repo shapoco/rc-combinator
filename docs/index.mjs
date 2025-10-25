@@ -299,7 +299,7 @@ function formatValue(value, unit = "", usePrefix = null) {
 	return `${s} ${prefix}${unit}`.trim();
 }
 const FIGURE_SCALE = 10;
-var Combination = class {
+var Combination = class Combination {
 	cType = ComponentType.Resistor;
 	parallel = false;
 	children = [];
@@ -430,6 +430,22 @@ var Combination = class {
 			ret = `${indent}${getStr(this.parallel ? "Parallel" : "Series")} (${formatValue(this.value, this.unit)}):\n${ret}`;
 			return ret;
 		}
+	}
+	static fromJson(cType, obj) {
+		const comb = new Combination();
+		comb.cType = cType;
+		if (typeof obj === "number") {
+			comb.parallel = false;
+			comb.value = obj;
+		} else {
+			comb.parallel = !!obj.parallel;
+			comb.value = obj.value;
+			if (obj.children) for (const childObj of obj.children) {
+				const childComb = Combination.fromJson(cType, childObj);
+				comb.children.push(childComb);
+			}
+		}
+		return comb;
 	}
 	toJson() {
 		if (this.isLeaf) return this.value;
@@ -1162,7 +1178,9 @@ function setVisible(elem, visible) {
 //#region src/main.ts
 const resCombHeader = makeH2(getStr("Find Resistor Combinations"));
 const resCombInputBox = new ValueBox("5.1k");
-function main(container) {
+let core = null;
+async function main(container, wasmCore) {
+	if (wasmCore) core = wasmCore;
 	container.appendChild(makeDiv([
 		makeResistorCombinatorUI(),
 		makeDividerCombinatorUI(),
@@ -1225,7 +1243,20 @@ function makeResistorCombinatorUI() {
 			const targetValue = resCombInputBox.value;
 			const availableValues = rangeSelector.getAvailableValues(targetValue);
 			const maxElements = numElementsInput.value;
-			const combs = findCombinations(ComponentType.Resistor, availableValues, targetValue, maxElements);
+			const start = performance.now();
+			let combs = [];
+			if (core) {
+				const valueVector = new core.VectorDouble();
+				for (const v of availableValues) valueVector.push_back(v);
+				const retJson = JSON.parse(core.find_combinations(false, valueVector, targetValue, maxElements));
+				for (const combJson of retJson.result) {
+					const comb = Combination.fromJson(ComponentType.Resistor, combJson);
+					combs.push(comb);
+				}
+				valueVector.delete();
+			} else combs = findCombinations(ComponentType.Resistor, availableValues, targetValue, maxElements);
+			const end = performance.now();
+			console.log(`Computation time: ${(end - start).toFixed(2)} ms`);
 			if (combs.length > 0) {
 				resultBox.appendChild(makeP(getStr("Found <n> combination(s):", { n: combs.length })));
 				for (const comb of combs) {

@@ -129,6 +129,10 @@ value_t SearchStateClass::sum(uint32_t end_id) const {
 }
 
 void SearchStateClass::update_min_max(value_t min, value_t max) {
+  if (min <= 0) min = 0;
+  if (max <= 0) max = 0;
+  if (max < min) max = min;
+
   this->min = min;
   this->max = max;
 
