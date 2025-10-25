@@ -19,23 +19,31 @@ using SearchState = std::shared_ptr<SearchStateClass>;
 class SearchStateClass {
  public:
   const uint32_t id;
-  const TopologyNode node;
+  const TopologyNode topology;
+  bool inv_sum;
+  const bool is_finisher;
+
   SearchState parent = nullptr;
   SearchState first_child = nullptr;
   SearchState next_brother = nullptr;
-  bool inv_sum;
+
   value_t value = 0;
+  value_t target = VALUE_NONE;
   value_t min = 0;
   value_t max = VALUE_POSITIVE_INFINITY;
 
-  SearchStateClass(const TopologyNode& node, bool inv_sum)
-      : id(generate_object_id()), node(node), inv_sum(inv_sum) {}
+  SearchStateClass(const TopologyNode& topo, bool inv_sum, bool is_finisher)
+      : id(generate_object_id()),
+        topology(topo),
+        inv_sum(inv_sum),
+        is_finisher(is_finisher) {}
 
   inline bool is_leaf() const { return !first_child; }
-  inline bool is_younguest() const { return !next_brother; }
+  inline bool is_last_child() const { return !next_brother; }
   inline bool is_root() const { return !parent; }
 
-  value_t sum(uint32_t end_id = 0) const;
+  inline value_t sum() const { return partial_sum(0, false); }
+  value_t partial_sum(uint32_t end_id, bool end_exclusive) const;
   void update_min_max(value_t min, value_t max);
 
   Combination bake(ComponentType type) const;
@@ -54,7 +62,7 @@ class SearchStateClass {
           s += "(" + child->to_string() + ")";
         }
         if (child->next_brother) {
-          s += node->parallel ? "||" : "--";
+          s += topology->parallel ? "||" : "--";
         }
         child = child->next_brother;
       }
@@ -65,21 +73,21 @@ class SearchStateClass {
 #endif
 };
 
-static inline SearchState create_search_state(const TopologyNode& node,
-                                              bool inv_sum) {
-  return std::make_shared<SearchStateClass>(node, inv_sum);
+static inline SearchState create_search_state(const TopologyNode& topo,
+                                              bool inv_sum, bool is_finisher) {
+  return std::make_shared<SearchStateClass>(topo, inv_sum, is_finisher);
 }
 
 SearchState build_search_state_tree(ComponentType type,
                                     std::vector<SearchState>& leafs,
-                                    TopologyNode node);
+                                    TopologyNode node, bool is_finisher = true);
 
 #ifdef RCCOMB_IMPLEMENTATION
 
 // トポロジの木から検索用作業オブジェクトの木を生成
 SearchState build_search_state_tree(ComponentType type,
                                     std::vector<SearchState>& leafs,
-                                    TopologyNode node) {
+                                    TopologyNode node, bool is_finisher) {
   bool inv_sum;
   if (type == ComponentType::Resistor) {
     inv_sum = node->parallel;
@@ -87,14 +95,17 @@ SearchState build_search_state_tree(ComponentType type,
     inv_sum = !node->parallel;
   }
 
-  SearchState st = create_search_state(node, inv_sum);
+  SearchState st = create_search_state(node, inv_sum, is_finisher);
 
   if (node->is_leaf()) {
     leafs.push_back(st);
   } else {
     SearchState prev_brother = nullptr;
-    for (const auto& child_node : node->children) {
-      auto child_st = build_search_state_tree(type, leafs, child_node);
+    for (size_t i = 0; i < node->children.size(); i++) {
+      auto child_node = node->children[i];
+      bool is_last = (i + 1 >= node->children.size());
+      auto child_st = build_search_state_tree(type, leafs, child_node,
+                                              is_finisher && is_last);
       child_st->parent = st;
 
       if (!st->first_child) {
@@ -111,16 +122,20 @@ SearchState build_search_state_tree(ComponentType type,
   return st;
 }
 
-value_t SearchStateClass::sum(uint32_t end_id) const {
+value_t SearchStateClass::partial_sum(uint32_t end_id,
+                                      bool end_exclusive) const {
   value_t accum = 0;
   auto child = this->first_child;
   while (child) {
+    if (end_exclusive && child->id == end_id) {
+      break;
+    }
     if (inv_sum) {
       accum += 1.0 / child->value;
     } else {
       accum += child->value;
     }
-    if (child->id == end_id) {
+    if (!end_exclusive && child->id == end_id) {
       break;
     }
     child = child->next_brother;
@@ -128,6 +143,7 @@ value_t SearchStateClass::sum(uint32_t end_id) const {
   return inv_sum ? (1.0 / accum) : accum;
 }
 
+// このノードと長男ノードに再帰的に min/max を設定
 void SearchStateClass::update_min_max(value_t min, value_t max) {
   if (min <= 0) min = 0;
   if (max <= 0) max = 0;
@@ -157,7 +173,7 @@ Combination SearchStateClass::bake(ComponentType type) const {
     child_combs.push_back(child->bake(type));
     child = child->next_brother;
   }
-  return create_combination(this->node, type, child_combs, this->value);
+  return create_combination(this->topology, type, child_combs, this->value);
 }
 
 #endif

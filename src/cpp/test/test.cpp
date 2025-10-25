@@ -12,14 +12,16 @@ int main(int argc, char** argv) {
                              4700,   10000,  22000,  47000, 100000,
                              220000, 470000, 1000000};
 
-  ValueList series(K10);
-  value_t target = 1000;
-  // value_t target = 4000;
-  // value_t target = 9000;
+  // ValueList series(K10);
+  ValueList series(E3);
+  // value_t target = 1000;
+  //  value_t target = 4000;
+  value_t target = 9000;
   // value_t target = 14000;
   //  int max_elements = 3;
   //  int max_elements = 4;
-  int max_elements = 10;
+  int max_elements = 5;
+  // int max_elements = 10;
 
   ValueSearchOptions options(ComponentType::Resistor, series, 100, 1000000,
                              max_elements, target);

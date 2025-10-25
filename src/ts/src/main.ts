@@ -168,9 +168,31 @@ function makeCapacitorCombinatorUI(): HTMLDivElement {
       const availableValues = rangeSelector.getAvailableValues(targetValue);
       const maxElements = numElementsInput.value;
 
-      const combs = RcComb.findCombinations(
-          RcComb.ComponentType.Capacitor, availableValues, targetValue,
-          maxElements);
+      const start = performance.now();
+
+      let combs: RcComb.Combination[] = [];
+      if (core) {
+        const valueVector = new core.VectorDouble();
+        //let valueVector: core.VectorDouble ;
+        for (const v of availableValues) {
+          valueVector.push_back(v);
+        }
+        const retJson = JSON.parse(core.find_combinations(
+            true, valueVector, targetValue, maxElements));
+        for (const combJson of retJson.result) {
+          const comb = RcComb.Combination.fromJson(
+              RcComb.ComponentType.Capacitor, combJson);
+          combs.push(comb);
+        }
+        valueVector.delete();
+      } else {
+        combs = RcComb.findCombinations(
+            RcComb.ComponentType.Capacitor, availableValues, targetValue,
+            maxElements);
+      }
+
+      const end = performance.now();
+      console.log(`Computation time: ${(end - start).toFixed(2)} ms`);
 
       if (combs.length > 0) {
         resultBox.appendChild(

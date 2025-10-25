@@ -13,6 +13,8 @@ class ValueList {
 
   ValueList(const std::vector<value_t>& vals) : values(sort_values(vals)) {}
 
+  inline size_t size() const { return values.size(); }
+
   // todo: optimize
   const value_t* get_values(value_t min, value_t max, int* count) const {
     int i_start = -1;
@@ -37,6 +39,20 @@ class ValueList {
     }
     *count = i_end - i_start + 1;
     return &values[i_start];
+  }
+
+  // todo: optimize
+  value_t get_nearest(value_t target) const {
+    value_t best_value = VALUE_NONE;
+    value_t best_error = VALUE_POSITIVE_INFINITY;
+    for (const auto& v : values) {
+      const auto error = std::abs(v - target);
+      if (error < best_error) {
+        best_error = error;
+        best_value = v;
+      }
+    }
+    return best_value;
   }
 };
 

@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <limits>
 #include <vector>
+#include <exception>
 
 #ifdef RCCOMB_DEBUG
 #include <cstdio>
@@ -37,6 +38,10 @@ static constexpr value_t VALUE_NONE = -1;
 static constexpr value_t VALUE_POSITIVE_INFINITY =
     std::numeric_limits<value_t>::infinity();
 static constexpr value_t VALUE_NEGATIVE_INFINITY = -VALUE_POSITIVE_INFINITY;
+
+inline bool value_is_valid(value_t v) {
+  return 0 < v && v < VALUE_POSITIVE_INFINITY;
+}
 
 using hash_t = uint32_t;
 

@@ -1330,7 +1330,20 @@ function makeCapacitorCombinatorUI() {
 			const targetValue = targetInput.value;
 			const availableValues = rangeSelector.getAvailableValues(targetValue);
 			const maxElements = numElementsInput.value;
-			const combs = findCombinations(ComponentType.Capacitor, availableValues, targetValue, maxElements);
+			const start = performance.now();
+			let combs = [];
+			if (core) {
+				const valueVector = new core.VectorDouble();
+				for (const v of availableValues) valueVector.push_back(v);
+				const retJson = JSON.parse(core.find_combinations(true, valueVector, targetValue, maxElements));
+				for (const combJson of retJson.result) {
+					const comb = Combination.fromJson(ComponentType.Capacitor, combJson);
+					combs.push(comb);
+				}
+				valueVector.delete();
+			} else combs = findCombinations(ComponentType.Capacitor, availableValues, targetValue, maxElements);
+			const end = performance.now();
+			console.log(`Computation time: ${(end - start).toFixed(2)} ms`);
 			if (combs.length > 0) {
 				resultBox.appendChild(makeP(getStr("Found <n> combination(s):", { n: combs.length })));
 				for (const comb of combs) {

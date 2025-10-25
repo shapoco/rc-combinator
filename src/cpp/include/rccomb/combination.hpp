@@ -26,6 +26,8 @@ class CombinationClass {
 
   std::string to_json_string() const;
 
+  bool is_normalized() const;
+
 #ifdef RCCOMB_DEBUG
   inline std::string to_string() const {
     if (is_leaf()) {
@@ -76,6 +78,33 @@ std::string CombinationClass::to_json_string() const {
     s += "]}";
     return s;
   }
+}
+
+// 正規化されているか確認 (重複回避のため)
+bool CombinationClass::is_normalized() const {
+  if (is_leaf()) return true;
+
+  const value_t epsilon = value / 1e9;
+
+  // 隣り合う同一トポロジの兄弟が降順になっているのを確認
+  for (size_t i = 1; i < children.size(); i++) {
+    const auto &prev = children[i - 1];
+    const auto &curr = children[i];
+    if (prev->topology->hash == curr->topology->hash) {
+      if (prev->value + epsilon < curr->value) {
+        return false;
+      }
+    }
+  }
+
+  // 子ノードも再帰的に確認
+  for (const auto &child : children) {
+    if (!child->is_normalized()) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 #endif
