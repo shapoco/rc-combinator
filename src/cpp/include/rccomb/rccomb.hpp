@@ -54,8 +54,10 @@ struct DividerSearchOptions {
         max_elements(max_elems) {}
 };
 
-std::vector<Combination> search_combinations(ValueSearchOptions& options);
-std::vector<DoubleCombination> search_dividers(DividerSearchOptions& options);
+result_t search_combinations(ValueSearchOptions& options,
+                             std::vector<Combination>& out_combs);
+result_t search_dividers(DividerSearchOptions& options,
+                         std::vector<DoubleCombination>& best_combs);
 
 #ifdef RCCOMB_IMPLEMENTATION
 
@@ -203,18 +205,18 @@ static void update_target_of_next_brother_of(SearchState st) {
 
 static void filter_unnormalized_combinations(std::vector<Combination>& combs);
 
-std::vector<Combination> search_combinations(ValueSearchOptions& options) {
+result_t search_combinations(ValueSearchOptions& options,
+                             std::vector<Combination>& best_combs) {
   // 探索空間の大きさをチェック
   const double search_space =
       std::pow((double)options.available_values.size(), options.max_elements);
   if (options.max_elements > 10 || search_space > 1e7) {
-    throw std::runtime_error("The search space is too large.");
+    return result_t::SEARCH_SPACE_TOO_LARGE;
   }
 
   const value_t epsilon = options.target / 1e9;
 
   value_t best_error = std::numeric_limits<value_t>::infinity();
-  std::vector<Combination> best_combs;
   int best_leaf_count = std::numeric_limits<int>::max();
 
   // 素子数が少ない順に試す
@@ -255,21 +257,21 @@ std::vector<Combination> search_combinations(ValueSearchOptions& options) {
   // 重複回避のため正規化されているものだけを残す
   filter_unnormalized_combinations(best_combs);
 
-  return best_combs;
+  return result_t::SUCCESS;
 }
 
-std::vector<DoubleCombination> search_dividers(DividerSearchOptions& options) {
+result_t search_dividers(DividerSearchOptions& options,
+                         std::vector<DoubleCombination>& best_combs) {
   const value_t epsilon = 1e-9;
 
   // 探索空間の大きさをチェック
   const double search_space = std::pow((double)options.available_values.size(),
                                        2 * options.max_elements);
   if (options.max_elements > 10 || search_space > 1e8) {
-    throw std::runtime_error("The search space is too large.");
+    return result_t::SEARCH_SPACE_TOO_LARGE;
   }
 
   value_t best_error = VALUE_POSITIVE_INFINITY;
-  std::vector<DoubleCombination> best_combs;
   std::map<value_t, DoubleCombination> result_memo;
 
   const value_t ratio_min = options.target_ratio / 2;
@@ -279,6 +281,8 @@ std::vector<DoubleCombination> search_dividers(DividerSearchOptions& options) {
   const value_t lower_max = options.total_max * ratio_max;
   const value_t upper_min = options.total_min * (1.0 - ratio_max);
   const value_t upper_max = options.total_max * (1.0 - ratio_min);
+
+  std::vector<Combination> upper_combs;
 
   std::vector<bool> parallels = {false, true};
   for (int num_lowers = 1; num_lowers <= options.max_elements; num_lowers++) {
@@ -291,6 +295,7 @@ std::vector<DoubleCombination> search_dividers(DividerSearchOptions& options) {
       for (const auto& topo : topos) {
         ValueSearchContext vsc(options.type, options.available_values, topo,
                                lower_min, lower_max);
+        result_t upper_error = result_t::SUCCESS;
         const auto cb = [&](ValueSearchContext& ctx, value_t lower_value) {
           const value_t target_total_value = lower_value / options.target_ratio;
           const value_t target_upper_value = target_total_value - lower_value;
@@ -309,7 +314,13 @@ std::vector<DoubleCombination> search_dividers(DividerSearchOptions& options) {
           ValueSearchOptions vso(options.type, options.available_values,
                                  upper_min, upper_max, options.max_elements,
                                  target_upper_value);
-          const auto upper_combs = search_combinations(vso);
+          upper_combs.clear();
+          result_t ret = search_combinations(vso, upper_combs);
+          if (ret != result_t::SUCCESS) {
+            upper_error = ret;
+            ctx.abort();
+            return;
+          }
           if (upper_combs.empty()) {
             // 条件を満たす上位側の組み合わせなし
             return;
@@ -336,6 +347,9 @@ std::vector<DoubleCombination> search_dividers(DividerSearchOptions& options) {
           best_error = error;
         };
         search_combinations_recursive(vsc, 0, cb);
+        if (upper_error != result_t::SUCCESS) {
+          return upper_error;
+        }
       }
     }
 
@@ -348,7 +362,7 @@ std::vector<DoubleCombination> search_dividers(DividerSearchOptions& options) {
     filter_unnormalized_combinations(comb->uppers);
     filter_unnormalized_combinations(comb->lowers);
   }
-  return best_combs;
+  return result_t::SUCCESS;
 }
 
 // 正規化されていないトポロジを削除 (重複回避)

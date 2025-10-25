@@ -1257,6 +1257,7 @@ function makeResistorCombinatorUI() {
 				const valueVector = new core.VectorDouble();
 				for (const v of availableValues) valueVector.push_back(v);
 				const retJson = JSON.parse(core.find_combinations(false, valueVector, targetValue, maxElements));
+				if (retJson.error) throw new Error(getStr(retJson.error));
 				for (const combJson of retJson.result) {
 					const comb = Combination.fromJson(ComponentType.Resistor, combJson);
 					combs.push(comb);
@@ -1344,6 +1345,7 @@ function makeCapacitorCombinatorUI() {
 				const valueVector = new core.VectorDouble();
 				for (const v of availableValues) valueVector.push_back(v);
 				const retJson = JSON.parse(core.find_combinations(true, valueVector, targetValue, maxElements));
+				if (retJson.error) throw new Error(getStr(retJson.error));
 				for (const combJson of retJson.result) {
 					const comb = Combination.fromJson(ComponentType.Capacitor, combJson);
 					combs.push(comb);
@@ -1446,6 +1448,7 @@ function makeDividerCombinatorUI() {
 				const valueVector = new core.VectorDouble();
 				for (const v of availableValues) valueVector.push_back(v);
 				const retJson = JSON.parse(core.find_dividers(valueVector, targetValue, totalMin, totalMax, maxElements));
+				if (retJson.error) throw new Error(getStr(retJson.error));
 				for (const combJson of retJson.result) {
 					const comb = DividerCombination.fromJson(ComponentType.Resistor, combJson);
 					combs.push(comb);

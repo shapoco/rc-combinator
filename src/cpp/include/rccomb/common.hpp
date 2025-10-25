@@ -4,9 +4,9 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <exception>
 #include <limits>
 #include <vector>
-#include <exception>
 
 #ifdef RCCOMB_DEBUG
 #include <cstdio>
@@ -26,6 +26,22 @@ namespace rccomb {
   do {                               \
   } while (0)
 #endif
+
+enum class result_t {
+  SUCCESS,
+  SEARCH_SPACE_TOO_LARGE,
+};
+
+static inline const char* result_to_string(result_t res) {
+  switch (res) {
+    case result_t::SUCCESS:
+      return "Success.";
+    case result_t::SEARCH_SPACE_TOO_LARGE:
+      return "The search space is too large.";
+    default:
+      return "Unknown result.";
+  }
+}
 
 enum class ComponentType {
   Resistor,

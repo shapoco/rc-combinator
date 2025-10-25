@@ -33,6 +33,7 @@ DEPENDENCIES := \
 
 CXXFLAGS := \
 	-std=c++20 \
+	-fwasm-exceptions \
 	-I$(RCCOMB_INC_DIR) \
 	-O3 \
 	-Wall \
@@ -40,7 +41,7 @@ CXXFLAGS := \
 	-s MODULARIZE=1 \
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-s EXPORT_NAME="createModule" \
-	-s EXPORTED_RUNTIME_METHODS='["ccall","cwrap","FS", "HEAPF64"]' \
+	-s EXPORTED_RUNTIME_METHODS='["ccall","cwrap"]' \
 	-s EXPORTED_FUNCTIONS='["_malloc","_free"]' 
 
 #	-s EXPORTED_RUNTIME_METHODS='["ccall","cwrap","FS","malloc","free"]'

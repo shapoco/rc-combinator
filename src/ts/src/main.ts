@@ -69,6 +69,9 @@ function makeResistorCombinatorUI(): HTMLDivElement {
         }
         const retJson = JSON.parse(core.find_combinations(
             false, valueVector, targetValue, maxElements));
+        if (retJson.error) {
+          throw new Error(getStr(retJson.error));
+        }
         for (const combJson of retJson.result) {
           const comb = RcComb.Combination.fromJson(
               RcComb.ComponentType.Resistor, combJson);
@@ -180,6 +183,9 @@ function makeCapacitorCombinatorUI(): HTMLDivElement {
         }
         const retJson = JSON.parse(core.find_combinations(
             true, valueVector, targetValue, maxElements));
+        if (retJson.error) {
+          throw new Error(getStr(retJson.error));
+        }
         for (const combJson of retJson.result) {
           const comb = RcComb.Combination.fromJson(
               RcComb.ComponentType.Capacitor, combJson);
@@ -274,6 +280,9 @@ function makeDividerCombinatorUI(): HTMLDivElement {
         }
         const retJson = JSON.parse(core.find_dividers(
             valueVector, targetValue, totalMin, totalMax, maxElements));
+        if (retJson.error) {
+          throw new Error(getStr(retJson.error));
+        }
         for (const combJson of retJson.result) {
           const comb = RcComb.DividerCombination.fromJson(
               RcComb.ComponentType.Resistor, combJson);

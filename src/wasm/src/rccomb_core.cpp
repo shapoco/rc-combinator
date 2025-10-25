@@ -27,7 +27,11 @@ std::string find_combinations(bool capacitor, const std::vector<double>& values,
   ValueSearchOptions options(type, value_list, min, max, max_elements,
                              target_value);
 
-  auto combinations = rccomb::search_combinations(options);
+  std::vector<Combination> combinations;
+  auto ret = rccomb::search_combinations(options, combinations);
+  if (ret != result_t::SUCCESS) {
+    return std::string("{\"error\":\"") + result_to_string(ret) + "\"}";
+  }
 
   std::string result = "{\"result\":[";
   for (size_t i = 0; i < combinations.size(); i++) {
@@ -38,7 +42,6 @@ std::string find_combinations(bool capacitor, const std::vector<double>& values,
     result += comb->to_json_string();
   }
   result += "]}";
-
   return result;
 }
 
@@ -55,7 +58,11 @@ std::string find_dividers(const std::vector<double>& values,
                                target_ratio, total_min, total_max,
                                max_elements);
 
-  auto combinations = rccomb::search_dividers(options);
+  std::vector<DoubleCombination> combinations;
+  auto ret = rccomb::search_dividers(options, combinations);
+  if (ret != result_t::SUCCESS) {
+    return std::string("{\"error\":\"") + result_to_string(ret) + "\"}";
+  }
 
   std::string result = "{\"result\":[";
   for (size_t i = 0; i < combinations.size(); i++) {
@@ -66,7 +73,6 @@ std::string find_dividers(const std::vector<double>& values,
     result += comb->to_json_string();
   }
   result += "]}";
-
   return result;
 }
 
