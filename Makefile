@@ -3,6 +3,8 @@
 TEST_PORT := 52480
 
 REPO_DIR := $(shell pwd)
+BASE_URL := https://shapoco.github.io/rc-combinator/
+
 BIN_DIR := $(REPO_DIR)/bin
 APP_DIST_DIR := $(REPO_DIR)/docs
 APP_TS_DIR := $(REPO_DIR)/src/ts
@@ -15,9 +17,9 @@ all:
 	@make --no-print-directory -C $(APP_WASM_DIR) build
 
 update_postfix:
-	$(CMD_UPDATE_POSTFIX) --dir $(APP_DIST_DIR) --file docs/index.html
-	$(CMD_UPDATE_POSTFIX) --dir $(APP_DIST_DIR) --file docs/wasm-beta.html
-	$(CMD_UPDATE_POSTFIX) --dir $(APP_DIST_DIR) --file docs/clock/index.html
+	$(CMD_UPDATE_POSTFIX) --base_dir $(APP_DIST_DIR) --base_url $(BASE_URL) --file index.html
+	$(CMD_UPDATE_POSTFIX) --base_dir $(APP_DIST_DIR) --base_url $(BASE_URL) --file wasm-beta.html
+	$(CMD_UPDATE_POSTFIX) --base_dir $(APP_DIST_DIR) --base_url $(BASE_URL) --file clock/index.html
 
 clean:
 	@make --no-print-directory -C $(APP_TS_DIR) clean

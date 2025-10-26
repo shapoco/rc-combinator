@@ -6,33 +6,33 @@ import hashlib
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-d', '--dir', required=True)
+parser.add_argument('-d', '--base_dir', required=True)
+parser.add_argument('-u', '--base_url', required=False)
 parser.add_argument('-f', '--file', required=True)
-parser.add_argument('-u', '--url', required=True)
 args = parser.parse_args()
 
-
 def main() -> None:
-    last_curdir = os.getcwd()
-    
-    with open(args.file) as f:
-        html = f.read()
-    
-    os.chdir(os.path.dirname(args.dir))
-    base_dir = os.getcwd()
+    base_dir = os.path.abspath(args.base_dir)
     if base_dir.endswith('/'):
         base_dir = base_dir[:-1]
         print(base_dir)
-    os.chdir(last_curdir)
-    
-    os.chdir(os.path.dirname(args.file))
+
+    os.chdir(base_dir)
+
+    file_path = os.path.abspath(args.file)
+
+    with open(file_path) as f:
+        html = f.read()
+
+    os.chdir(os.path.dirname(file_path))
     
     html = fix_url(base_dir, html, r'<script\s[^>]*src="([^"]+)"[^>]*>', 1)
     html = fix_url(base_dir, html, r'<link\s[^>]*href="([^"]+)"[^>]*>', 1)
+    html = fix_url(base_dir, html, r'<meta\s+property="og:image"\s+[^>]*content="([^"]+)"[^>]*>', 1)
     html = fix_url(base_dir, html, r'fetch\s*\(\s*["\']([^\'"]+)["\']\s*\)', 1)
     html = fix_url(base_dir, html, r'import.+from\s*["\']([^\'"]+)["\']', 1)
     
-    os.chdir(last_curdir)
+    os.chdir(base_dir)
 
     with open(args.file, 'w') as f:
         f.write(html)
@@ -52,8 +52,9 @@ def fix_url(base_dir: str, in_html: str, pattern: re.Pattern, group: int = 1) ->
             abs_path = os.path.join(base_dir, path[1:])
         elif path.startswith('.'):
             abs_path = os.path.join(os.getcwd(), path)
-        elif args.url and path.startswith(args.url):
-            abs_path = os.path.join(base_dir, path[len(args.url):])
+        elif args.base_url and path.startswith(args.base_url):
+            abs_path = os.path.join(base_dir, path[len(args.base_url):])
+            print(f'Base URL matched: {path} -> {abs_path}')
             
         if abs_path:
             # 対象ファイルのハッシュを計算してパスを更新
