@@ -1,5 +1,6 @@
 body {
-  background: #e8f0f8;
+  background: #fff;
+  color: #000;
   margin: 0px;
   padding: 0px;
 }
@@ -26,15 +27,6 @@ input[type="text"] {
 
 textarea {
   height: 100px;
-}
-
-#container {
-  background: white;
-  max-width: 900px;
-  margin: 0px auto;
-  padding: 0px;
-  position: relative;
-  box-sizing: border-box;
 }
 
 header {
