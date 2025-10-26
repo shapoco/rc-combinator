@@ -1,31 +1,32 @@
-.PHONY: all build test setup
+.PHONY: all update_postfix test setup clean
 
-REPO_DIR := $(shell pwd)
 TEST_PORT := 52480
 
-APP_NAME := rc-combinator
-APP_TS_DIR := src/ts
-APP_SRC_DIR := $(APP_TS_DIR)/src
-APP_BUILD_DIR := $(APP_TS_DIR)/dist
-APP_TS_LIST := $(wildcard $(APP_SRC_DIR)/*.ts)
+REPO_DIR := $(shell pwd)
+BIN_DIR := $(REPO_DIR)/bin
 APP_DIST_DIR := $(REPO_DIR)/docs
-APP_JS := $(APP_DIST_DIR)/$(APP_NAME).js
+APP_TS_DIR := $(REPO_DIR)/src/ts
+APP_WASM_DIR := $(REPO_DIR)/src/wasm
 
-EXTRA_DEPENDENCIES := \
-	$(APP_TS_DIR)/tsdown.config.ts \
-	Makefile
+CMD_UPDATE_POSTFIX := python3 $(BIN_DIR)/update_url_postfix.py
 
-all: build
+all:
+	@make --no-print-directory -C $(APP_TS_DIR) build
+	@make --no-print-directory -C $(APP_WASM_DIR) build
 
-build: $(APP_JS)
+update_postfix:
+	$(CMD_UPDATE_POSTFIX) --dir $(APP_DIST_DIR) --file docs/index.html
+	$(CMD_UPDATE_POSTFIX) --dir $(APP_DIST_DIR) --file docs/wasm-beta.html
+	$(CMD_UPDATE_POSTFIX) --dir $(APP_DIST_DIR) --file docs/clock/index.html
 
-$(APP_JS): $(APP_TS_LIST) $(EXTRA_DEPENDENCIES)
-	@mkdir -p $(dir $@)
-	cd $(APP_TS_DIR) && npx tsdown
-	cp $(APP_BUILD_DIR)/*.mjs $(APP_DIST_DIR)/.
+clean:
+	@make --no-print-directory -C $(APP_TS_DIR) clean
+	@make --no-print-directory -C $(APP_WASM_DIR) clean
 
 test:
 	python3 -m http.server -d $(APP_DIST_DIR) $(TEST_PORT)
 
 setup:
+	cd $(BIN_DIR) && ./setup_emsdk.sh
 	cd $(APP_TS_DIR) && npm install -D tsdown typescript
+
