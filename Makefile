@@ -19,9 +19,10 @@ build:
 	@make --no-print-directory -C $(APP_WASM_DIR) build
 
 update_postfix:
-	$(CMD_UPDATE_POSTFIX) --base_dir $(APP_DIST_DIR) --base_url $(BASE_URL) --file index.html
-	$(CMD_UPDATE_POSTFIX) --base_dir $(APP_DIST_DIR) --base_url $(BASE_URL) --file wasm-beta.html
+	$(CMD_UPDATE_POSTFIX) --base_dir $(APP_DIST_DIR) --base_url $(BASE_URL) --file rccomb_core.js
 	$(CMD_UPDATE_POSTFIX) --base_dir $(APP_DIST_DIR) --base_url $(BASE_URL) --file clock/index.html
+	$(CMD_UPDATE_POSTFIX) --base_dir $(APP_DIST_DIR) --base_url $(BASE_URL) --file wasm-beta.html
+	$(CMD_UPDATE_POSTFIX) --base_dir $(APP_DIST_DIR) --base_url $(BASE_URL) --file index.html
 
 clean:
 	@make --no-print-directory -C $(APP_TS_DIR) clean

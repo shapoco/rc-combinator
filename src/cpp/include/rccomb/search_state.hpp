@@ -58,7 +58,7 @@ static inline SearchState create_search_state(const Topology& topo,
 
 SearchState build_search_state_tree(ComponentType type,
                                     std::vector<SearchState>& leafs,
-                                    Topology node, bool is_finisher = true);
+                                    Topology& node, bool is_finisher = true);
 
 #ifdef RCCOMB_IMPLEMENTATION
 
@@ -121,24 +121,24 @@ std::string SearchStateClass::to_string() const {
 // トポロジの木から検索用作業オブジェクトの木を生成
 SearchState build_search_state_tree(ComponentType type,
                                     std::vector<SearchState>& leafs,
-                                    Topology node, bool is_finisher) {
+                                    Topology& topology, bool is_finisher) {
   bool inv_sum;
   if (type == ComponentType::Resistor) {
-    inv_sum = node->parallel;
+    inv_sum = topology->parallel;
   } else {
-    inv_sum = !node->parallel;
+    inv_sum = !topology->parallel;
   }
 
-  SearchState st = create_search_state(node, inv_sum, is_finisher);
+  SearchState st = create_search_state(topology, inv_sum, is_finisher);
 
-  if (node->is_leaf()) {
+  if (topology->is_leaf()) {
     leafs.push_back(st);
   } else {
     SearchState prev_brother = nullptr;
-    for (size_t i = 0; i < node->children.size(); i++) {
-      auto child_node = node->children[i];
-      bool is_last = (i + 1 >= node->children.size());
-      auto child_st = build_search_state_tree(type, leafs, child_node,
+    for (size_t i = 0; i < topology->children.size(); i++) {
+      auto child_topology = topology->children[i];
+      bool is_last = (i + 1 >= topology->children.size());
+      auto child_st = build_search_state_tree(type, leafs, child_topology,
                                               is_finisher && is_last);
       child_st->parent = st;
 

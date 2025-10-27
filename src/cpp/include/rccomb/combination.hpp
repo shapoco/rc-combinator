@@ -148,7 +148,7 @@ std::string CombinationClass::to_string() const {
         s += topology->parallel ? "//" : "--";
       }
     }
-    s += "==>" + std::to_string(value);
+    // s += "==>" + std::to_string(value);
     return s;
   }
 }

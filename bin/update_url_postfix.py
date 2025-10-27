@@ -30,6 +30,7 @@ def main() -> None:
     html = fix_url(base_dir, html, r'<link\s[^>]*href="([^"]+)"[^>]*>', 1)
     html = fix_url(base_dir, html, r'<meta\s+property="og:image"\s+[^>]*content="([^"]+)"[^>]*>', 1)
     html = fix_url(base_dir, html, r'fetch\s*\(\s*["\']([^\'"]+)["\']\s*\)', 1)
+    html = fix_url(base_dir, html, r'locateFile\s*\(\s*["\']([^\'"]+)["\']\s*\)', 1)
     html = fix_url(base_dir, html, r'import.+from\s*["\']([^\'"]+)["\']', 1)
     
     os.chdir(base_dir)
@@ -50,11 +51,14 @@ def fix_url(base_dir: str, in_html: str, pattern: re.Pattern, group: int = 1) ->
         abs_path = None
         if path.startswith('/'):
             abs_path = os.path.join(base_dir, path[1:])
-        elif path.startswith('.'):
-            abs_path = os.path.join(os.getcwd(), path)
         elif args.base_url and path.startswith(args.base_url):
             abs_path = os.path.join(base_dir, path[len(args.base_url):])
-            print(f'Base URL matched: {path} -> {abs_path}')
+        elif path.startswith('.'):
+            abs_path = os.path.join(os.getcwd(), path)
+        else:
+            tmp = os.path.join(os.getcwd(), path)
+            if os.path.exists(tmp):
+                abs_path = tmp
             
         if abs_path:
             # 対象ファイルのハッシュを計算してパスを更新

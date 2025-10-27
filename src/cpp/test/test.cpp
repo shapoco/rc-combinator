@@ -54,7 +54,7 @@ class TestCombinationClass {
           s += topology->parallel ? "//" : "--";
         }
       }
-      s += "==>" + std::to_string(value);
+      // s += "==>" + std::to_string(value);
       return s;
     }
   }
@@ -69,7 +69,7 @@ std::map<int, std::vector<TestTopology>> topologies;
 
 bool test_search_combinations(ComponentType type, std::vector<value_t>& series,
                               int max_elements, value_t target);
-TestCombination calc_value(ComponentType type, TestTopology topo,
+TestCombination calc_value(ComponentType type, TestTopology& topo,
                            const std::vector<value_t>& leaf_values, int pos,
                            value_t* out_value = nullptr, bool bake = false);
 std::vector<TestTopology>& test_get_topology(bool parallel, int n);
@@ -118,7 +118,7 @@ int main(int argc, char** argv) {
 
     for (const auto& div : dividers) {
       printf("%s\n", div->to_string().c_str());
-      printf("%s\n", div->to_json_string().c_str());
+      // printf("%s\n", div->to_json_string().c_str());
     }
 
     std::chrono::duration<double, std::milli> duration = end - start;
@@ -163,9 +163,9 @@ bool test_search_combinations(ComponentType type, std::vector<value_t>& series,
   std::vector<bool> parallels = {false, true};
 
   for (int num_elements = 1; num_elements <= max_elements; num_elements++) {
-    for (const auto& parallel : parallels) {
+    for (auto parallel : parallels) {
       if (num_elements == 1 && parallel) continue;
-      const auto& topos = test_get_topology(parallel, num_elements);
+      auto& topos = test_get_topology(parallel, num_elements);
 
       std::vector<value_t> slot(num_elements, 0);
       std::vector<int> indices(num_elements, 0);
@@ -175,7 +175,7 @@ bool test_search_combinations(ComponentType type, std::vector<value_t>& series,
           slot[i] = series[indices[i]];
         }
 
-        for (const auto& topo : topos) {
+        for (auto& topo : topos) {
           value_t value;
           calc_value(type, topo, slot, 0, &value);
           value_t error = std::abs(value - target);
@@ -224,13 +224,13 @@ bool test_search_combinations(ComponentType type, std::vector<value_t>& series,
     printf("  |DUT|%2d|%15.9lf|%15.9lf| %s\n", dut_elements, dut_value,
            dut_error, dut_comb->to_string().c_str());
     printf("\n");
-    //return false;
+    // return false;
   }
 
   return true;
 }
 
-TestCombination calc_value(ComponentType type, TestTopology topo,
+TestCombination calc_value(ComponentType type, TestTopology& topo,
                            const std::vector<value_t>& leaf_values, int pos,
                            value_t* out_value, bool bake) {
   if (topo->is_leaf()) {
@@ -257,7 +257,7 @@ TestCombination calc_value(ComponentType type, TestTopology topo,
   if (bake) {
     child_combs = new std::vector<TestCombination>();
   }
-  for (const auto& child : topo->children) {
+  for (auto& child : topo->children) {
     value_t child_value;
     auto child_comb =
         calc_value(type, child, leaf_values, child_pos, &child_value, bake);

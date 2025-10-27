@@ -73,7 +73,7 @@ struct ValueSearchContext {
   bool aborted = false;
 
   ValueSearchContext(ComponentType type, const ValueList& values,
-                     Topology topology, value_t min = 0,
+                     Topology& topology, value_t min = 0,
                      value_t max = VALUE_POSITIVE_INFINITY,
                      value_t target = VALUE_NONE)
       : type(type), available_values(values) {
@@ -210,7 +210,7 @@ static void update_target_of_next_brother_of(SearchState st) {
   // 弟が木の右端に位置する場合は目標値を更新
   if (value_is_valid(parent->target) && brother->is_finisher) {
     value_t parent_target = parent->target;
-    if (parent->topology->parallel) {
+    if (parent->inv_sum) {
       brother->target =
           partial_val * parent_target / (partial_val - parent_target);
     } else {
@@ -245,8 +245,8 @@ result_t search_combinations(ValueSearchOptions& options,
       if (num_elems == 1 && parallel) continue;
 
       // 全トポロジーを試す
-      const auto& topos = get_topologies(num_elems, parallel);
-      for (const auto& topo : topos) {
+      auto& topos = get_topologies(num_elems, parallel);
+      for (auto& topo : topos) {
         ValueSearchContext ctx(options.type, options.available_values, topo,
                                options.min_value, options.max_value,
                                options.target);
@@ -317,8 +317,8 @@ result_t search_dividers(DividerSearchOptions& options,
       if (num_lowers == 1 && parallel) continue;
 
       // 全トポロジーを試す
-      const auto topos = get_topologies(num_lowers, parallel);
-      for (const auto& topo : topos) {
+      auto& topos = get_topologies(num_lowers, parallel);
+      for (auto& topo : topos) {
         ValueSearchContext vsc(options.type, options.available_values, topo,
                                lower_min, lower_max);
         result_t upper_error = result_t::SUCCESS;
