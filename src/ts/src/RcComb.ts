@@ -17,23 +17,38 @@ export const enum ComponentType {
   Capacitor,
 }
 
+export const enum TopologyConstraint {
+  Series = 1,
+  Parallel = 2,
+  NoLimit = Series | Parallel,
+}
+
+export const MAX_COMBINATION_ELEMENTS = 10;
+export const MAX_DIVIDER_ELEMENTS = 5;
+
 export class TopologyNode {
-  private complexity_: number = -1;
-  public hash: number = -1;
+  public num_leafs = -1;
+  public depth = -1;
+  public hash = -1;
 
   constructor(
       public iLeft: number, public iRight: number, public parallel: boolean,
       public children: Array<TopologyNode>) {
     if (children.length === 0) {
       this.hash = 1;
+      this.depth = 0;
+      this.num_leafs = 1;
     } else {
       const POLY = 0x80200003;
       let lfsr = parallel ? 0xAAAAAAAA : 0x55555555;
+      this.num_leafs = 0;
       for (const child of children) {
         lfsr ^= child.hash;
         const msb = (lfsr & 0x80000000) !== 0;
         lfsr = (lfsr & 0x7FFFFFFF) << 1;
         if (msb) lfsr ^= POLY;
+        this.num_leafs += child.num_leafs;
+        this.depth = Math.max(this.depth, child.depth + 1);
       }
       this.hash = lfsr;
     }
@@ -41,20 +56,6 @@ export class TopologyNode {
 
   get isLeaf(): boolean {
     return this.iLeft + 1 >= this.iRight;
-  }
-
-  get complexity(): number {
-    if (this.complexity_ < 0) {
-      if (this.isLeaf) {
-        this.complexity_ = 1;
-      } else {
-        this.complexity_ = 0;
-        for (const child of this.children) {
-          this.complexity_ += child.complexity;
-        }
-      }
-    }
-    return this.complexity_;
   }
 }
 
@@ -415,13 +416,17 @@ export class DividerCombination {
 
 export function findCombinations(
     cType: ComponentType, values: number[], targetValue: number,
-    maxElements: number): Combination[] {
+    maxElements: number, topoConstr: TopologyConstraint,
+    maxDepth: number): Combination[] {
   const epsilon = targetValue * 1e-9;
   const retMin = targetValue / 2;
   const retMax = targetValue * 2;
 
-  const numComb = Math.pow(values.length, maxElements);
-  if (maxElements > 10 || numComb > 1e6) {
+  const numValues = topoConstr === TopologyConstraint.NoLimit ?
+      values.length :
+      values.length / 2;
+  const numComb = Math.pow(numValues, maxElements);
+  if (maxElements > MAX_COMBINATION_ELEMENTS || numComb > 1e6) {
     throw new Error(getStr('The search space is too large.'));
   }
 
@@ -434,6 +439,11 @@ export function findCombinations(
     const indices = new Array<number>(numElem).fill(0);
     while (indices[numElem - 1] < values.length) {
       for (const topo of topos) {
+        const t = topo.parallel ? TopologyConstraint.Parallel :
+                                  TopologyConstraint.Series;
+        if (numElem >= 2 && !(t & topoConstr)) continue;
+        if (topo.depth > maxDepth) continue;
+
         const value =
             calcValue(cType, values, indices, topo, null, retMin, retMax);
         if (isNaN(value)) {
@@ -471,12 +481,15 @@ export function findCombinations(
 
 export function findDividers(
     cType: ComponentType, values: number[], targetRatio: number,
-    totalMin: number, totalMax: number,
-    maxElements: number): DividerCombination[] {
+    totalMin: number, totalMax: number, maxElements: number,
+    topoConstr: TopologyConstraint, maxDepth: number): DividerCombination[] {
   const epsilon = 1e-9;
 
-  const numComb = Math.pow(values.length, 2 * maxElements);
-  if (maxElements > 10 || numComb > 1e7) {
+  const numValues = topoConstr === TopologyConstraint.NoLimit ?
+      values.length :
+      values.length / 2;
+  const numComb = Math.pow(numValues, 2 * maxElements);
+  if (maxElements > MAX_DIVIDER_ELEMENTS || numComb > 1e7) {
     throw new Error(getStr('The search space is too large.'));
   }
 
@@ -489,6 +502,11 @@ export function findDividers(
     const indices = new Array<number>(numElem).fill(0);
     while (indices[numElem - 1] < values.length) {
       for (const topo of topos) {
+        const t = topo.parallel ? TopologyConstraint.Parallel :
+                                  TopologyConstraint.Series;
+        if (numElem >= 2 && !(t & topoConstr)) continue;
+        if (topo.depth > maxDepth) continue;
+
         const lowerValue =
             calcValue(cType, values, indices, topo, null, 0, totalMax);
         if (isNaN(lowerValue)) {
@@ -508,8 +526,8 @@ export function findDividers(
           continue;
         }
 
-        const upperCombs =
-            findCombinations(cType, values, upperTargetValue, maxElements);
+        const upperCombs = findCombinations(
+            cType, values, upperTargetValue, maxElements, topoConstr, maxDepth);
         if (upperCombs.length === 0) {
           continue;
         }
@@ -571,7 +589,7 @@ function calcValue(
   if (comb) {
     comb.cType = cType;
     comb.parallel = topo.parallel;
-    comb.complexity = topo.complexity;
+    comb.complexity = topo.num_leafs;
   }
 
   if (topo.isLeaf) {

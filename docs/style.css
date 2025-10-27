@@ -15,13 +15,15 @@ textarea {
 }
 
 input[type="text"],
+input[type="number"],
 textarea,
 select {
   width: 100px;
   ime-mode: inactive;
 }
 
-input[type="text"] {
+input[type="text"],
+input[type="number"] {
   text-align: right;
 }
 

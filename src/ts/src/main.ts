@@ -5,8 +5,6 @@ import * as Svg from './Svg';
 import {getStr} from './Text';
 import * as Ui from './Ui';
 
-const resCombHeader = Ui.makeH2(getStr('Find Resistor Combinations'));
-const resCombInputBox = new Ui.ValueBox('5.1k');
 
 let core: Core.RccombCore|null = null;
 
@@ -17,29 +15,39 @@ export async function main(
   }
 
   container.appendChild(Ui.makeDiv([
-    makeResistorCombinatorUI(),
+    makeCombinatorUI(RcComb.ComponentType.Resistor),
     makeDividerCombinatorUI(),
-    makeCapacitorCombinatorUI(),
+    makeCombinatorUI(RcComb.ComponentType.Capacitor),
     makeCurrentLimitingUI(),
   ]));
 }
 
-function makeResistorCombinatorUI(): HTMLDivElement {
-  const rangeSelector =
-      new Ui.ValueRangeSelector(RcComb.ComponentType.Resistor);
-  const numElementsInput = new Ui.ValueBox('3');
+function makeCombinatorUI(type: RcComb.ComponentType): HTMLDivElement {
+  const cap = type === RcComb.ComponentType.Capacitor;
+
+  const rangeSelector = new Ui.ValueRangeSelector(type);
+  const numElementsInput =
+      Ui.makeNumElementInput(RcComb.MAX_COMBINATION_ELEMENTS, 3);
+  const topTopologySelector = Ui.makeTopologySelector();
+  const maxDepthInput = Ui.makeDepthSelector();
   const resultBox = Ui.makeDiv();
+  const resCombInputBox = new Ui.ValueBox(cap ? '3.14μ' : '5.1k');
+
+  const unit = cap ? 'F' : 'Ω';
 
   const ui = Ui.makeDiv([
-    resCombHeader,
+    Ui.makeH2(getStr(
+        cap ? 'Find Capacitor Combinations' : 'Find Resistor Combinations')),
     Ui.makeTable([
       [getStr('Item'), getStr('Value'), getStr('Unit')],
       [getStr('E Series'), rangeSelector.seriesSelect, ''],
-      [getStr('Custom Values'), rangeSelector.customValuesInput, 'Ω'],
-      [getStr('Minimum'), rangeSelector.minResisterInput.inputBox, 'Ω'],
-      [getStr('Maximum'), rangeSelector.maxResisterInput.inputBox, 'Ω'],
+      [getStr('Custom Values'), rangeSelector.customValuesInput, unit],
+      [getStr('Minimum'), rangeSelector.minResisterInput.inputBox, unit],
+      [getStr('Maximum'), rangeSelector.maxResisterInput.inputBox, unit],
       [getStr('Max Elements'), numElementsInput.inputBox, ''],
-      [getStr('Target Value'), resCombInputBox.inputBox, 'Ω'],
+      [getStr('Top Topology'), topTopologySelector, ''],
+      [getStr('Max Nests'), maxDepthInput, ''],
+      [getStr('Target Value'), resCombInputBox.inputBox, unit],
     ]),
     resultBox,
   ]);
@@ -57,6 +65,9 @@ function makeResistorCombinatorUI(): HTMLDivElement {
       const targetValue = resCombInputBox.value;
       const availableValues = rangeSelector.getAvailableValues(targetValue);
       const maxElements = numElementsInput.value;
+      const topoConstr =
+          parseInt(topTopologySelector.value) as RcComb.TopologyConstraint;
+      const maxDepth = parseInt(maxDepthInput.value);
 
       const start = performance.now();
 
@@ -68,20 +79,19 @@ function makeResistorCombinatorUI(): HTMLDivElement {
           valueVector.push_back(v);
         }
         const retJson = JSON.parse(core.find_combinations(
-            false, valueVector, targetValue, maxElements));
+            cap, valueVector, targetValue, maxElements, topoConstr, maxDepth));
         if (retJson.error) {
           throw new Error(getStr(retJson.error));
         }
         for (const combJson of retJson.result) {
-          const comb = RcComb.Combination.fromJson(
-              RcComb.ComponentType.Resistor, combJson);
+          const comb = RcComb.Combination.fromJson(type, combJson);
           combs.push(comb);
         }
         valueVector.delete();
       } else {
         combs = RcComb.findCombinations(
-            RcComb.ComponentType.Resistor, availableValues, targetValue,
-            maxElements);
+            type, availableValues, targetValue, maxElements, topoConstr,
+            maxDepth);
       }
 
       const end = performance.now();
@@ -105,120 +115,8 @@ function makeResistorCombinatorUI(): HTMLDivElement {
   rangeSelector.setOnChange(callback);
   resCombInputBox.setOnChange(callback);
   numElementsInput.setOnChange(callback);
-
-  callback();
-
-  if (false) {
-    const availableValues = RcComb.makeAvaiableValues('E3', 100, 100000);
-    console.log(availableValues.join(', '));
-    const retJson = [0];
-    for (let t = 1; t <= 59; t++) {
-      const r = t * 1000;
-      const combs = RcComb.findCombinations(
-          RcComb.ComponentType.Resistor, availableValues, r, 6);
-      let bestComb: RcComb.Combination|null = null;
-      let bestNumSeries = Number.POSITIVE_INFINITY;
-      for (const comb of combs) {
-        const numSeries = comb.parallel ? 1 : comb.children.length;
-        const error = Math.abs(comb.value - r);
-        if (error > r * 1e-9) {
-          continue;
-        }
-        if (numSeries < bestNumSeries) {
-          bestNumSeries = numSeries;
-          bestComb = comb;
-        }
-      }
-      retJson.push(bestComb!.toJson());
-    }
-    console.log(JSON.stringify(retJson));
-  }
-
-  return ui;
-}
-
-function makeCapacitorCombinatorUI(): HTMLDivElement {
-  const rangeSelector =
-      new Ui.ValueRangeSelector(RcComb.ComponentType.Capacitor);
-  const targetInput = new Ui.ValueBox('3.14μ');
-  const numElementsInput = new Ui.ValueBox('3');
-  const resultBox = Ui.makeDiv();
-
-  const ui = Ui.makeDiv([
-    Ui.makeH2(getStr('Find Capacitor Combinations')),
-    Ui.makeTable([
-      [getStr('Item'), getStr('Value'), getStr('Unit')],
-      [getStr('E Series'), rangeSelector.seriesSelect, ''],
-      [getStr('Custom Values'), rangeSelector.customValuesInput, 'F'],
-      [getStr('Minimum'), rangeSelector.minResisterInput.inputBox, 'F'],
-      [getStr('Maximum'), rangeSelector.maxResisterInput.inputBox, 'F'],
-      [getStr('Max Elements'), numElementsInput.inputBox, ''],
-      [getStr('Target Value'), targetInput.inputBox, 'F'],
-    ]),
-    resultBox,
-  ]);
-
-  const callback = () => {
-    resultBox.innerHTML = '';
-    try {
-      const custom = rangeSelector.seriesSelect.value === 'custom';
-      Ui.setVisible(Ui.parentTrOf(rangeSelector.customValuesInput)!, custom);
-      Ui.setVisible(
-          Ui.parentTrOf(rangeSelector.minResisterInput.inputBox)!, !custom);
-      Ui.setVisible(
-          Ui.parentTrOf(rangeSelector.maxResisterInput.inputBox)!, !custom);
-
-      const targetValue = targetInput.value;
-      const availableValues = rangeSelector.getAvailableValues(targetValue);
-      const maxElements = numElementsInput.value;
-
-      const start = performance.now();
-
-      let combs: RcComb.Combination[] = [];
-      if (core) {
-        const valueVector = new core.VectorDouble();
-        // let valueVector: core.VectorDouble ;
-        for (const v of availableValues) {
-          valueVector.push_back(v);
-        }
-        const retJson = JSON.parse(core.find_combinations(
-            true, valueVector, targetValue, maxElements));
-        if (retJson.error) {
-          throw new Error(getStr(retJson.error));
-        }
-        for (const combJson of retJson.result) {
-          const comb = RcComb.Combination.fromJson(
-              RcComb.ComponentType.Capacitor, combJson);
-          combs.push(comb);
-        }
-        valueVector.delete();
-      } else {
-        combs = RcComb.findCombinations(
-            RcComb.ComponentType.Capacitor, availableValues, targetValue,
-            maxElements);
-      }
-
-      const end = performance.now();
-      console.log(`Computation time: ${(end - start).toFixed(2)} ms`);
-
-      if (combs.length > 0) {
-        resultBox.appendChild(
-            Ui.makeP(getStr('Found <n> combination(s):', {n: combs.length})))
-        for (const comb of combs) {
-          // resultText += comb.toString() + '\n';
-          resultBox.appendChild(comb.generateSvg(targetValue));
-          resultBox.appendChild(document.createTextNode(' '));
-        }
-      } else {
-        resultBox.appendChild(Ui.makeP(getStr('No combinations found.')))
-      }
-    } catch (e) {
-      resultBox.appendChild(Ui.makeP(`Error: ${(e as Error).message}`));
-    }
-  };
-  rangeSelector.setOnChange(callback);
-  targetInput.setOnChange(callback);
-  numElementsInput.setOnChange(callback);
+  topTopologySelector.addEventListener('change', () => callback());
+  maxDepthInput.addEventListener('change', () => callback());
 
   callback();
 
@@ -231,7 +129,10 @@ function makeDividerCombinatorUI(): HTMLDivElement {
   const targetInput = new Ui.ValueBox('3.3 / 5.0');
   const totalMinBox = new Ui.ValueBox('10k');
   const totalMaxBox = new Ui.ValueBox('100k');
-  const numElementsInput = new Ui.ValueBox('2');
+  const numElementsInput =
+      Ui.makeNumElementInput(RcComb.MAX_DIVIDER_ELEMENTS, 2);
+  const topTopologySelector = Ui.makeTopologySelector();
+  const maxDepthInput = Ui.makeDepthSelector();
   const resultBox = Ui.makeDiv();
 
   const ui = Ui.makeDiv([
@@ -245,6 +146,8 @@ function makeDividerCombinatorUI(): HTMLDivElement {
       [getStr('Minimum'), rangeSelector.minResisterInput.inputBox, 'Ω'],
       [getStr('Maximum'), rangeSelector.maxResisterInput.inputBox, 'Ω'],
       [getStr('Max Elements'), numElementsInput.inputBox, ''],
+      [getStr('Top Topology'), topTopologySelector, ''],
+      [getStr('Max Nests'), maxDepthInput, ''],
       ['R1 + R2 (min)', totalMinBox.inputBox, 'Ω'],
       ['R1 + R2 (max)', totalMaxBox.inputBox, 'Ω'],
       ['R2 / (R1 + R2)', targetInput.inputBox, ''],
@@ -268,6 +171,9 @@ function makeDividerCombinatorUI(): HTMLDivElement {
       const availableValues =
           rangeSelector.getAvailableValues((totalMin + totalMax) / 2);
       const maxElements = numElementsInput.value;
+      const topoConstr =
+          parseInt(topTopologySelector.value) as RcComb.TopologyConstraint;
+      const maxDepth = parseInt(maxDepthInput.value);
 
       const start = performance.now();
 
@@ -279,7 +185,8 @@ function makeDividerCombinatorUI(): HTMLDivElement {
           valueVector.push_back(v);
         }
         const retJson = JSON.parse(core.find_dividers(
-            valueVector, targetValue, totalMin, totalMax, maxElements));
+            valueVector, targetValue, totalMin, totalMax, maxElements,
+            topoConstr, maxDepth));
         if (retJson.error) {
           throw new Error(getStr(retJson.error));
         }
@@ -292,7 +199,7 @@ function makeDividerCombinatorUI(): HTMLDivElement {
       } else {
         combs = RcComb.findDividers(
             RcComb.ComponentType.Resistor, availableValues, targetValue,
-            totalMin, totalMax, maxElements);
+            totalMin, totalMax, maxElements, topoConstr, maxDepth);
       }
 
       const end = performance.now();
@@ -317,6 +224,8 @@ function makeDividerCombinatorUI(): HTMLDivElement {
   rangeSelector.setOnChange(callback);
   targetInput.setOnChange(callback);
   numElementsInput.setOnChange(callback);
+  topTopologySelector.addEventListener('change', () => callback());
+  maxDepthInput.addEventListener('change', () => callback());
   totalMinBox.setOnChange(callback);
   totalMaxBox.setOnChange(callback);
 

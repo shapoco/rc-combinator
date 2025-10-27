@@ -65,6 +65,47 @@ export class ValueRangeSelector {
   }
 }
 
+export class IntegerBox {
+  inputBox = document.createElement('input');
+  onChangeCallback: () => void = () => {};
+
+  constructor(
+      value: number|null = null, min: number = 0, max: number = 9999,
+      public defaultValue: number = 0, placeholder: string = '') {
+    this.inputBox.type = 'number';
+    this.inputBox.min = min.toString();
+    this.inputBox.max = max.toString();
+    this.inputBox.placeholder = placeholder;
+    if (value !== null) {
+      this.inputBox.value = value.toString();
+    }
+  }
+
+  get value() {
+    let text = this.inputBox.value.trim();
+    if (text !== '') {
+      return Math.floor(evalExpr(text));
+    } else {
+      return this.defaultValue;
+    }
+  }
+
+  setOnChange(callback: () => void) {
+    this.onChangeCallback = callback;
+    this.inputBox.addEventListener('input', () => this.onChange());
+    this.inputBox.addEventListener('change', () => this.onChange());
+  }
+
+  onChange() {
+    try {
+      this.inputBox.title = RcComb.formatValue(this.value);
+    } catch (e) {
+      this.inputBox.title = (e as Error).message;
+    }
+    this.onChangeCallback();
+  }
+}
+
 export class ValueBox {
   inputBox = makeTextBox();
   onChangeCallback: () => void = () => {};
@@ -98,6 +139,39 @@ export class ValueBox {
     }
     this.onChangeCallback();
   }
+}
+
+export function makeNumElementInput(max: number, defaultValue: number): IntegerBox {
+  return new IntegerBox(defaultValue, 1, max, max, `(${getStr('No Limit')})`);
+}
+
+export function makeTopologySelector(): HTMLSelectElement {
+  const items = [
+    {
+      value: RcComb.TopologyConstraint.Series.toString(),
+      label: getStr('Series'),
+    },
+    {
+      value: RcComb.TopologyConstraint.Parallel.toString(),
+      label: getStr('Parallel'),
+    },
+    {
+      value: RcComb.TopologyConstraint.NoLimit.toString(),
+      label: getStr('No Limit'),
+    },
+  ];
+  return makeSelectBox(items, RcComb.TopologyConstraint.NoLimit.toString());
+}
+
+export function makeDepthSelector(): HTMLSelectElement {
+  const noLimit = '999';
+  const items = [
+    { value: '1', label: '1' },
+    { value: '2', label: '2' },
+    { value: '3', label: '3' },
+    { value: noLimit, label: getStr('No Limit') },
+  ];
+  return makeSelectBox(items, noLimit);
 }
 
 export function makeBr(): HTMLBRElement {

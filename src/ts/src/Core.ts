@@ -11,10 +11,12 @@ declare interface RccombCore {
        argTypes: string[]|null) => (...args: any[]) => any;
   find_combinations:
       (capacitor: boolean, values: VectorDouble, target_value: number,
-       max_elements: number) => string;
+       max_elements: number, topology_constraint: number,
+       max_depth: number) => string;
   find_dividers:
       (values: VectorDouble, target_ratio: number, total_min: number,
-       total_max: number, max_elements: number) => string;
+       total_max: number, max_elements: number, topology_constraint: number,
+       max_depth: number) => string;
   VectorDouble: new() => VectorDouble;
   //_malloc: (size: number) => number;
   //_free: (ptr: number) => void;

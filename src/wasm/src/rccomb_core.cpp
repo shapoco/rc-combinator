@@ -14,7 +14,8 @@
 using namespace rccomb;
 
 std::string find_combinations(bool capacitor, const std::vector<double>& values,
-                              double target_value, int max_elements) {
+                              double target_value, int max_elements,
+                              int topology_constraint, int max_depth) {
   auto type = capacitor ? ComponentType::Capacitor : ComponentType::Resistor;
   std::vector<value_t> val_vec;
   for (const auto& v : values) {
@@ -26,6 +27,9 @@ std::string find_combinations(bool capacitor, const std::vector<double>& values,
   value_t max = target_value * 2;
   ValueSearchOptions options(type, value_list, min, max, max_elements,
                              target_value);
+  options.topology_constraint =
+      static_cast<topology_constraint_t>(topology_constraint);
+  options.max_depth = max_depth;
 
   std::vector<Combination> combinations;
   auto ret = rccomb::search_combinations(options, combinations);
@@ -47,7 +51,8 @@ std::string find_combinations(bool capacitor, const std::vector<double>& values,
 
 std::string find_dividers(const std::vector<double>& values,
                           double target_ratio, double total_min,
-                          double total_max, int max_elements) {
+                          double total_max, int max_elements,
+                          int topology_constraint, int max_depth) {
   std::vector<value_t> val_vec;
   for (const auto& v : values) {
     val_vec.push_back(static_cast<value_t>(v));
@@ -57,6 +62,9 @@ std::string find_dividers(const std::vector<double>& values,
   DividerSearchOptions options(ComponentType::Resistor, value_list,
                                target_ratio, total_min, total_max,
                                max_elements);
+  options.topology_constraint =
+      static_cast<topology_constraint_t>(topology_constraint);
+  options.max_depth = max_depth;
 
   std::vector<DoubleCombination> combinations;
   auto ret = rccomb::search_dividers(options, combinations);

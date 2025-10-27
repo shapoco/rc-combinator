@@ -22,6 +22,8 @@ struct ValueSearchOptions {
   const value_t min_value;
   const value_t max_value;
   int max_elements;
+  topology_constraint_t topology_constraint = topology_constraint_t::NO_LIMIT;
+  int max_depth = 9999;
   const value_t target;
 
   ValueSearchOptions(ComponentType type, const ValueList& values,
@@ -42,6 +44,8 @@ struct DividerSearchOptions {
   const value_t total_min;
   const value_t total_max;
   int max_elements;
+  topology_constraint_t topology_constraint = topology_constraint_t::NO_LIMIT;
+  int max_depth = 9999;
 
   DividerSearchOptions(ComponentType type, const ValueList& values,
                        value_t target_rat, value_t total_min_val,
@@ -236,6 +240,8 @@ result_t search_combinations(ValueSearchOptions& options,
   value_t best_error = std::numeric_limits<value_t>::infinity();
   int best_num_elems = std::numeric_limits<int>::max();
 
+  const int topo_constr = static_cast<int>(options.topology_constraint);
+
   // 素子数が少ない順に試す
   std::vector<bool> parallels = {false, true};
   for (int num_elems = 1; num_elems <= options.max_elements; num_elems++) {
@@ -247,6 +253,12 @@ result_t search_combinations(ValueSearchOptions& options,
       // 全トポロジーを試す
       auto& topos = get_topologies(num_elems, parallel);
       for (auto& topo : topos) {
+        int t = topo->parallel
+                    ? static_cast<int>(topology_constraint_t::PARALLEL)
+                    : static_cast<int>(topology_constraint_t::SERIES);
+        if (num_elems >= 2 && !(t & topo_constr)) continue;
+        if (topo->depth > options.max_depth) continue;
+
         ValueSearchContext ctx(options.type, options.available_values, topo,
                                options.min_value, options.max_value,
                                options.target);
@@ -308,6 +320,8 @@ result_t search_dividers(DividerSearchOptions& options,
 
   std::vector<Combination> upper_combs;
 
+  const int topo_constr = static_cast<int>(options.topology_constraint);
+
   // 下側の抵抗値を列挙する
   std::vector<bool> parallels = {false, true};
   for (int num_lowers = 1; num_lowers <= options.max_elements; num_lowers++) {
@@ -319,6 +333,11 @@ result_t search_dividers(DividerSearchOptions& options,
       // 全トポロジーを試す
       auto& topos = get_topologies(num_lowers, parallel);
       for (auto& topo : topos) {
+        int t = topo->parallel
+                    ? static_cast<int>(topology_constraint_t::PARALLEL)
+                    : static_cast<int>(topology_constraint_t::SERIES);
+        if (num_lowers >= 2 && !(t & topo_constr)) continue;
+        if (topo->depth > options.max_depth) continue;
         ValueSearchContext vsc(options.type, options.available_values, topo,
                                lower_min, lower_max);
         result_t upper_error = result_t::SUCCESS;
@@ -341,6 +360,8 @@ result_t search_dividers(DividerSearchOptions& options,
           ValueSearchOptions vso(options.type, options.available_values,
                                  upper_min, upper_max, options.max_elements,
                                  target_upper_value);
+          vso.topology_constraint = options.topology_constraint;
+          vso.max_depth = options.max_depth;
           upper_combs.clear();
           result_t ret = search_combinations(vso, upper_combs);
           if (ret != result_t::SUCCESS) {

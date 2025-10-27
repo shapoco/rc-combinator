@@ -20,6 +20,7 @@ class TopologyClass {
   const bool parallel;
   const std::vector<Topology> children;
   const int num_leafs;
+  const int depth;
   const hash_t hash;
 
  private:
@@ -32,6 +33,20 @@ class TopologyClass {
         total += child->num_leafs;
       }
       return total;
+    }
+  }
+
+  inline static int count_depth(const std::vector<Topology>& children) {
+    if (children.empty()) {
+      return 0;
+    } else {
+      int max = 0;
+      for (const auto& child : children) {
+        if (max < child->depth) {
+          max = child->depth;
+        }
+      }
+      return max + 1;
     }
   }
 
@@ -56,6 +71,7 @@ class TopologyClass {
       : parallel(parallel),
         children(children),
         num_leafs(count_leafs(children)),
+        depth(count_depth(children)),
         hash(compute_hash(parallel, children)) {}
 
   inline bool is_leaf() const { return num_leafs == 1; }
@@ -112,8 +128,7 @@ std::vector<Topology>& get_topologies(int num_leafs, bool parallel) {
   if (!cache.contains(key)) {
     if (num_leafs == 1) {
       // 葉ノードの生成
-      const auto leaf =
-          create_topology_node(parallel, std::vector<Topology>{});
+      const auto leaf = create_topology_node(parallel, std::vector<Topology>{});
       const std::vector<Topology> nodes = {leaf};
       cache[key] = nodes;
     } else if (num_leafs > 1) {

@@ -28,6 +28,9 @@ const texts: {[key: string]: {[key: string]: string}} = {
     '<s> Approximation': '<s> 近似',
     'Error': '誤差',
     'No Error': '誤差なし',
+    'No Limit': '制限なし',
+    'Top Topology': '最上位トポロジー',
+    'Max Nests': '最大ネスト数',
   },
 };
 

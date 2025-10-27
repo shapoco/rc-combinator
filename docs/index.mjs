@@ -144,7 +144,10 @@ const texts = { "ja": {
 	"Ideal Value": "理想値",
 	"<s> Approximation": "<s> 近似",
 	"Error": "誤差",
-	"No Error": "誤差なし"
+	"No Error": "誤差なし",
+	"No Limit": "制限なし",
+	"Top Topology": "最上位トポロジー",
+	"Max Nests": "最大ネスト数"
 } };
 function getStr(key, vars) {
 	let ret = key;
@@ -220,37 +223,44 @@ let ComponentType = /* @__PURE__ */ function(ComponentType$1) {
 	ComponentType$1[ComponentType$1["Capacitor"] = 1] = "Capacitor";
 	return ComponentType$1;
 }({});
+let TopologyConstraint = /* @__PURE__ */ function(TopologyConstraint$1) {
+	TopologyConstraint$1[TopologyConstraint$1["Series"] = 1] = "Series";
+	TopologyConstraint$1[TopologyConstraint$1["Parallel"] = 2] = "Parallel";
+	TopologyConstraint$1[TopologyConstraint$1["NoLimit"] = 3] = "NoLimit";
+	return TopologyConstraint$1;
+}({});
+const MAX_COMBINATION_ELEMENTS = 10;
+const MAX_DIVIDER_ELEMENTS = 5;
 var TopologyNode = class {
-	complexity_ = -1;
+	num_leafs = -1;
+	depth = -1;
 	hash = -1;
 	constructor(iLeft, iRight, parallel, children) {
 		this.iLeft = iLeft;
 		this.iRight = iRight;
 		this.parallel = parallel;
 		this.children = children;
-		if (children.length === 0) this.hash = 1;
-		else {
+		if (children.length === 0) {
+			this.hash = 1;
+			this.depth = 0;
+			this.num_leafs = 1;
+		} else {
 			const POLY = 2149580803;
 			let lfsr = parallel ? 2863311530 : 1431655765;
+			this.num_leafs = 0;
 			for (const child of children) {
 				lfsr ^= child.hash;
 				const msb = (lfsr & 2147483648) !== 0;
 				lfsr = (lfsr & 2147483647) << 1;
 				if (msb) lfsr ^= POLY;
+				this.num_leafs += child.num_leafs;
+				this.depth = Math.max(this.depth, child.depth + 1);
 			}
 			this.hash = lfsr;
 		}
 	}
 	get isLeaf() {
 		return this.iLeft + 1 >= this.iRight;
-	}
-	get complexity() {
-		if (this.complexity_ < 0) if (this.isLeaf) this.complexity_ = 1;
-		else {
-			this.complexity_ = 0;
-			for (const child of this.children) this.complexity_ += child.complexity;
-		}
-		return this.complexity_;
 	}
 };
 const topologyMemo = /* @__PURE__ */ new Map();
@@ -540,12 +550,12 @@ var DividerCombination = class DividerCombination {
 		return new DividerCombination(uppers, lowers, ratio);
 	}
 };
-function findCombinations(cType, values, targetValue, maxElements) {
+function findCombinations(cType, values, targetValue, maxElements, topoConstr, maxDepth) {
 	const epsilon = targetValue * 1e-9;
 	const retMin = targetValue / 2;
 	const retMax = targetValue * 2;
-	const numComb = Math.pow(values.length, maxElements);
-	if (maxElements > 10 || numComb > 1e6) throw new Error(getStr("The search space is too large."));
+	const numValues = topoConstr === TopologyConstraint.NoLimit ? values.length : values.length / 2;
+	if (maxElements > MAX_COMBINATION_ELEMENTS || Math.pow(numValues, maxElements) > 1e6) throw new Error(getStr("The search space is too large."));
 	let bestError = Number.POSITIVE_INFINITY;
 	let bestCombinations = [];
 	for (let numElem = 1; numElem <= maxElements; numElem++) {
@@ -553,6 +563,9 @@ function findCombinations(cType, values, targetValue, maxElements) {
 		const indices = new Array(numElem).fill(0);
 		while (indices[numElem - 1] < values.length) {
 			for (const topo of topos) {
+				const t = topo.parallel ? TopologyConstraint.Parallel : TopologyConstraint.Series;
+				if (numElem >= 2 && !(t & topoConstr)) continue;
+				if (topo.depth > maxDepth) continue;
 				const value = calcValue(cType, values, indices, topo, null, retMin, retMax);
 				if (isNaN(value)) continue;
 				const error = Math.abs(value - targetValue);
@@ -569,10 +582,11 @@ function findCombinations(cType, values, targetValue, maxElements) {
 	}
 	return selectSimplestCombinations(bestCombinations);
 }
-function findDividers(cType, values, targetRatio, totalMin, totalMax, maxElements) {
+function findDividers(cType, values, targetRatio, totalMin, totalMax, maxElements, topoConstr, maxDepth) {
 	const epsilon = 1e-9;
-	const numComb = Math.pow(values.length, 2 * maxElements);
-	if (maxElements > 10 || numComb > 1e7) throw new Error(getStr("The search space is too large."));
+	const numValues = topoConstr === TopologyConstraint.NoLimit ? values.length : values.length / 2;
+	const numComb = Math.pow(numValues, 2 * maxElements);
+	if (maxElements > MAX_DIVIDER_ELEMENTS || numComb > 1e7) throw new Error(getStr("The search space is too large."));
 	let bestError = Number.POSITIVE_INFINITY;
 	let bestCombinations = [];
 	const combMemo = /* @__PURE__ */ new Map();
@@ -581,6 +595,9 @@ function findDividers(cType, values, targetRatio, totalMin, totalMax, maxElement
 		const indices = new Array(numElem).fill(0);
 		while (indices[numElem - 1] < values.length) {
 			for (const topo of topos) {
+				const t = topo.parallel ? TopologyConstraint.Parallel : TopologyConstraint.Series;
+				if (numElem >= 2 && !(t & topoConstr)) continue;
+				if (topo.depth > maxDepth) continue;
 				const lowerValue = calcValue(cType, values, indices, topo, null, 0, totalMax);
 				if (isNaN(lowerValue)) continue;
 				const totalTargetValue = lowerValue / targetRatio;
@@ -592,7 +609,7 @@ function findDividers(cType, values, targetRatio, totalMin, totalMax, maxElement
 					combMemo.get(lowerValue)?.lower.push(lowerComb$1);
 					continue;
 				}
-				const upperCombs = findCombinations(cType, values, upperTargetValue, maxElements);
+				const upperCombs = findCombinations(cType, values, upperTargetValue, maxElements, topoConstr, maxDepth);
 				if (upperCombs.length === 0) continue;
 				const ratio = lowerValue / (upperCombs[0].value + lowerValue);
 				const error = Math.abs(ratio - targetRatio);
@@ -628,7 +645,7 @@ function calcValue(cType, values, indices, topo, comb = null, min = 0, max = Num
 	if (comb) {
 		comb.cType = cType;
 		comb.parallel = topo.parallel;
-		comb.complexity = topo.complexity;
+		comb.complexity = topo.num_leafs;
 	}
 	if (topo.isLeaf) {
 		const val$1 = values[indices[topo.iLeft]];
@@ -1063,6 +1080,36 @@ var ValueRangeSelector = class {
 		this.maxResisterInput.setOnChange(callback);
 	}
 };
+var IntegerBox = class {
+	inputBox = document.createElement("input");
+	onChangeCallback = () => {};
+	constructor(value = null, min = 0, max = 9999, defaultValue = 0, placeholder = "") {
+		this.defaultValue = defaultValue;
+		this.inputBox.type = "number";
+		this.inputBox.min = min.toString();
+		this.inputBox.max = max.toString();
+		this.inputBox.placeholder = placeholder;
+		if (value !== null) this.inputBox.value = value.toString();
+	}
+	get value() {
+		let text = this.inputBox.value.trim();
+		if (text !== "") return Math.floor(evalExpr(text));
+		else return this.defaultValue;
+	}
+	setOnChange(callback) {
+		this.onChangeCallback = callback;
+		this.inputBox.addEventListener("input", () => this.onChange());
+		this.inputBox.addEventListener("change", () => this.onChange());
+	}
+	onChange() {
+		try {
+			this.inputBox.title = formatValue(this.value);
+		} catch (e) {
+			this.inputBox.title = e.message;
+		}
+		this.onChangeCallback();
+	}
+};
 var ValueBox = class {
 	inputBox = makeTextBox();
 	onChangeCallback = () => {};
@@ -1091,6 +1138,46 @@ var ValueBox = class {
 		this.onChangeCallback();
 	}
 };
+function makeNumElementInput(max, defaultValue) {
+	return new IntegerBox(defaultValue, 1, max, max, `(${getStr("No Limit")})`);
+}
+function makeTopologySelector() {
+	return makeSelectBox([
+		{
+			value: TopologyConstraint.Series.toString(),
+			label: getStr("Series")
+		},
+		{
+			value: TopologyConstraint.Parallel.toString(),
+			label: getStr("Parallel")
+		},
+		{
+			value: TopologyConstraint.NoLimit.toString(),
+			label: getStr("No Limit")
+		}
+	], TopologyConstraint.NoLimit.toString());
+}
+function makeDepthSelector() {
+	const noLimit = "999";
+	return makeSelectBox([
+		{
+			value: "1",
+			label: "1"
+		},
+		{
+			value: "2",
+			label: "2"
+		},
+		{
+			value: "3",
+			label: "3"
+		},
+		{
+			value: noLimit,
+			label: getStr("No Limit")
+		}
+	], noLimit);
+}
 function makeH2(label) {
 	const elm = document.createElement("h2");
 	elm.textContent = label;
@@ -1184,24 +1271,27 @@ function setVisible(elem, visible) {
 
 //#endregion
 //#region src/main.ts
-const resCombHeader = makeH2(getStr("Find Resistor Combinations"));
-const resCombInputBox = new ValueBox("5.1k");
 let core = null;
 async function main(container, wasmCore) {
 	if (wasmCore) core = wasmCore;
 	container.appendChild(makeDiv([
-		makeResistorCombinatorUI(),
+		makeCombinatorUI(ComponentType.Resistor),
 		makeDividerCombinatorUI(),
-		makeCapacitorCombinatorUI(),
+		makeCombinatorUI(ComponentType.Capacitor),
 		makeCurrentLimitingUI()
 	]));
 }
-function makeResistorCombinatorUI() {
-	const rangeSelector = new ValueRangeSelector(ComponentType.Resistor);
-	const numElementsInput = new ValueBox("3");
+function makeCombinatorUI(type) {
+	const cap = type === ComponentType.Capacitor;
+	const rangeSelector = new ValueRangeSelector(type);
+	const numElementsInput = makeNumElementInput(MAX_COMBINATION_ELEMENTS, 3);
+	const topTopologySelector = makeTopologySelector();
+	const maxDepthInput = makeDepthSelector();
 	const resultBox = makeDiv();
+	const resCombInputBox = new ValueBox(cap ? "3.14μ" : "5.1k");
+	const unit = cap ? "F" : "Ω";
 	const ui = makeDiv([
-		resCombHeader,
+		makeH2(getStr(cap ? "Find Capacitor Combinations" : "Find Resistor Combinations")),
 		makeTable([
 			[
 				getStr("Item"),
@@ -1216,17 +1306,17 @@ function makeResistorCombinatorUI() {
 			[
 				getStr("Custom Values"),
 				rangeSelector.customValuesInput,
-				"Ω"
+				unit
 			],
 			[
 				getStr("Minimum"),
 				rangeSelector.minResisterInput.inputBox,
-				"Ω"
+				unit
 			],
 			[
 				getStr("Maximum"),
 				rangeSelector.maxResisterInput.inputBox,
-				"Ω"
+				unit
 			],
 			[
 				getStr("Max Elements"),
@@ -1234,9 +1324,19 @@ function makeResistorCombinatorUI() {
 				""
 			],
 			[
+				getStr("Top Topology"),
+				topTopologySelector,
+				""
+			],
+			[
+				getStr("Max Nests"),
+				maxDepthInput,
+				""
+			],
+			[
 				getStr("Target Value"),
 				resCombInputBox.inputBox,
-				"Ω"
+				unit
 			]
 		]),
 		resultBox
@@ -1251,19 +1351,21 @@ function makeResistorCombinatorUI() {
 			const targetValue = resCombInputBox.value;
 			const availableValues = rangeSelector.getAvailableValues(targetValue);
 			const maxElements = numElementsInput.value;
+			const topoConstr = parseInt(topTopologySelector.value);
+			const maxDepth = parseInt(maxDepthInput.value);
 			const start = performance.now();
 			let combs = [];
 			if (core) {
 				const valueVector = new core.VectorDouble();
 				for (const v of availableValues) valueVector.push_back(v);
-				const retJson = JSON.parse(core.find_combinations(false, valueVector, targetValue, maxElements));
+				const retJson = JSON.parse(core.find_combinations(cap, valueVector, targetValue, maxElements, topoConstr, maxDepth));
 				if (retJson.error) throw new Error(getStr(retJson.error));
 				for (const combJson of retJson.result) {
-					const comb = Combination.fromJson(ComponentType.Resistor, combJson);
+					const comb = Combination.fromJson(type, combJson);
 					combs.push(comb);
 				}
 				valueVector.delete();
-			} else combs = findCombinations(ComponentType.Resistor, availableValues, targetValue, maxElements);
+			} else combs = findCombinations(type, availableValues, targetValue, maxElements, topoConstr, maxDepth);
 			const end = performance.now();
 			console.log(`Computation time: ${(end - start).toFixed(2)} ms`);
 			if (combs.length > 0) {
@@ -1280,94 +1382,8 @@ function makeResistorCombinatorUI() {
 	rangeSelector.setOnChange(callback);
 	resCombInputBox.setOnChange(callback);
 	numElementsInput.setOnChange(callback);
-	callback();
-	return ui;
-}
-function makeCapacitorCombinatorUI() {
-	const rangeSelector = new ValueRangeSelector(ComponentType.Capacitor);
-	const targetInput = new ValueBox("3.14μ");
-	const numElementsInput = new ValueBox("3");
-	const resultBox = makeDiv();
-	const ui = makeDiv([
-		makeH2(getStr("Find Capacitor Combinations")),
-		makeTable([
-			[
-				getStr("Item"),
-				getStr("Value"),
-				getStr("Unit")
-			],
-			[
-				getStr("E Series"),
-				rangeSelector.seriesSelect,
-				""
-			],
-			[
-				getStr("Custom Values"),
-				rangeSelector.customValuesInput,
-				"F"
-			],
-			[
-				getStr("Minimum"),
-				rangeSelector.minResisterInput.inputBox,
-				"F"
-			],
-			[
-				getStr("Maximum"),
-				rangeSelector.maxResisterInput.inputBox,
-				"F"
-			],
-			[
-				getStr("Max Elements"),
-				numElementsInput.inputBox,
-				""
-			],
-			[
-				getStr("Target Value"),
-				targetInput.inputBox,
-				"F"
-			]
-		]),
-		resultBox
-	]);
-	const callback = () => {
-		resultBox.innerHTML = "";
-		try {
-			const custom = rangeSelector.seriesSelect.value === "custom";
-			setVisible(parentTrOf(rangeSelector.customValuesInput), custom);
-			setVisible(parentTrOf(rangeSelector.minResisterInput.inputBox), !custom);
-			setVisible(parentTrOf(rangeSelector.maxResisterInput.inputBox), !custom);
-			const targetValue = targetInput.value;
-			const availableValues = rangeSelector.getAvailableValues(targetValue);
-			const maxElements = numElementsInput.value;
-			const start = performance.now();
-			let combs = [];
-			if (core) {
-				const valueVector = new core.VectorDouble();
-				for (const v of availableValues) valueVector.push_back(v);
-				const retJson = JSON.parse(core.find_combinations(true, valueVector, targetValue, maxElements));
-				if (retJson.error) throw new Error(getStr(retJson.error));
-				for (const combJson of retJson.result) {
-					const comb = Combination.fromJson(ComponentType.Capacitor, combJson);
-					combs.push(comb);
-				}
-				valueVector.delete();
-			} else combs = findCombinations(ComponentType.Capacitor, availableValues, targetValue, maxElements);
-			const end = performance.now();
-			console.log(`Computation time: ${(end - start).toFixed(2)} ms`);
-			if (combs.length > 0) {
-				resultBox.appendChild(makeP(getStr("Found <n> combination(s):", { n: combs.length })));
-				for (const comb of combs) {
-					resultBox.appendChild(comb.generateSvg(targetValue));
-					resultBox.appendChild(document.createTextNode(" "));
-				}
-			} else resultBox.appendChild(makeP(getStr("No combinations found.")));
-		} catch (e) {
-			resultBox.appendChild(makeP(`Error: ${e.message}`));
-		}
-	};
-	rangeSelector.setOnChange(callback);
-	targetInput.setOnChange(callback);
-	numElementsInput.setOnChange(callback);
+	topTopologySelector.addEventListener("change", () => callback());
+	maxDepthInput.addEventListener("change", () => callback());
 	callback();
 	return ui;
 }
@@ -1376,7 +1392,9 @@ function makeDividerCombinatorUI() {
 	const targetInput = new ValueBox("3.3 / 5.0");
 	const totalMinBox = new ValueBox("10k");
 	const totalMaxBox = new ValueBox("100k");
-	const numElementsInput = new ValueBox("2");
+	const numElementsInput = makeNumElementInput(MAX_DIVIDER_ELEMENTS, 2);
+	const topTopologySelector = makeTopologySelector();
+	const maxDepthInput = makeDepthSelector();
 	const resultBox = makeDiv();
 	const ui = makeDiv([
 		makeH2(getStr("Find Voltage Dividers")),
@@ -1413,6 +1431,16 @@ function makeDividerCombinatorUI() {
 				""
 			],
 			[
+				getStr("Top Topology"),
+				topTopologySelector,
+				""
+			],
+			[
+				getStr("Max Nests"),
+				maxDepthInput,
+				""
+			],
+			[
 				"R1 + R2 (min)",
 				totalMinBox.inputBox,
 				"Ω"
@@ -1442,19 +1470,21 @@ function makeDividerCombinatorUI() {
 			const totalMax = totalMaxBox.value;
 			const availableValues = rangeSelector.getAvailableValues((totalMin + totalMax) / 2);
 			const maxElements = numElementsInput.value;
+			const topoConstr = parseInt(topTopologySelector.value);
+			const maxDepth = parseInt(maxDepthInput.value);
 			const start = performance.now();
 			let combs = [];
 			if (core) {
 				const valueVector = new core.VectorDouble();
 				for (const v of availableValues) valueVector.push_back(v);
-				const retJson = JSON.parse(core.find_dividers(valueVector, targetValue, totalMin, totalMax, maxElements));
+				const retJson = JSON.parse(core.find_dividers(valueVector, targetValue, totalMin, totalMax, maxElements, topoConstr, maxDepth));
 				if (retJson.error) throw new Error(getStr(retJson.error));
 				for (const combJson of retJson.result) {
 					const comb = DividerCombination.fromJson(ComponentType.Resistor, combJson);
 					combs.push(comb);
 				}
 				valueVector.delete();
-			} else combs = findDividers(ComponentType.Resistor, availableValues, targetValue, totalMin, totalMax, maxElements);
+			} else combs = findDividers(ComponentType.Resistor, availableValues, targetValue, totalMin, totalMax, maxElements, topoConstr, maxDepth);
 			const end = performance.now();
 			console.log(`Computation time: ${(end - start).toFixed(2)} ms`);
 			if (combs.length > 0) {
@@ -1471,6 +1501,8 @@ function makeDividerCombinatorUI() {
 	rangeSelector.setOnChange(callback);
 	targetInput.setOnChange(callback);
 	numElementsInput.setOnChange(callback);
+	topTopologySelector.addEventListener("change", () => callback());
+	maxDepthInput.addEventListener("change", () => callback());
 	totalMinBox.setOnChange(callback);
 	totalMaxBox.setOnChange(callback);
 	callback();

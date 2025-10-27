@@ -35,6 +35,12 @@ enum class result_t {
   NEGATIVE_VALUE,
 };
 
+enum class topology_constraint_t {
+  SERIES = 1,
+  PARALLEL = 2,
+  NO_LIMIT = 3,
+};
+
 static inline const char* result_to_string(result_t res) {
   switch (res) {
     case result_t::SUCCESS:
