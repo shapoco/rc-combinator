@@ -1,6 +1,6 @@
 .PHONY: all build clean
 
-REPO_DIR := ../..
+REPO_DIR := $(shell cd ../../.. ; pwd)
 
 BUILD_DIR := build
 

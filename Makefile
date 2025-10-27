@@ -7,8 +7,8 @@ BASE_URL := https://shapoco.github.io/rc-combinator/
 
 BIN_DIR := $(REPO_DIR)/bin
 APP_DIST_DIR := $(REPO_DIR)/docs
-APP_TS_DIR := $(REPO_DIR)/src/ts
-APP_WASM_DIR := $(REPO_DIR)/src/wasm
+APP_TS_DIR := $(REPO_DIR)/src/ui/ts
+APP_WASM_DIR := $(REPO_DIR)/src/lib/cpp_wasm
 
 CMD_UPDATE_POSTFIX := python3 $(BIN_DIR)/update_url_postfix.py
 
@@ -21,7 +21,7 @@ build:
 update_postfix:
 	$(CMD_UPDATE_POSTFIX) --base_dir $(APP_DIST_DIR) --base_url $(BASE_URL) --file rccomb_core.js
 	$(CMD_UPDATE_POSTFIX) --base_dir $(APP_DIST_DIR) --base_url $(BASE_URL) --file clock/index.html
-	$(CMD_UPDATE_POSTFIX) --base_dir $(APP_DIST_DIR) --base_url $(BASE_URL) --file wasm-beta.html
+	$(CMD_UPDATE_POSTFIX) --base_dir $(APP_DIST_DIR) --base_url $(BASE_URL) --file nowasm.html
 	$(CMD_UPDATE_POSTFIX) --base_dir $(APP_DIST_DIR) --base_url $(BASE_URL) --file index.html
 
 clean:

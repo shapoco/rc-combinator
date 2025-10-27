@@ -1,6 +1,6 @@
 .PHONY: all build clean
 
-REPO_DIR := $(shell cd ../.. ; pwd)
+REPO_DIR := $(shell cd ../../.. ; pwd)
 
 APP_NAME := rc-combinator
 APP_TS_DIR := .
