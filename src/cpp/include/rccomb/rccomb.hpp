@@ -11,7 +11,7 @@
 #include "rccomb/common.hpp"
 #include "rccomb/double_combination.hpp"
 #include "rccomb/search_state.hpp"
-#include "rccomb/topology_node.hpp"
+#include "rccomb/topology.hpp"
 #include "rccomb/value_list.hpp"
 
 namespace rccomb {
@@ -73,7 +73,7 @@ struct ValueSearchContext {
   bool aborted = false;
 
   ValueSearchContext(ComponentType type, const ValueList& values,
-                     TopologyNode topology, value_t min = 0,
+                     Topology topology, value_t min = 0,
                      value_t max = VALUE_POSITIVE_INFINITY,
                      value_t target = VALUE_NONE)
       : type(type), available_values(values) {
@@ -88,6 +88,7 @@ struct ValueSearchContext {
 
 static void update_target_of_next_brother_of(SearchState st);
 
+// 探索木の葉にひとつずつ値を設定して探索
 template <class callback_t>
 void search_combinations_recursive(ValueSearchContext& ctx, int pos,
                                    const callback_t& callback) {
@@ -100,18 +101,14 @@ void search_combinations_recursive(ValueSearchContext& ctx, int pos,
 
   bool last = pos + 1 >= ctx.num_elements;
 
-  value_t nearest = VALUE_NONE;
-
   int count = 0;
   const value_t* values = nullptr;
   if (value_is_valid(st->target)) {
     // ターゲット値が指定されている場合は最も近い値だけを試す
-    nearest = ctx.available_values.get_nearest(st->target);
-    if (nearest < min || max < nearest) {
+    values = ctx.available_values.get_nearest(st->target, &count);
+    if (values[count - 1] < min || max < values[0]) {
       return;
     }
-    values = &nearest;
-    count = 1;
   } else {
     values = ctx.available_values.get_values(min, max, &count);
   }
@@ -121,15 +118,34 @@ void search_combinations_recursive(ValueSearchContext& ctx, int pos,
     st->value = values[i];
 
     // 親ノードを辿って値を更新
-    auto younguest = st;
-    while (!younguest->is_root() && younguest->is_last_child()) {
-      younguest = younguest->parent;
-      younguest->value = younguest->sum();
-    }
+    auto child = st;
+    while (!child->is_root()) {
+      auto parent = child->parent;
 
-    // 枝刈り
-    // (次の葉ノードとそれを含む親ノードの target/min/max を更新)
-    update_target_of_next_brother_of(younguest);
+      // 兄ノードの積算値に自ノードの値を加算
+      auto prev = child->prev_brother;
+      child->accum = prev ? prev->accum : 0;
+      if (parent->inv_sum) {
+        child->accum += 1 / child->value;
+      } else {
+        child->accum += child->value;
+      }
+
+      if (child->is_last_child()) {
+        // 兄弟全部の積算値が揃ったら親ノードの値を更新
+        if (parent->inv_sum) {
+          parent->value = 1 / child->accum;
+        } else {
+          parent->value = child->accum;
+        }
+      } else {
+        // 弟ノードの目標値と値域を更新
+        update_target_of_next_brother_of(child);
+        break;
+      }
+
+      child = parent;
+    }
 
     if (last) {
       // 全ての葉が埋まったらコールバック
@@ -158,9 +174,9 @@ static void update_target_of_next_brother_of(SearchState st) {
   auto parent = st->parent;
   value_t parent_min = parent->min;
   value_t parent_max = parent->max;
-  value_t partial_val = parent->partial_sum(st->id, false);
   value_t brother_min = 0;
   value_t brother_max = VALUE_POSITIVE_INFINITY;
+  value_t partial_val = parent->inv_sum ? (1 / st->accum) : st->accum;
   if (parent->inv_sum) {
     // 並列和
     if (brother->is_last_child()) {
@@ -205,6 +221,7 @@ static void update_target_of_next_brother_of(SearchState st) {
 
 static void filter_unnormalized_combinations(std::vector<Combination>& combs);
 
+// 合成抵抗・合成容量の探索
 result_t search_combinations(ValueSearchOptions& options,
                              std::vector<Combination>& best_combs) {
   // 探索空間の大きさをチェック
@@ -217,7 +234,7 @@ result_t search_combinations(ValueSearchOptions& options,
   const value_t epsilon = options.target / 1e9;
 
   value_t best_error = std::numeric_limits<value_t>::infinity();
-  int best_leaf_count = std::numeric_limits<int>::max();
+  int best_num_elems = std::numeric_limits<int>::max();
 
   // 素子数が少ない順に試す
   std::vector<bool> parallels = {false, true};
@@ -227,19 +244,18 @@ result_t search_combinations(ValueSearchOptions& options,
       // 1 素子の場合は直列のみ探索
       if (num_elems == 1 && parallel) continue;
 
-      const auto topos = get_topologies(num_elems, parallel);
       // 全トポロジーを試す
+      const auto& topos = get_topologies(num_elems, parallel);
       for (const auto& topo : topos) {
         ValueSearchContext ctx(options.type, options.available_values, topo,
                                options.min_value, options.max_value,
                                options.target);
         const auto cb = [&](ValueSearchContext& ctx, value_t value) {
           const auto error = std::abs(value - options.target);
-          const int num_leafs = ctx.root_state->topology->num_leafs;
           if (error < best_error - epsilon) {
             best_combs.clear();
           }
-          if (error < best_error + epsilon && num_leafs <= best_leaf_count) {
+          if (error < best_error + epsilon && num_elems <= best_num_elems) {
             best_error = error;
             best_combs.push_back(ctx.root_state->bake(options.type));
           }
@@ -257,9 +273,17 @@ result_t search_combinations(ValueSearchOptions& options,
   // 重複回避のため正規化されているものだけを残す
   filter_unnormalized_combinations(best_combs);
 
+  for (auto& comb : best_combs) {
+    result_t ret = comb->verify();
+    if (ret != result_t::SUCCESS) {
+      return ret;
+    }
+  }
+
   return result_t::SUCCESS;
 }
 
+// 分圧抵抗の探索
 result_t search_dividers(DividerSearchOptions& options,
                          std::vector<DoubleCombination>& best_combs) {
   const value_t epsilon = 1e-9;
@@ -284,6 +308,7 @@ result_t search_dividers(DividerSearchOptions& options,
 
   std::vector<Combination> upper_combs;
 
+  // 下側の抵抗値を列挙する
   std::vector<bool> parallels = {false, true};
   for (int num_lowers = 1; num_lowers <= options.max_elements; num_lowers++) {
     //  並列・直列パターンを全部試す
@@ -291,6 +316,7 @@ result_t search_dividers(DividerSearchOptions& options,
       // 1 素子の場合は直列のみ探索
       if (num_lowers == 1 && parallel) continue;
 
+      // 全トポロジーを試す
       const auto topos = get_topologies(num_lowers, parallel);
       for (const auto& topo : topos) {
         ValueSearchContext vsc(options.type, options.available_values, topo,
@@ -311,6 +337,7 @@ result_t search_dividers(DividerSearchOptions& options,
             return;
           }
 
+          // 下側の抵抗値に対応する上側の抵抗を列挙する
           ValueSearchOptions vso(options.type, options.available_values,
                                  upper_min, upper_max, options.max_elements,
                                  target_upper_value);
@@ -361,7 +388,12 @@ result_t search_dividers(DividerSearchOptions& options,
   for (auto& comb : best_combs) {
     filter_unnormalized_combinations(comb->uppers);
     filter_unnormalized_combinations(comb->lowers);
+    result_t ret = comb->verify();
+    if (ret != result_t::SUCCESS) {
+      return ret;
+    }
   }
+
   return result_t::SUCCESS;
 }
 

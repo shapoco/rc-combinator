@@ -9,7 +9,7 @@
 
 #include "rccomb/combination.hpp"
 #include "rccomb/common.hpp"
-#include "rccomb/topology_node.hpp"
+#include "rccomb/topology.hpp"
 
 namespace rccomb {
 
@@ -19,75 +19,109 @@ using SearchState = std::shared_ptr<SearchStateClass>;
 class SearchStateClass {
  public:
   const uint32_t id;
-  const TopologyNode topology;
+  const Topology topology;
   bool inv_sum;
   const bool is_finisher;
 
   SearchState parent = nullptr;
   SearchState first_child = nullptr;
+  SearchState prev_brother = nullptr;
   SearchState next_brother = nullptr;
 
+  value_t accum = 0;
   value_t value = 0;
   value_t target = VALUE_NONE;
   value_t min = 0;
   value_t max = VALUE_POSITIVE_INFINITY;
 
-  SearchStateClass(const TopologyNode& topo, bool inv_sum, bool is_finisher)
+  SearchStateClass(const Topology& topo, bool inv_sum, bool is_finisher)
       : id(generate_object_id()),
         topology(topo),
         inv_sum(inv_sum),
         is_finisher(is_finisher) {}
 
   inline bool is_leaf() const { return !first_child; }
+  inline bool is_first_child() const { return !prev_brother; }
   inline bool is_last_child() const { return !next_brother; }
   inline bool is_root() const { return !parent; }
 
-  inline value_t sum() const { return partial_sum(0, false); }
-  value_t partial_sum(uint32_t end_id, bool end_exclusive) const;
   void update_min_max(value_t min, value_t max);
 
   Combination bake(ComponentType type) const;
-
-#ifdef RCCOMB_DEBUG
-  inline std::string to_string() const {
-    if (is_leaf()) {
-      return std::to_string(value);
-    } else {
-      std::string s;
-      auto child = first_child;
-      while (child) {
-        if (child->is_leaf()) {
-          s += child->to_string();
-        } else {
-          s += "(" + child->to_string() + ")";
-        }
-        if (child->next_brother) {
-          s += topology->parallel ? "||" : "--";
-        }
-        child = child->next_brother;
-      }
-      s += "==>" + std::to_string(value);
-      return s;
-    }
-  }
-#endif
+  std::string to_string() const;
 };
 
-static inline SearchState create_search_state(const TopologyNode& topo,
+static inline SearchState create_search_state(const Topology& topo,
                                               bool inv_sum, bool is_finisher) {
   return std::make_shared<SearchStateClass>(topo, inv_sum, is_finisher);
 }
 
 SearchState build_search_state_tree(ComponentType type,
                                     std::vector<SearchState>& leafs,
-                                    TopologyNode node, bool is_finisher = true);
+                                    Topology node, bool is_finisher = true);
 
 #ifdef RCCOMB_IMPLEMENTATION
+
+// このノードとその長男ノードに再帰的に min/max を設定
+void SearchStateClass::update_min_max(value_t min, value_t max) {
+  if (min <= 0) min = 0;
+  if (max <= 0) max = 0;
+  if (max < min) max = min;
+
+  auto st = this;
+
+  min -= min / 1e9;
+  max += max / 1e9;
+
+  while (st) {
+    st->min = min;
+    st->max = max;
+    if (st->inv_sum) {
+      max = VALUE_POSITIVE_INFINITY;
+    } else {
+      min = 0;
+    }
+    st = st->first_child.get();
+  }
+}
+
+// 検索結果を Combination に変換
+Combination SearchStateClass::bake(ComponentType type) const {
+  std::vector<Combination> child_combs;
+  auto child = this->first_child;
+  while (child) {
+    child_combs.push_back(child->bake(type));
+    child = child->next_brother;
+  }
+  return create_combination(this->topology, type, child_combs, this->value);
+}
+
+std::string SearchStateClass::to_string() const {
+  if (is_leaf()) {
+    return std::to_string(value);
+  } else {
+    std::string s;
+    auto child = first_child;
+    while (child) {
+      if (child->is_leaf()) {
+        s += child->to_string();
+      } else {
+        s += "(" + child->to_string() + ")";
+      }
+      if (child->next_brother) {
+        s += topology->parallel ? "//" : "--";
+      }
+      child = child->next_brother;
+    }
+    s += "==>" + std::to_string(value);
+    return s;
+  }
+}
 
 // トポロジの木から検索用作業オブジェクトの木を生成
 SearchState build_search_state_tree(ComponentType type,
                                     std::vector<SearchState>& leafs,
-                                    TopologyNode node, bool is_finisher) {
+                                    Topology node, bool is_finisher) {
   bool inv_sum;
   if (type == ComponentType::Resistor) {
     inv_sum = node->parallel;
@@ -114,66 +148,13 @@ SearchState build_search_state_tree(ComponentType type,
 
       if (prev_brother) {
         prev_brother->next_brother = child_st;
+        child_st->prev_brother = prev_brother;
       }
       prev_brother = child_st;
     }
   }
 
   return st;
-}
-
-value_t SearchStateClass::partial_sum(uint32_t end_id,
-                                      bool end_exclusive) const {
-  value_t accum = 0;
-  auto child = this->first_child;
-  while (child) {
-    if (end_exclusive && child->id == end_id) {
-      break;
-    }
-    if (inv_sum) {
-      accum += 1.0 / child->value;
-    } else {
-      accum += child->value;
-    }
-    if (!end_exclusive && child->id == end_id) {
-      break;
-    }
-    child = child->next_brother;
-  }
-  return inv_sum ? (1.0 / accum) : accum;
-}
-
-// このノードと長男ノードに再帰的に min/max を設定
-void SearchStateClass::update_min_max(value_t min, value_t max) {
-  if (min <= 0) min = 0;
-  if (max <= 0) max = 0;
-  if (max < min) max = min;
-
-  this->min = min;
-  this->max = max;
-
-  const auto child = this->first_child;
-  if (child) {
-    value_t child_min = 0;
-    value_t child_max = VALUE_POSITIVE_INFINITY;
-    if (inv_sum) {
-      child_min = min;
-    } else {
-      child_max = max;
-    }
-    child->update_min_max(child_min, child_max);
-  }
-}
-
-// 検索結果を Combination に変換
-Combination SearchStateClass::bake(ComponentType type) const {
-  std::vector<Combination> child_combs;
-  auto child = this->first_child;
-  while (child) {
-    child_combs.push_back(child->bake(type));
-    child = child->next_brother;
-  }
-  return create_combination(this->topology, type, child_combs, this->value);
 }
 
 #endif

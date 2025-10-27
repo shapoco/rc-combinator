@@ -10,20 +10,20 @@
 
 namespace rccomb {
 
-class TopologyNodeClass;
-using TopologyNode = std::shared_ptr<TopologyNodeClass>;
+class TopologyClass;
+using Topology = std::shared_ptr<TopologyClass>;
 
-class TopologyNodeClass {
+class TopologyClass {
  public:
   static constexpr uint32_t POLY = 0xEDB88320;
 
   const bool parallel;
-  const std::vector<TopologyNode> children;
+  const std::vector<Topology> children;
   const int num_leafs;
   const hash_t hash;
 
  private:
-  inline static int count_leafs(const std::vector<TopologyNode>& children) {
+  inline static int count_leafs(const std::vector<Topology>& children) {
     if (children.empty()) {
       return 1;
     } else {
@@ -36,7 +36,7 @@ class TopologyNodeClass {
   }
 
   inline static hash_t compute_hash(bool parallel,
-                                    const std::vector<TopologyNode>& children) {
+                                    const std::vector<Topology>& children) {
     hash_t h = 0x12345678;
     if (!children.empty()) {
       if (parallel) {
@@ -52,7 +52,7 @@ class TopologyNodeClass {
   }
 
  public:
-  TopologyNodeClass(bool parallel, const std::vector<TopologyNode>& children)
+  TopologyClass(bool parallel, const std::vector<Topology>& children)
       : parallel(parallel),
         children(children),
         num_leafs(count_leafs(children)),
@@ -73,7 +73,7 @@ class TopologyNodeClass {
           s += "(" + children[i]->to_string() + ")";
         }
         if (i + 1 < children.size()) {
-          s += parallel ? "||" : "--";
+          s += parallel ? "//" : "--";
         }
       }
       return s;
@@ -82,12 +82,12 @@ class TopologyNodeClass {
 #endif
 };
 
-static inline TopologyNode create_topology_node(
-    bool parallel, const std::vector<TopologyNode>& children) {
-  return std::make_shared<TopologyNodeClass>(parallel, children);
+static inline Topology create_topology_node(
+    bool parallel, const std::vector<Topology>& children) {
+  return std::make_shared<TopologyClass>(parallel, children);
 }
 
-std::vector<TopologyNode>& get_topologies(int num_leafs, bool parallel);
+std::vector<Topology>& get_topologies(int num_leafs, bool parallel);
 
 #ifdef RCCOMB_IMPLEMENTATION
 
@@ -95,30 +95,30 @@ std::vector<TopologyNode>& get_topologies(int num_leafs, bool parallel);
 struct NodeDivideContext {
   const bool parallel;
   std::vector<int> part_sizes;
-  std::vector<TopologyNode> nodes;
+  std::vector<Topology> nodes;
 };
 
 // トポロジのキャッシュ
-std::map<int, std::vector<TopologyNode>> cache;
+std::map<int, std::vector<Topology>> cache;
 
 static void split_children_recursive(NodeDivideContext& ctx, int num_parts,
                                      int leafs_remaining);
 static void collect_children(NodeDivideContext& ctx, int num_parts);
 
 // num_children個の子ノードを持つ全トポロジーを取得
-std::vector<TopologyNode>& get_topologies(int num_leafs, bool parallel) {
+std::vector<Topology>& get_topologies(int num_leafs, bool parallel) {
   const uint32_t key = num_leafs + ((num_leafs >= 2 && parallel) ? 1000 : 0);
 
   if (!cache.contains(key)) {
     if (num_leafs == 1) {
       // 葉ノードの生成
       const auto leaf =
-          create_topology_node(parallel, std::vector<TopologyNode>{});
-      const std::vector<TopologyNode> nodes = {leaf};
+          create_topology_node(parallel, std::vector<Topology>{});
+      const std::vector<Topology> nodes = {leaf};
       cache[key] = nodes;
     } else if (num_leafs > 1) {
       // 子ノードを再帰的に分割
-      std::vector<TopologyNode> nodes;
+      std::vector<Topology> nodes;
       NodeDivideContext ctx{
           .parallel = parallel,
           .part_sizes = std::vector<int>(num_leafs, 0),
@@ -168,7 +168,7 @@ static void collect_children(NodeDivideContext& ctx, int num_parts) {
   if (num_parts == 0) return;
 
   // 孫ノードを収集
-  std::vector<std::vector<TopologyNode>> parts;
+  std::vector<std::vector<Topology>> parts;
   for (int i = 0; i < num_parts; i++) {
     parts.push_back(get_topologies(ctx.part_sizes[i], !ctx.parallel));
   }
@@ -178,7 +178,7 @@ static void collect_children(NodeDivideContext& ctx, int num_parts) {
   while (indices[num_parts - 1] <
          static_cast<int>(parts[num_parts - 1].size())) {
     // 子ノードを生成
-    std::vector<TopologyNode> children(num_parts);
+    std::vector<Topology> children(num_parts);
     for (int i = 0; i < num_parts; i++) {
       children[i] = parts[i][indices[i]];
     }

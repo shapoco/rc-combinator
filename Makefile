@@ -12,7 +12,9 @@ APP_WASM_DIR := $(REPO_DIR)/src/wasm
 
 CMD_UPDATE_POSTFIX := python3 $(BIN_DIR)/update_url_postfix.py
 
-all:
+all: build update_postfix
+
+build:
 	@make --no-print-directory -C $(APP_TS_DIR) build
 	@make --no-print-directory -C $(APP_WASM_DIR) build
 

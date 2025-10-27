@@ -690,7 +690,7 @@ export function makeAvaiableValues(
     for (const base of baseValues) {
       const value = base * multiplier;
       const epsilon = value / 1e6;
-      if ((minValue - epsilon) < value && value < (maxValue + epsilon)) {
+      if ((minValue - epsilon) <= value && value <= (maxValue + epsilon)) {
         values.push(value);
       }
     }

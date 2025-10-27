@@ -42,17 +42,18 @@ class ValueList {
   }
 
   // todo: optimize
-  value_t get_nearest(value_t target) const {
-    value_t best_value = VALUE_NONE;
+  const value_t* get_nearest(value_t target, int* count) const {
     value_t best_error = VALUE_POSITIVE_INFINITY;
-    for (const auto& v : values) {
-      const auto error = std::abs(v - target);
+    int best_index = -1;
+    for (size_t i = 0; i < values.size(); i++) {
+      value_t error = std::abs(values[i] - target);
       if (error < best_error) {
         best_error = error;
-        best_value = v;
+        best_index = i;
       }
     }
-    return best_value;
+    *count = 1;
+    return &values[best_index];
   }
 };
 

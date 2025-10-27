@@ -710,7 +710,7 @@ function makeAvaiableValues(series, minValue = 1e-12, maxValue = 0xe8d4a51000) {
 		for (const base of baseValues) {
 			const value = base * multiplier;
 			const epsilon = value / 1e6;
-			if (minValue - epsilon < value && value < maxValue + epsilon) values.push(value);
+			if (minValue - epsilon <= value && value <= maxValue + epsilon) values.push(value);
 		}
 	}
 	values.sort((a, b) => a - b);

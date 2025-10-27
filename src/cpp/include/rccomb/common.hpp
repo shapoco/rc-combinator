@@ -30,6 +30,9 @@ namespace rccomb {
 enum class result_t {
   SUCCESS,
   SEARCH_SPACE_TOO_LARGE,
+  BROKEN_TOPOLOGY,
+  INACCURATE_RESULT,
+  NEGATIVE_VALUE,
 };
 
 static inline const char* result_to_string(result_t res) {
@@ -38,6 +41,12 @@ static inline const char* result_to_string(result_t res) {
       return "Success.";
     case result_t::SEARCH_SPACE_TOO_LARGE:
       return "The search space is too large.";
+    case result_t::BROKEN_TOPOLOGY:
+      return "The topology is broken.";
+    case result_t::INACCURATE_RESULT:
+      return "Inaccurate result.";
+    case result_t::NEGATIVE_VALUE:
+      return "A negative value was encountered.";
     default:
       return "Unknown result.";
   }
