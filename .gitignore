@@ -8,7 +8,7 @@ settings.json
 *.o
 *.out
 node_modules/
-src/ts/dist/
+src/ui/ts/dist/
 package-lock.json
 package.json
 bin/emsdk/
