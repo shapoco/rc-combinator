@@ -898,7 +898,7 @@ var WorkerAgent = class {
 		this.abortWorker();
 		if (this.worker === null) {
 			console.log("Starting worker...");
-			this.worker = new Worker("../worker/index.mjs?12345678", { type: "module" });
+			this.worker = new Worker("https://shapoco.github.io/rc-combinator/worker/index.mjs?2", { type: "module" });
 			console.log("Worker started.");
 			this.worker.onmessage = (e) => this.onMessaged(e);
 			this.worker.onerror = (e) => this.onError(e.message);
