@@ -34,16 +34,22 @@ export class WorkerAgent {
     this.abortWorker();
 
     if (this.worker === null) {
-      console.log('Starting worker...');
-      this.worker = new Worker('https://shapoco.github.io/rc-combinator/worker/index.mjs?2', {type: 'module'});
+      const baseUrl = window.location.hostname === 'localhost' ?
+          '..' :
+          'https://shapoco.github.io/rc-combinator';
+      const mjsUrl = `${baseUrl}/worker/index.mjs`;
+      console.log(`Starting worker...: '${mjsUrl}'`);
+      this.worker = new Worker(mjsUrl, {type: 'module'});
       console.log('Worker started.');
       this.worker.onmessage = (e) => this.onMessaged(e);
       this.worker.onerror = (e) => this.onError(e.message);
-      this.worker.onmessageerror = (e) => this.onError('Message error in worker');
+      this.worker.onmessageerror = (e) =>
+          this.onError('Message error in worker');
       console.log('Worker event handlers set.');
     }
 
-    this.lastLaunchedParams = JSON.parse(JSON.stringify(this.startRequestParams));
+    this.lastLaunchedParams =
+        JSON.parse(JSON.stringify(this.startRequestParams));
     console.log('Posting message to worker:', this.startRequestParams);
     this.worker.postMessage(this.startRequestParams);
     console.log('Message posted.');
