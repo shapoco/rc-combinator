@@ -73,6 +73,7 @@ export class WorkerAgent {
   }
 
   onError(msg: string): void {
+    console.log(`[Worker] Aborted with message: '${msg}'`);
     this.abortWorker();
     if (this.onAborted) {
       this.onAborted(msg);

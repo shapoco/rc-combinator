@@ -932,6 +932,7 @@ var WorkerAgent = class {
 		}
 	}
 	onError(msg) {
+		console.log(`[Worker] Aborted with message: '${msg}'`);
 		this.abortWorker();
 		if (this.onAborted) this.onAborted(msg);
 	}
@@ -1116,6 +1117,7 @@ var CombinationFinderUi = class {
 		}
 	}
 	onAborted(msg) {
+		console.log(`Aborted with message: '${msg}'`);
 		this.resultBox.textContent = getStr(msg);
 	}
 };

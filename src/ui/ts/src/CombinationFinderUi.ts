@@ -186,6 +186,7 @@ export class CombinationFinderUi {
   }
 
   onAborted(msg: string): void {
+    console.log(`Aborted with message: '${msg}'`);
     this.resultBox.textContent = getStr(msg);
   }
 }
