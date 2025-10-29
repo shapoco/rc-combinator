@@ -10,7 +10,7 @@ export const enum TopologyConstraint {
   NoLimit = Series | Parallel,
 }
 
-const MAX_COMBINATION_ELEMENTS = 10;
+export const MAX_COMBINATION_ELEMENTS = 10;
 
 export class Topology {
   public num_leafs = -1;
@@ -82,6 +82,7 @@ export class Combination {
     } else {
       return {
         parallel: this.parallel,
+        value: this.value,
         children: this.children.map(child => child.toJson()),
       };
     }

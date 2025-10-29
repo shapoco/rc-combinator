@@ -1,3 +1,4 @@
+import {CombinationFinderUi} from './CombinationFinderUi';
 import * as Core from './Core';
 import createModule from './Core';
 import * as RcComb from './RcComb';
@@ -8,8 +9,16 @@ import * as Ui from './Ui';
 
 let core: Core.RccombCore|null = null;
 
-export async function main(
-    container: HTMLElement, wasmCore: Core.RccombCore|null) {
+export function main(container: HTMLElement): void {
+  const resCombFinderUi = new CombinationFinderUi(false);
+  const capCombFinderUi = new CombinationFinderUi(true);
+  container.appendChild(Ui.makeDiv([
+    resCombFinderUi.ui!,
+    capCombFinderUi.ui!,
+  ]));
+}
+
+async function oldMain(container: HTMLElement, wasmCore: Core.RccombCore|null) {
   if (wasmCore) {
     core = wasmCore;
   }
@@ -99,7 +108,7 @@ function makeCombinatorUI(type: RcComb.ComponentType): HTMLDivElement {
 
       if (combs.length > 0) {
         resultBox.appendChild(
-            Ui.makeP(getStr('Found <n> combination(s):', {n: combs.length})))
+            Ui.makeP(getStr('<n> combinations found', {n: combs.length})))
         for (const comb of combs) {
           // resultText += comb.toString() + '\n';
           resultBox.appendChild(comb.generateSvg(targetValue));
@@ -208,7 +217,7 @@ function makeDividerCombinatorUI(): HTMLDivElement {
 
       if (combs.length > 0) {
         resultBox.appendChild(
-            Ui.makeP(getStr('Found <n> combination(s):', {n: combs.length})))
+            Ui.makeP(getStr('<n> combinations found', {n: combs.length})))
         for (const comb of combs) {
           // resultText += comb.toString() + '\n';
           resultBox.appendChild(comb.generateSvg(targetValue));

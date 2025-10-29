@@ -5,9 +5,9 @@
 #include <stack>
 #include <vector>
 
-#include <rccomb/rccomb.hpp>
+#include <rcmb/rcmb.hpp>
 
-using namespace rccomb;
+using namespace rcmb;
 
 class TestTopologyClass;
 using TestTopology = std::shared_ptr<TestTopologyClass>;

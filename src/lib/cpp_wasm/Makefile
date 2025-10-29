@@ -4,9 +4,9 @@ REPO_DIR := $(shell cd ../../.. ; pwd)
 
 BUILD_DIR := build
 
-RCCOMB_DIR := ../cpp
-RCCOMB_INC_DIR := $(RCCOMB_DIR)/include
-RCCOMB_SRC_DIR := $(RCCOMB_DIR)/src
+RCMB_DIR := ../cpp
+RCMB_INC_DIR := $(RCMB_DIR)/include
+RCMB_SRC_DIR := $(RCMB_DIR)/src
 
 MODULE_NAME := rcmb_wasm
 MODULE_SRC_DIR := src
@@ -19,21 +19,21 @@ DIST_WASM := $(DIST_DIR)/$(MODULE_NAME).wasm
 
 all: build
 
-build: $(DIST_WASM)
+build: $(MODULE_WASM)
 
 CPP_FILES := \
-	$(wildcard $(RCCOMB_SRC_DIR)/*.cpp)  \
+	$(wildcard $(RCMB_SRC_DIR)/*.cpp)  \
 	$(wildcard $(MODULE_SRC_DIR)/*.cpp)
 
 DEPENDENCIES := \
 	$(CPP_FILES) \
-	$(wildcard $(RCCOMB_INC_DIR)/rccomb/*.hpp) \
-	$(wildcard $(RCCOMB_SRC_DIR)/*.cpp) \
+	$(wildcard $(RCMB_INC_DIR)/rcmb/*.hpp) \
+	$(wildcard $(RCMB_SRC_DIR)/*.cpp) \
 	Makefile
 
 CXXFLAGS := \
 	-std=c++20 \
-	-I$(RCCOMB_INC_DIR) \
+	-I$(RCMB_INC_DIR) \
 	-O3 \
 	-Wall \
 	--bind \

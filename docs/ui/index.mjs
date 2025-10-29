@@ -1,227 +1,8 @@
-//#region src/Svg.ts
-var State = class State {
-	x = 0;
-	y = 0;
-	backColor = "white";
-	foreColor = "black";
-	textColor = "black";
-	fontSize = 12;
-	clone() {
-		const state = new State();
-		state.x = this.x;
-		state.y = this.y;
-		state.backColor = this.backColor;
-		state.foreColor = this.foreColor;
-		state.textColor = this.textColor;
-		state.fontSize = this.fontSize;
-		return state;
-	}
-};
-var SvgCanvas = class {
-	svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-	xMin = 0;
-	yMin = 0;
-	xMax = 1;
-	yMax = 1;
-	stack = [new State()];
-	constructor() {
-		this.svg.setAttribute("viewBox", "0 0 100 100");
-	}
-	get state() {
-		return this.stack[this.stack.length - 1];
-	}
-	pushState() {
-		this.stack.push(this.state.clone());
-	}
-	popState() {
-		if (this.stack.length > 1) this.stack.pop();
-		else throw new Error("State stack underflow");
-	}
-	offsetState(dx, dy) {
-		this.state.x += dx;
-		this.state.y += dy;
-	}
-	setBackColor(color = "transparent") {
-		this.state.backColor = color;
-	}
-	setForeColor(color = "black") {
-		this.state.foreColor = color;
-	}
-	setTextColor(color = "black") {
-		this.state.textColor = color;
-	}
-	setFontSize(size) {
-		this.state.fontSize = size;
-	}
-	drawFillRect(x, y, w, h) {
-		x += this.state.x;
-		y += this.state.y;
-		const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-		rect.setAttribute("x", x.toString());
-		rect.setAttribute("y", y.toString());
-		rect.setAttribute("width", w.toString());
-		rect.setAttribute("height", h.toString());
-		if (this.state.backColor !== "transparent") rect.setAttribute("fill", this.state.backColor);
-		if (this.state.foreColor !== "transparent") rect.setAttribute("stroke", this.state.foreColor);
-		this.svg.appendChild(rect);
-		this.xMin = Math.min(this.xMin, x);
-		this.yMin = Math.min(this.yMin, y);
-		this.xMax = Math.max(this.xMax, x + w);
-		this.yMax = Math.max(this.yMax, y + h);
-	}
-	drawLine(x1, y1, x2, y2) {
-		x1 += this.state.x;
-		y1 += this.state.y;
-		x2 += this.state.x;
-		y2 += this.state.y;
-		const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-		line.setAttribute("x1", x1.toString());
-		line.setAttribute("y1", y1.toString());
-		line.setAttribute("x2", x2.toString());
-		line.setAttribute("y2", y2.toString());
-		line.setAttribute("stroke", this.state.foreColor);
-		this.svg.appendChild(line);
-		this.xMin = Math.min(this.xMin, x1);
-		this.yMin = Math.min(this.yMin, y1);
-		this.xMax = Math.max(this.xMax, x2);
-		this.yMax = Math.max(this.yMax, y2);
-	}
-	drawText(x, y, text) {
-		x += this.state.x;
-		y += this.state.y;
-		const textElem = document.createElementNS("http://www.w3.org/2000/svg", "text");
-		textElem.setAttribute("x", x.toString());
-		textElem.setAttribute("y", y.toString());
-		textElem.setAttribute("fill", this.state.textColor);
-		textElem.setAttribute("font-size", this.state.fontSize.toString());
-		textElem.setAttribute("font-family", "Arial, sans-serif");
-		textElem.setAttribute("text-anchor", "middle");
-		textElem.textContent = text;
-		this.svg.appendChild(textElem);
-		const w = text.length * (this.state.fontSize * .6);
-		this.xMin = Math.min(this.xMin, x - w / 2);
-		this.yMin = Math.min(this.yMin, y - this.state.fontSize);
-		this.xMax = Math.max(this.xMax, x + w / 2);
-		this.yMax = Math.max(this.yMax, y);
-	}
-	build() {
-		const x = this.xMin - 10;
-		const y = this.yMin - 10;
-		const w = this.xMax - this.xMin + 20;
-		const h = this.yMax - this.yMin + 20;
-		this.svg.setAttribute("viewBox", `${x} ${y} ${w} ${h}`);
-		return this.svg;
-	}
-};
-
-//#endregion
-//#region src/Text.ts
-const texts = { "ja": {
-	"Find Resistor Combinations": "合成抵抗を見つける",
-	"Find Capacitor Combinations": "合成容量を見つける",
-	"Find Voltage Dividers": "分圧抵抗を見つける",
-	"Find LED Current Limiting Resistor": "LEDの電流制限抵抗を見つける",
-	"Power Voltage": "電源電圧",
-	"Forward Voltage": "順方向電圧",
-	"Forward Current": "順方向電流",
-	"E Series": "シリーズ",
-	"Item": "項目",
-	"Value": "値",
-	"Unit": "単位",
-	"Minimum": "素子最小値",
-	"Maximum": "素子最大値",
-	"Custom": "カスタム",
-	"Custom Values": "カスタム値",
-	"Max Elements": "最大素子数",
-	"Target Value": "目標値",
-	"The search space is too large.": "探索空間が大きすぎます。",
-	"Upper Resistor": "上側の抵抗",
-	"Lower Resistor": "下側の抵抗",
-	"No combinations found.": "組み合わせが見つかりませんでした。",
-	"Found <n> combination(s):": "<n> 件の組み合わせが見つかりました。",
-	"Parallel": "並列",
-	"Series": "直列",
-	"Ideal Value": "理想値",
-	"<s> Approximation": "<s> 近似",
-	"Error": "誤差",
-	"No Error": "誤差なし",
-	"No Limit": "制限なし",
-	"Top Topology": "最上位トポロジー",
-	"Max Nests": "最大ネスト数"
-} };
-function getStr(key, vars) {
-	let ret = key;
-	const lang = navigator.language;
-	if (lang in texts && key in texts[lang]) ret = texts[lang][key];
-	if (vars) for (const varKey of Object.keys(vars)) {
-		const varValue = vars[varKey];
-		ret = ret.replace(new RegExp(`<${varKey}>`, "g"), varValue.toString());
-	}
-	return ret;
-}
-
-//#endregion
-//#region src/RcComb.ts
-const SERIESES = {
-	"E1": [100],
-	"E3": [
-		100,
-		220,
-		470
-	],
-	"E6": [
-		100,
-		150,
-		220,
-		330,
-		470,
-		680
-	],
-	"E12": [
-		100,
-		120,
-		150,
-		180,
-		220,
-		270,
-		330,
-		390,
-		470,
-		560,
-		680,
-		820
-	],
-	"E24": [
-		100,
-		110,
-		120,
-		130,
-		150,
-		160,
-		180,
-		200,
-		220,
-		240,
-		270,
-		300,
-		330,
-		360,
-		390,
-		430,
-		470,
-		510,
-		560,
-		620,
-		680,
-		750,
-		820,
-		910
-	]
-};
-let ComponentType = /* @__PURE__ */ function(ComponentType$1) {
-	ComponentType$1[ComponentType$1["Resistor"] = 0] = "Resistor";
-	ComponentType$1[ComponentType$1["Capacitor"] = 1] = "Capacitor";
-	return ComponentType$1;
+//#region ../../lib/ts/src/RcmbJS.ts
+let Method = /* @__PURE__ */ function(Method$1) {
+	Method$1[Method$1["FindCombination"] = 1] = "FindCombination";
+	Method$1[Method$1["FindDivider"] = 2] = "FindDivider";
+	return Method$1;
 }({});
 let TopologyConstraint = /* @__PURE__ */ function(TopologyConstraint$1) {
 	TopologyConstraint$1[TopologyConstraint$1["Series"] = 1] = "Series";
@@ -230,570 +11,6 @@ let TopologyConstraint = /* @__PURE__ */ function(TopologyConstraint$1) {
 	return TopologyConstraint$1;
 }({});
 const MAX_COMBINATION_ELEMENTS = 10;
-const MAX_DIVIDER_ELEMENTS = 5;
-var TopologyNode = class {
-	num_leafs = -1;
-	depth = -1;
-	hash = -1;
-	constructor(iLeft, iRight, parallel, children) {
-		this.iLeft = iLeft;
-		this.iRight = iRight;
-		this.parallel = parallel;
-		this.children = children;
-		if (children.length === 0) {
-			this.hash = 1;
-			this.depth = 0;
-			this.num_leafs = 1;
-		} else {
-			const POLY = 2149580803;
-			let lfsr = parallel ? 2863311530 : 1431655765;
-			this.num_leafs = 0;
-			for (const child of children) {
-				lfsr ^= child.hash;
-				const msb = (lfsr & 2147483648) !== 0;
-				lfsr = (lfsr & 2147483647) << 1;
-				if (msb) lfsr ^= POLY;
-				this.num_leafs += child.num_leafs;
-				this.depth = Math.max(this.depth, child.depth + 1);
-			}
-			this.hash = lfsr;
-		}
-	}
-	get isLeaf() {
-		return this.iLeft + 1 >= this.iRight;
-	}
-};
-const topologyMemo = /* @__PURE__ */ new Map();
-function formatValue(value, unit = "", usePrefix = null) {
-	if (!isFinite(value) || isNaN(value)) return "NaN";
-	if (usePrefix === null) usePrefix = unit !== "";
-	let prefix = "";
-	if (usePrefix) {
-		if (value >= 999999e6) {
-			value /= 0xe8d4a51000;
-			prefix = "T";
-		} else if (value >= 999999e3) {
-			value /= 1e9;
-			prefix = "G";
-		} else if (value >= 999999) {
-			value /= 1e6;
-			prefix = "M";
-		} else if (value >= 999.999) {
-			value /= 1e3;
-			prefix = "k";
-		} else if (value >= .999999) prefix = "";
-		else if (value >= 999999e-9) {
-			value *= 1e3;
-			prefix = "m";
-		} else if (value >= 9.99999e-7) {
-			value *= 1e6;
-			prefix = "μ";
-		} else if (value >= 999999e-15) {
-			value *= 1e9;
-			prefix = "n";
-		} else if (value >= 999999e-18) {
-			value *= 0xe8d4a51000;
-			prefix = "p";
-		}
-	}
-	const minDigits = usePrefix ? 3 : 6;
-	value = Math.round(value * pow10(minDigits));
-	let s = "";
-	while (s.length <= minDigits + 1 || value > 0) {
-		const digit = value % 10;
-		value = Math.floor(value / 10);
-		s = digit.toString() + s;
-		if (s.length === minDigits) s = "." + s;
-	}
-	s = s.replace(/\.?0+$/, "");
-	return `${s} ${prefix}${unit}`.trim();
-}
-const FIGURE_SCALE = 10;
-var Combination = class Combination {
-	cType = ComponentType.Resistor;
-	parallel = false;
-	children = [];
-	value = 0;
-	complexity = -1;
-	x = 0;
-	y = 0;
-	width = 0;
-	height = 0;
-	constructor() {}
-	get isLeaf() {
-		return this.children.length === 0;
-	}
-	get unit() {
-		switch (this.cType) {
-			case ComponentType.Resistor: return "Ω";
-			case ComponentType.Capacitor: return "F";
-			default: return "";
-		}
-	}
-	layout() {
-		let maxChildWidth = 0;
-		let maxChildHeight = 0;
-		for (const child of this.children) {
-			child.layout();
-			maxChildWidth = Math.max(maxChildWidth, child.width);
-			maxChildHeight = Math.max(maxChildHeight, child.height);
-		}
-		if (this.isLeaf) {
-			this.width = FIGURE_SCALE * 2;
-			this.height = FIGURE_SCALE * 2;
-		} else if (this.parallel) {
-			let y = 0;
-			this.width = maxChildWidth + FIGURE_SCALE * 2;
-			for (const child of this.children) {
-				child.x = (this.width - child.width) / 2;
-				child.y = y;
-				y += child.height + FIGURE_SCALE;
-			}
-			this.height = y - FIGURE_SCALE;
-		} else {
-			let x = 0;
-			this.height = maxChildHeight + FIGURE_SCALE * 2;
-			for (const child of this.children) {
-				child.x = x;
-				child.y = (this.height - child.height) / 2;
-				x += child.width + FIGURE_SCALE * 1.5;
-			}
-			this.width = x - FIGURE_SCALE * 1.5;
-		}
-	}
-	paint(svg) {
-		svg.pushState();
-		svg.offsetState(this.x, this.y);
-		if (this.isLeaf) if (this.cType === ComponentType.Resistor) {
-			const h = this.height / 3;
-			const y = (this.height - h) / 2;
-			svg.setBackColor("white");
-			svg.drawFillRect(0, y, this.width, h);
-			svg.setFontSize(9);
-			svg.drawText(this.width / 2, y - FIGURE_SCALE / 4, formatValue(this.value, this.unit));
-		} else {
-			const w = this.width / 3;
-			const h = this.height * 2 / 3;
-			const x0 = this.width / 2 - w / 2;
-			const x1 = this.width / 2 + w / 2;
-			const y = (this.height - h) / 2;
-			svg.setForeColor("transparent");
-			svg.drawFillRect(x0, y, w, h);
-			svg.setForeColor("black");
-			svg.drawLine(x0, y, x0, y + h);
-			svg.drawLine(x1, y, x1, y + h);
-			svg.setFontSize(9);
-			svg.drawText(this.width / 2, y - FIGURE_SCALE / 3, formatValue(this.value, this.unit));
-		}
-		else if (this.parallel) {
-			svg.setForeColor("transparent");
-			svg.drawFillRect(0, 0, this.width, this.height);
-			svg.setForeColor("black");
-			let y0 = -1;
-			let y1 = this.height;
-			for (const child of this.children) {
-				const y = child.y + child.height / 2;
-				svg.drawLine(0, y, this.width, y);
-				if (y0 < 0) y0 = y;
-				y1 = y;
-			}
-			svg.drawLine(0, y0, 0, y1);
-			svg.drawLine(this.width, y0, this.width, y1);
-		}
-		for (const child of this.children) child.paint(svg);
-		svg.popState();
-	}
-	generateSvg(target) {
-		const canvas = new SvgCanvas();
-		this.layout();
-		{
-			const x0 = this.x - 20;
-			const x1 = x0 + this.width + 40;
-			const y = this.y + this.height / 2;
-			canvas.drawLine(x0, y, x1, y);
-		}
-		this.paint(canvas);
-		{
-			const x = this.x + this.width / 2;
-			const y = this.y + this.height + 12;
-			canvas.setFontSize(12);
-			canvas.drawText(x, y, formatValue(this.value, this.unit));
-			canvas.setFontSize(9);
-			const error = (this.value - target) / target;
-			let errorText = `(${getStr("No Error")})`;
-			if (Math.abs(error) > 1e-6) errorText = `(${getStr("Error")}: ${error > 0 ? "+" : ""}${(error * 100).toFixed(3)}%)`;
-			canvas.drawText(x, y + 15, errorText);
-		}
-		const img = new Image();
-		img.src = "data:image/svg+xml;base64," + bytesToBase64(new XMLSerializer().serializeToString(canvas.build()));
-		img.style.backgroundColor = "white";
-		img.style.border = "1px solid black";
-		img.style.width = "300px";
-		img.style.height = "300px";
-		return img;
-	}
-	toString(indent = "") {
-		if (this.isLeaf) return `${indent}${formatValue(this.value, this.unit)}\n`;
-		else {
-			let ret = "";
-			for (const child of this.children) ret += child.toString(indent + "    ");
-			ret = `${indent}${getStr(this.parallel ? "Parallel" : "Series")} (${formatValue(this.value, this.unit)}):\n${ret}`;
-			return ret;
-		}
-	}
-	static fromJson(cType, obj) {
-		const comb = new Combination();
-		comb.cType = cType;
-		if (typeof obj === "number") {
-			comb.parallel = false;
-			comb.value = obj;
-		} else {
-			comb.parallel = !!obj.parallel;
-			comb.value = obj.value;
-			if (obj.children) for (const childObj of obj.children) {
-				const childComb = Combination.fromJson(cType, childObj);
-				comb.children.push(childComb);
-			}
-		}
-		return comb;
-	}
-	toJson() {
-		if (this.isLeaf) return this.value;
-		else return {
-			parallel: this.parallel,
-			children: this.children.map((child) => child.toJson())
-		};
-	}
-};
-var DividerCombination = class DividerCombination {
-	x = 0;
-	y = 0;
-	width = 0;
-	height = 0;
-	constructor(upper, lower, ratio) {
-		this.upper = upper;
-		this.lower = lower;
-		this.ratio = ratio;
-	}
-	toString() {
-		const up = this.upper[0];
-		const lo = this.lower[0];
-		let ret = `R2 / (R1 + R2) = ${this.ratio.toFixed(6)}\nR1 + R2 = ${formatValue(up.value + lo.value, "Ω")}\n`;
-		ret += "R1:\n";
-		ret += up.toString("    ");
-		ret += "R2:\n";
-		ret += lo.toString("    ");
-		return ret;
-	}
-	layout() {
-		const upper = this.upper[0];
-		const lower = this.lower[0];
-		upper.layout();
-		lower.layout();
-		const padding = FIGURE_SCALE * 4;
-		this.width = upper.width + lower.width + padding;
-		this.height = Math.max(upper.height, lower.height);
-		lower.x += upper.width + padding;
-		upper.y += (this.height - upper.height) / 2;
-		lower.y += (this.height - lower.height) / 2;
-	}
-	generateSvg(target) {
-		const upper = this.upper[0];
-		const lower = this.lower[0];
-		const canvas = new SvgCanvas();
-		this.layout();
-		{
-			const x0 = this.x - 20;
-			const x1 = x0 + this.width + 40;
-			const y = this.y + this.height / 2;
-			canvas.drawLine(x0, y, x1, y);
-		}
-		upper.paint(canvas);
-		{
-			const x = upper.x + upper.width / 2;
-			const y = this.y + this.height + 9;
-			canvas.setFontSize(9);
-			canvas.drawText(x, y, "R1 = " + formatValue(upper.value, upper.unit));
-		}
-		lower.paint(canvas);
-		{
-			const x = lower.x + lower.width / 2;
-			const y = this.y + this.height + 9;
-			canvas.setFontSize(9);
-			canvas.drawText(x, y, "R2 = " + formatValue(lower.value, lower.unit));
-		}
-		{
-			const x = this.x + this.width / 2;
-			const y = this.y + this.height + 32;
-			canvas.setFontSize(12);
-			canvas.drawText(x, y, "R2 / (R1 + R2) = " + formatValue(this.ratio, ""));
-			canvas.setFontSize(9);
-			const error = (this.ratio - target) / target;
-			let errorText = `(${getStr("No Error")})`;
-			if (Math.abs(error) > 1e-6) errorText = `(${getStr("Error")}: ${error > 0 ? "+" : ""}${(error * 100).toFixed(3)}%)`;
-			canvas.drawText(x, y + 15, errorText);
-		}
-		const img = new Image();
-		img.src = "data:image/svg+xml;base64," + bytesToBase64(new XMLSerializer().serializeToString(canvas.build()));
-		img.style.backgroundColor = "white";
-		img.style.border = "1px solid black";
-		img.style.width = "400px";
-		img.style.height = "200px";
-		return img;
-	}
-	static fromJson(cType, obj) {
-		const ratio = obj.ratio;
-		let uppers = [];
-		let lowers = [];
-		for (const childObj of obj.uppers) uppers.push(Combination.fromJson(cType, childObj));
-		for (const childObj of obj.lowers) lowers.push(Combination.fromJson(cType, childObj));
-		return new DividerCombination(uppers, lowers, ratio);
-	}
-};
-function findCombinations(cType, values, targetValue, maxElements, topoConstr, maxDepth) {
-	const epsilon = targetValue * 1e-9;
-	const retMin = targetValue / 2;
-	const retMax = targetValue * 2;
-	const numValues = topoConstr === TopologyConstraint.NoLimit ? values.length : values.length / 2;
-	if (maxElements > MAX_COMBINATION_ELEMENTS || Math.pow(numValues, maxElements) > 1e6) throw new Error(getStr("The search space is too large."));
-	let bestError = Number.POSITIVE_INFINITY;
-	let bestCombinations = [];
-	for (let numElem = 1; numElem <= maxElements; numElem++) {
-		const topos = searchTopologies(0, numElem);
-		const indices = new Array(numElem).fill(0);
-		while (indices[numElem - 1] < values.length) {
-			for (const topo of topos) {
-				const t = topo.parallel ? TopologyConstraint.Parallel : TopologyConstraint.Series;
-				if (numElem >= 2 && !(t & topoConstr)) continue;
-				if (topo.depth > maxDepth) continue;
-				const value = calcValue(cType, values, indices, topo, null, retMin, retMax);
-				if (isNaN(value)) continue;
-				const error = Math.abs(value - targetValue);
-				if (error - epsilon > bestError) continue;
-				if (error + epsilon < bestError) bestCombinations = [];
-				bestError = error;
-				const comb = new Combination();
-				calcValue(cType, values, indices, topo, comb);
-				bestCombinations.push(comb);
-			}
-			incrementIndices(indices, values);
-		}
-		if (bestError <= epsilon) break;
-	}
-	return selectSimplestCombinations(bestCombinations);
-}
-function findDividers(cType, values, targetRatio, totalMin, totalMax, maxElements, topoConstr, maxDepth) {
-	const epsilon = 1e-9;
-	const numValues = topoConstr === TopologyConstraint.NoLimit ? values.length : values.length / 2;
-	const numComb = Math.pow(numValues, 2 * maxElements);
-	if (maxElements > MAX_DIVIDER_ELEMENTS || numComb > 1e7) throw new Error(getStr("The search space is too large."));
-	let bestError = Number.POSITIVE_INFINITY;
-	let bestCombinations = [];
-	const combMemo = /* @__PURE__ */ new Map();
-	for (let numElem = 1; numElem <= maxElements; numElem++) {
-		const topos = searchTopologies(0, numElem);
-		const indices = new Array(numElem).fill(0);
-		while (indices[numElem - 1] < values.length) {
-			for (const topo of topos) {
-				const t = topo.parallel ? TopologyConstraint.Parallel : TopologyConstraint.Series;
-				if (numElem >= 2 && !(t & topoConstr)) continue;
-				if (topo.depth > maxDepth) continue;
-				const lowerValue = calcValue(cType, values, indices, topo, null, 0, totalMax);
-				if (isNaN(lowerValue)) continue;
-				const totalTargetValue = lowerValue / targetRatio;
-				const upperTargetValue = totalTargetValue - lowerValue;
-				if (totalTargetValue < totalMin || totalMax < totalTargetValue) continue;
-				if (lowerValue in combMemo) {
-					const lowerComb$1 = new Combination();
-					calcValue(cType, values, indices, topo, lowerComb$1);
-					combMemo.get(lowerValue)?.lower.push(lowerComb$1);
-					continue;
-				}
-				const upperCombs = findCombinations(cType, values, upperTargetValue, maxElements, topoConstr, maxDepth);
-				if (upperCombs.length === 0) continue;
-				const ratio = lowerValue / (upperCombs[0].value + lowerValue);
-				const error = Math.abs(ratio - targetRatio);
-				if (error - epsilon > bestError) continue;
-				if (error + epsilon < bestError) bestCombinations = [];
-				bestError = error;
-				const lowerComb = new Combination();
-				calcValue(cType, values, indices, topo, lowerComb);
-				const dividerComb = new DividerCombination(upperCombs, [lowerComb], ratio);
-				bestCombinations.push(dividerComb);
-				combMemo.set(lowerValue, dividerComb);
-			}
-			incrementIndices(indices, values);
-		}
-		if (bestError <= epsilon) break;
-	}
-	for (const comb of bestCombinations) {
-		comb.upper = selectSimplestCombinations(comb.upper);
-		comb.lower = selectSimplestCombinations(comb.lower);
-	}
-	return bestCombinations;
-}
-function incrementIndices(indices, values) {
-	const n = indices.length;
-	for (let i = 0; i < n; i++) {
-		indices[i]++;
-		if (indices[i] < values.length) break;
-		else if (i + 1 >= n) break;
-		else indices[i] = 0;
-	}
-}
-function calcValue(cType, values, indices, topo, comb = null, min = 0, max = Number.POSITIVE_INFINITY) {
-	if (comb) {
-		comb.cType = cType;
-		comb.parallel = topo.parallel;
-		comb.complexity = topo.num_leafs;
-	}
-	if (topo.isLeaf) {
-		const val$1 = values[indices[topo.iLeft]];
-		if (val$1 < min || max < val$1) return NaN;
-		if (comb) comb.value = val$1;
-		return val$1;
-	}
-	let invSum = false;
-	if (cType === ComponentType.Resistor) invSum = topo.parallel;
-	else invSum = !topo.parallel;
-	let accum = 0;
-	let lastVal = Number.POSITIVE_INFINITY;
-	let lastTopo = -1;
-	for (let iChild = 0; iChild < topo.children.length; iChild++) {
-		const childTopo = topo.children[iChild];
-		const childComb = comb ? new Combination() : null;
-		const last = iChild + 1 >= topo.children.length;
-		let childMin = 0;
-		let childMax = Number.POSITIVE_INFINITY;
-		if (invSum) if (last) {
-			const tmp = 1 / accum;
-			childMin = tmp * min / (tmp - min);
-			childMax = tmp * max / (tmp - max);
-			if (childMax < childMin) childMax = Number.POSITIVE_INFINITY;
-		} else childMin = min;
-		else {
-			if (last) childMin = min - accum;
-			childMax = max - accum;
-		}
-		const childVal = calcValue(cType, values, indices, childTopo, childComb, childMin, childMax);
-		if (isNaN(childVal)) return NaN;
-		if (lastTopo === childTopo.hash) {
-			if (childVal > lastVal) return NaN;
-		}
-		lastTopo = childTopo.hash;
-		lastVal = childVal;
-		if (comb) comb.children.push(childComb);
-		if (invSum) accum += 1 / childVal;
-		else accum += childVal;
-	}
-	const val = invSum ? 1 / accum : accum;
-	if (comb) comb.value = val;
-	return val;
-}
-function pow10(exp) {
-	let ret = 1;
-	const neg = exp < 0;
-	if (neg) exp = -exp;
-	if (exp >= 16) {
-		ret *= 0x2386f26fc10000;
-		exp -= 16;
-	}
-	if (exp >= 8) {
-		ret *= 1e8;
-		exp -= 8;
-	}
-	if (exp >= 4) {
-		ret *= 1e4;
-		exp -= 4;
-	}
-	if (exp >= 2) {
-		ret *= 100;
-		exp -= 2;
-	}
-	if (exp >= 1) {
-		ret *= 10;
-		exp -= 1;
-	}
-	ret *= Math.pow(10, exp);
-	if (neg) ret = 1 / ret;
-	return ret;
-}
-function makeAvaiableValues(series, minValue = 1e-12, maxValue = 0xe8d4a51000) {
-	const baseValues = SERIESES[series];
-	if (!baseValues) throw new Error(`Unknown series: ${series}`);
-	const values = [];
-	for (let exp = -11; exp <= 15; exp++) {
-		const multiplier = pow10(exp - 3);
-		for (const base of baseValues) {
-			const value = base * multiplier;
-			const epsilon = value / 1e6;
-			if (minValue - epsilon <= value && value <= maxValue + epsilon) values.push(value);
-		}
-	}
-	values.sort((a, b) => a - b);
-	return values;
-}
-function selectSimplestCombinations(combs) {
-	let bestComplexity = Number.POSITIVE_INFINITY;
-	for (const comb of combs) if (comb.complexity < bestComplexity) bestComplexity = comb.complexity;
-	return combs.filter((comb) => comb.complexity === bestComplexity);
-}
-function searchTopologies(iLeft, iRight) {
-	let topos = searchTopologiesRecursive(iLeft, iRight, false);
-	if (iLeft + 1 < iRight) topos = topos.concat(searchTopologiesRecursive(iLeft, iRight, true));
-	return topos;
-}
-function searchTopologiesRecursive(iLeft, iRight, parallel) {
-	const key = iLeft + iRight * 1e3 + (parallel ? 1e6 : 0);
-	if (topologyMemo.has(key)) return topologyMemo.get(key);
-	const ret = new Array();
-	if (iLeft + 1 >= iRight) {
-		ret.push(new TopologyNode(iLeft, iRight, parallel, []));
-		topologyMemo.set(key, ret);
-		return ret;
-	}
-	const n = iRight - iLeft;
-	divideElementsRecursive(new Array(n), 0, n, (partSizes, numParts) => {
-		const parts = new Array(numParts);
-		let il = iLeft;
-		for (let iPart = 0; iPart < numParts; iPart++) {
-			const ir = il + partSizes[iPart];
-			parts[iPart] = searchTopologiesRecursive(il, ir, !parallel);
-			il = ir;
-		}
-		const indices = new Array(numParts).fill(0);
-		while (indices[numParts - 1] < parts[numParts - 1].length) {
-			const childNodes = new Array(numParts);
-			for (let iPart = 0; iPart < numParts; iPart++) childNodes[iPart] = parts[iPart][indices[iPart]];
-			ret.push(new TopologyNode(iLeft, iRight, parallel, childNodes));
-			for (let i = 0; i < numParts; i++) {
-				indices[i]++;
-				if (indices[i] < parts[i].length) break;
-				else if (i + 1 >= numParts) break;
-				else indices[i] = 0;
-			}
-		}
-	}, 0);
-	topologyMemo.set(key, ret);
-	return ret;
-}
-function divideElementsRecursive(buff, buffSize, numElems, callback, depth) {
-	if (numElems === 0) callback(buff, buffSize);
-	else {
-		let wMax = numElems;
-		if (buffSize == 0) wMax = numElems - 1;
-		else if (buffSize > 0 && buff[buffSize - 1] < wMax) wMax = buff[buffSize - 1];
-		for (let w = 1; w <= wMax; w++) {
-			buff[buffSize] = w;
-			divideElementsRecursive(buff, buffSize + 1, numElems - w, callback, depth + 1);
-		}
-	}
-}
-function bytesToBase64(s) {
-	const bytes = new TextEncoder().encode(s);
-	const binString = Array.from(bytes, (byte) => String.fromCodePoint(byte)).join("");
-	return btoa(binString);
-}
 
 //#endregion
 //#region src/Calc.ts
@@ -1021,26 +238,175 @@ var StringReader = class StringReader {
 		return this.pos >= this.str.length;
 	}
 };
+function pow10(exp) {
+	let ret = 1;
+	const neg = exp < 0;
+	if (neg) exp = -exp;
+	if (exp >= 16) {
+		ret *= 0x2386f26fc10000;
+		exp -= 16;
+	}
+	if (exp >= 8) {
+		ret *= 1e8;
+		exp -= 8;
+	}
+	if (exp >= 4) {
+		ret *= 1e4;
+		exp -= 4;
+	}
+	if (exp >= 2) {
+		ret *= 100;
+		exp -= 2;
+	}
+	if (exp >= 1) {
+		ret *= 10;
+		exp -= 1;
+	}
+	ret *= Math.pow(10, exp);
+	if (neg) ret = 1 / ret;
+	return ret;
+}
 
 //#endregion
-//#region src/Ui.ts
+//#region src/Series.ts
+const Series = {
+	"E1": [100],
+	"E3": [
+		100,
+		220,
+		470
+	],
+	"E6": [
+		100,
+		150,
+		220,
+		330,
+		470,
+		680
+	],
+	"E12": [
+		100,
+		120,
+		150,
+		180,
+		220,
+		270,
+		330,
+		390,
+		470,
+		560,
+		680,
+		820
+	],
+	"E24": [
+		100,
+		110,
+		120,
+		130,
+		150,
+		160,
+		180,
+		200,
+		220,
+		240,
+		270,
+		300,
+		330,
+		360,
+		390,
+		430,
+		470,
+		510,
+		560,
+		620,
+		680,
+		750,
+		820,
+		910
+	]
+};
+function makeAvaiableValues(series, minValue = 1e-12, maxValue = 0xe8d4a51000) {
+	const baseValues = Series[series];
+	if (!baseValues) throw new Error(`Unknown series: ${series}`);
+	const values = [];
+	for (let exp = -11; exp <= 15; exp++) {
+		const multiplier = pow10(exp - 3);
+		for (const base of baseValues) {
+			const value = base * multiplier;
+			const epsilon = value / 1e6;
+			if (minValue - epsilon <= value && value <= maxValue + epsilon) values.push(value);
+		}
+	}
+	values.sort((a, b) => a - b);
+	return values;
+}
+
+//#endregion
+//#region src/Text.ts
+const texts = { "ja": {
+	"Find Resistor Combinations": "合成抵抗を見つける",
+	"Find Capacitor Combinations": "合成容量を見つける",
+	"Find Voltage Dividers": "分圧抵抗を見つける",
+	"Find LED Current Limiting Resistor": "LEDの電流制限抵抗を見つける",
+	"Power Voltage": "電源電圧",
+	"Forward Voltage": "順方向電圧",
+	"Forward Current": "順方向電流",
+	"E Series": "シリーズ",
+	"Item": "項目",
+	"Value": "値",
+	"Unit": "単位",
+	"Minimum": "素子最小値",
+	"Maximum": "素子最大値",
+	"Custom": "カスタム",
+	"Custom Values": "カスタム値",
+	"Max Elements": "最大素子数",
+	"Target Value": "目標値",
+	"The search space is too large.": "探索空間が大きすぎます。",
+	"Upper Resistor": "上側の抵抗",
+	"Lower Resistor": "下側の抵抗",
+	"No combinations found.": "組み合わせが見つかりませんでした。",
+	"<n> combinations found": "<n> 件の組み合わせが見つかりました",
+	"Parallel": "並列",
+	"Series": "直列",
+	"Ideal Value": "理想値",
+	"<s> Approximation": "<s> 近似",
+	"Error": "誤差",
+	"No Error": "誤差なし",
+	"No Limit": "制限なし",
+	"Top Topology": "最上位トポロジー",
+	"Max Nests": "最大ネスト数",
+	"Search Time": "探索時間"
+} };
+function getStr(key, vars) {
+	let ret = key;
+	const lang = navigator.language;
+	if (lang in texts && key in texts[lang]) ret = texts[lang][key];
+	if (vars) for (const varKey of Object.keys(vars)) {
+		const varValue = vars[varKey];
+		ret = ret.replace(new RegExp(`<${varKey}>`, "g"), varValue.toString());
+	}
+	return ret;
+}
+
+//#endregion
+//#region src/RcmbUi.ts
 var ValueRangeSelector = class {
 	seriesSelect = makeSeriesSelector();
 	customValuesInput = document.createElement("textarea");
 	minResisterInput = new ValueBox();
 	maxResisterInput = new ValueBox();
-	constructor(cType) {
-		this.cType = cType;
-		if (cType === ComponentType.Resistor) {
-			this.customValuesInput.value = "100, 1k, 10k";
-			this.customValuesInput.placeholder = "e.g.\n100, 1k, 10k";
-			this.minResisterInput.inputBox.value = "100";
-			this.maxResisterInput.inputBox.value = "1M";
-		} else {
+	constructor(capacitor) {
+		this.capacitor = capacitor;
+		if (capacitor) {
 			this.customValuesInput.value = "1n, 10n, 100n";
 			this.customValuesInput.placeholder = "e.g.\n1n, 10n, 100n";
 			this.minResisterInput.inputBox.value = "100p";
 			this.maxResisterInput.inputBox.value = "100u";
+		} else {
+			this.customValuesInput.value = "100, 1k, 10k";
+			this.customValuesInput.placeholder = "e.g.\n100, 1k, 10k";
+			this.minResisterInput.inputBox.value = "100";
+			this.maxResisterInput.inputBox.value = "1M";
 		}
 		this.customValuesInput.disabled = true;
 	}
@@ -1178,21 +544,21 @@ function makeDepthSelector() {
 		}
 	], noLimit);
 }
-function makeH2(label) {
+function makeH2(label = "") {
 	const elm = document.createElement("h2");
 	elm.textContent = label;
 	return elm;
 }
-function makeDiv(children = [], className = null, center = false) {
+function makeDiv$1(children = [], className = null, center = false) {
 	const elm = document.createElement("div");
-	toElementArray(children).forEach((child) => elm.appendChild(child));
+	toElementArray$1(children).forEach((child) => elm.appendChild(child));
 	if (className) elm.classList.add(className);
 	if (center) elm.style.textAlign = "center";
 	return elm;
 }
 function makeP(children, className = null, center = false) {
 	const elm = document.createElement("p");
-	toElementArray(children).forEach((child) => elm.appendChild(child));
+	toElementArray$1(children).forEach((child) => elm.appendChild(child));
 	if (className) elm.classList.add(className);
 	if (center) elm.style.textAlign = "center";
 	return elm;
@@ -1204,7 +570,7 @@ function makeTable(rows) {
 		const row = document.createElement("tr");
 		for (const cellData of rowData) {
 			const cell = document.createElement(head ? "th" : "td");
-			toElementArray(cellData).forEach((child) => cell.appendChild(child));
+			toElementArray$1(cellData).forEach((child) => cell.appendChild(child));
 			row.appendChild(cell);
 		}
 		head = false;
@@ -1220,7 +586,7 @@ function makeTextBox(value = null) {
 }
 function makeSeriesSelector() {
 	let items = [];
-	for (const key of Object.keys(SERIESES)) items.push({
+	for (const key of Object.keys(Series)) items.push({
 		value: key,
 		label: key
 	});
@@ -1242,7 +608,7 @@ function makeSelectBox(items, defaultValue) {
 	select.value = defaultValue.toString();
 	return select;
 }
-function toElementArray(children) {
+function toElementArray$1(children) {
 	if (children == null) return [];
 	if (!Array.isArray(children)) children = [children];
 	for (let i = 0; i < children.length; i++) if (typeof children[i] === "string") children[i] = document.createTextNode(children[i]);
@@ -1268,331 +634,509 @@ function hide(elem) {
 function setVisible(elem, visible) {
 	return visible ? show(elem) : hide(elem);
 }
+function formatValue(value, unit = "", usePrefix = null) {
+	if (!isFinite(value) || isNaN(value)) return "NaN";
+	if (usePrefix === null) usePrefix = unit !== "";
+	let prefix = "";
+	if (usePrefix) {
+		if (value >= 999999e6) {
+			value /= 0xe8d4a51000;
+			prefix = "T";
+		} else if (value >= 999999e3) {
+			value /= 1e9;
+			prefix = "G";
+		} else if (value >= 999999) {
+			value /= 1e6;
+			prefix = "M";
+		} else if (value >= 999.999) {
+			value /= 1e3;
+			prefix = "k";
+		} else if (value >= .999999) prefix = "";
+		else if (value >= 999999e-9) {
+			value *= 1e3;
+			prefix = "m";
+		} else if (value >= 9.99999e-7) {
+			value *= 1e6;
+			prefix = "μ";
+		} else if (value >= 999999e-15) {
+			value *= 1e9;
+			prefix = "n";
+		} else if (value >= 999999e-18) {
+			value *= 0xe8d4a51000;
+			prefix = "p";
+		}
+	}
+	const minDigits = usePrefix ? 3 : 6;
+	value = Math.round(value * pow10(minDigits));
+	let s = "";
+	while (s.length <= minDigits + 1 || value > 0) {
+		const digit = value % 10;
+		value = Math.floor(value / 10);
+		s = digit.toString() + s;
+		if (s.length === minDigits) s = "." + s;
+	}
+	s = s.replace(/\.?0+$/, "");
+	return `${s} ${prefix}${unit}`.trim();
+}
+
+//#endregion
+//#region src/Schematics.ts
+const SCALE = 1;
+const ELEMENT_SIZE = 40 * SCALE;
+const R_WIDTH = ELEMENT_SIZE;
+const R_HEIGHT = Math.round(ELEMENT_SIZE * .4);
+const C_WIDTH = Math.round(ELEMENT_SIZE * .3);
+const C_HEIGHT = Math.round(ELEMENT_SIZE * .7);
+const COLOR_CODE_TABLE = [
+	"#000",
+	"#864",
+	"#c00",
+	"#f80",
+	"#cc0",
+	"#080",
+	"#04c",
+	"#c4c",
+	"#888",
+	"#fff"
+];
+function drawResistor(ctx, x, y, value) {
+	ctx.save();
+	ctx.translate(x, y);
+	let colors;
+	if (value >= 1e-6) {
+		const exp = Math.floor(Math.log10(value) + 1e-10) - 1;
+		const frac = Math.round(value / Math.pow(10, exp));
+		const digits1 = Math.floor(frac / 10) % 10;
+		const digits2 = frac % 10;
+		const digits3 = exp;
+		colors = [
+			COLOR_CODE_TABLE[digits1],
+			COLOR_CODE_TABLE[digits2],
+			COLOR_CODE_TABLE[digits3],
+			"#870"
+		];
+	} else colors = [COLOR_CODE_TABLE[0]];
+	const bandWidth = R_WIDTH * .125;
+	const bandGap = bandWidth / 2;
+	const bandX0 = (R_WIDTH - (bandWidth * colors.length + bandGap * (colors.length - 1))) / 2;
+	y += (ELEMENT_SIZE - R_HEIGHT) / 2;
+	for (let i = 0; i < colors.length; i++) {
+		const x$1 = bandX0 + i * (bandWidth + bandGap);
+		ctx.fillStyle = colors[i];
+		ctx.fillRect(x$1, y, bandWidth, R_HEIGHT);
+	}
+	ctx.lineWidth = 2 * SCALE;
+	ctx.strokeRect(0, y, R_WIDTH, R_HEIGHT);
+	ctx.font = `${16 * SCALE}px sans-serif`;
+	ctx.textAlign = "center";
+	ctx.textBaseline = "bottom";
+	const text = formatValue(value, "Ω", true);
+	ctx.fillStyle = "#000";
+	ctx.fillText(text, R_WIDTH / 2, y - 5 * SCALE);
+	ctx.restore();
+}
+function drawCapacitor(ctx, x, y, value) {
+	ctx.save();
+	ctx.translate(x, y);
+	const x0 = (ELEMENT_SIZE - C_WIDTH) / 2;
+	const x1 = x0 + C_WIDTH;
+	const y0 = (ELEMENT_SIZE - C_HEIGHT) / 2;
+	const y1 = y0 + C_HEIGHT;
+	ctx.lineWidth = 4 * SCALE;
+	ctx.beginPath();
+	ctx.moveTo(x0, y0);
+	ctx.lineTo(x0, y1);
+	ctx.moveTo(x1, y0);
+	ctx.lineTo(x1, y1);
+	ctx.stroke();
+	const yCenter = ELEMENT_SIZE / 2;
+	drawWire(ctx, 0, yCenter, x0, yCenter);
+	drawWire(ctx, x1, yCenter, ELEMENT_SIZE, yCenter);
+	ctx.font = `${16 * SCALE}px sans-serif`;
+	ctx.textAlign = "center";
+	ctx.textBaseline = "bottom";
+	const text = formatValue(value, "F", true);
+	ctx.fillStyle = "#000";
+	ctx.fillText(text, R_WIDTH / 2, y0 - 5 * SCALE);
+	ctx.restore();
+}
+function drawWire(ctx, x0, y0, x1, y1) {
+	ctx.save();
+	ctx.lineCap = "round";
+	ctx.lineWidth = 2 * SCALE;
+	ctx.beginPath();
+	ctx.moveTo(x0, y0);
+	ctx.lineTo(x1, y1);
+	ctx.stroke();
+	ctx.restore();
+}
+var TreeNode = class TreeNode {
+	x = 0;
+	y = 0;
+	width = 0;
+	height = 0;
+	constructor(capacitor, parallel, children, value = -1) {
+		this.capacitor = capacitor;
+		this.parallel = parallel;
+		this.children = children;
+		this.value = value;
+		if (this.isLeaf) {
+			this.width = ELEMENT_SIZE;
+			this.height = ELEMENT_SIZE;
+		} else if (this.parallel) {
+			const X_PADDING = 20 * SCALE;
+			const Y_PADDING = 20 * SCALE;
+			let maxWidth = 0;
+			let totalHeight = 0;
+			for (const c of this.children) {
+				c.y = totalHeight;
+				maxWidth = Math.max(maxWidth, c.width);
+				totalHeight += c.height + Y_PADDING;
+			}
+			for (const c of this.children) c.x = (maxWidth - c.width) / 2 + X_PADDING;
+			totalHeight -= Y_PADDING;
+			this.width = maxWidth + X_PADDING * 2;
+			this.height = totalHeight;
+		} else {
+			const X_PADDING = 20 * SCALE;
+			let totalWidth = 0;
+			let maxHeight = 0;
+			for (const c of this.children) {
+				c.x = totalWidth;
+				totalWidth += c.width + X_PADDING;
+				maxHeight = Math.max(maxHeight, c.height);
+			}
+			for (const c of this.children) c.y = (maxHeight - c.height) / 2;
+			totalWidth -= X_PADDING;
+			this.width = totalWidth;
+			this.height = maxHeight;
+		}
+	}
+	static fromJSON(capacitor, json) {
+		if (typeof json === "number") return new TreeNode(capacitor, false, [], json);
+		else {
+			const value = json.value;
+			const parallel = json.parallel;
+			const children = [];
+			for (const childJson of json.children) children.push(TreeNode.fromJSON(capacitor, childJson));
+			return new TreeNode(capacitor, parallel, children, value);
+		}
+	}
+	scale(dx, dy, xScale, yScale) {
+		this.x *= xScale;
+		this.y *= yScale;
+		this.width *= xScale;
+		this.height *= yScale;
+		for (const c of this.children) c.scale(dx, dy, xScale, yScale);
+	}
+	offset(dx, dy) {
+		this.x += dx;
+		this.y += dy;
+	}
+	draw(ctx) {
+		ctx.save();
+		ctx.translate(this.x, this.y);
+		if (this.isLeaf) if (this.capacitor) drawCapacitor(ctx, 0, 0, this.value);
+		else drawResistor(ctx, 0, 0, this.value);
+		else if (this.parallel) {
+			let y0 = 0;
+			let y1 = 0;
+			for (let i = 0; i < this.children.length; i++) {
+				const c = this.children[i];
+				const x0 = c.x;
+				const x1 = c.x + c.width;
+				const y = c.y + c.height / 2;
+				drawWire(ctx, 0, y, x0, y);
+				drawWire(ctx, x1, y, this.width, y);
+				if (i === 0) y0 = y;
+				y1 = y;
+			}
+			drawWire(ctx, 0, y0, 0, y1);
+			drawWire(ctx, this.width, y0, this.width, y1);
+		} else {
+			const y = this.height / 2;
+			for (let i = 0; i < this.children.length - 1; i++) {
+				const x0 = this.children[i].x + this.children[i].width;
+				const x1 = this.children[i + 1].x;
+				drawWire(ctx, x0, y, x1, y);
+			}
+		}
+		for (const c of this.children) c.draw(ctx);
+		ctx.restore();
+	}
+	get isLeaf() {
+		return this.children.length === 0;
+	}
+};
+
+//#endregion
+//#region src/WorkerAgents.ts
+var WorkerAgent = class {
+	worker = null;
+	workerRunning = false;
+	startRequestParams = {};
+	startRequestTimerId = null;
+	lastLaunchedParams = {};
+	onFinished = null;
+	onAborted = null;
+	requestStart(p) {
+		if (JSON.stringify(p) === JSON.stringify(this.startRequestParams)) return;
+		this.cancelRequest();
+		this.startRequestParams = p;
+		this.startRequestTimerId = window.setTimeout(async () => {
+			this.startRequestTimerId = null;
+			await this.startWorker();
+		}, 100);
+	}
+	cancelRequest() {
+		if (this.startRequestTimerId !== null) {
+			window.clearTimeout(this.startRequestTimerId);
+			this.startRequestTimerId = null;
+		}
+	}
+	async startWorker() {
+		this.abortWorker();
+		if (this.worker === null) {
+			this.worker = new Worker("../worker/index.mjs", { type: "module" });
+			this.worker.onmessage = (e) => this.onMessaged(e);
+			this.worker.onerror = (e) => this.onError(e);
+		}
+		this.lastLaunchedParams = JSON.parse(JSON.stringify(this.startRequestParams));
+		this.worker.postMessage(this.startRequestParams);
+		this.workerRunning = true;
+	}
+	abortWorker() {
+		if (this.worker !== null) {
+			this.worker.terminate();
+			this.worker = null;
+		}
+		this.workerRunning = false;
+	}
+	onMessaged(e) {
+		this.workerRunning = false;
+		if (this.onFinished) {
+			let ret = e.data;
+			ret.params = this.lastLaunchedParams;
+			this.onFinished(ret);
+		}
+		if (this.startRequestTimerId !== null) {
+			window.clearTimeout(this.startRequestTimerId);
+			this.startRequestTimerId = null;
+			this.startWorker();
+		}
+	}
+	onError(e) {
+		this.abortWorker();
+		if (this.onAborted) this.onAborted(e.message);
+	}
+};
+
+//#endregion
+//#region src/CombinationFinderUi.ts
+var CombinationFinderUi = class {
+	rangeSelector = null;
+	numElementsInput = makeNumElementInput(MAX_COMBINATION_ELEMENTS, 3);
+	topTopologySelector = makeTopologySelector();
+	maxDepthInput = makeDepthSelector();
+	resultBox = makeDiv$1();
+	resCombInputBox = null;
+	ui = null;
+	workerAgent = new WorkerAgent();
+	constructor(capacitor) {
+		this.capacitor = capacitor;
+		const unit = capacitor ? "F" : "Ω";
+		this.rangeSelector = new ValueRangeSelector(capacitor);
+		this.resCombInputBox = new ValueBox(capacitor ? "3.14μ" : "5.1k");
+		this.ui = makeDiv$1([
+			makeH2(this.capacitor ? getStr("Find Capacitor Combinations") : getStr("Find Resistor Combinations")),
+			makeTable([
+				[
+					getStr("Item"),
+					getStr("Value"),
+					getStr("Unit")
+				],
+				[
+					getStr("E Series"),
+					this.rangeSelector.seriesSelect,
+					""
+				],
+				[
+					getStr("Custom Values"),
+					this.rangeSelector.customValuesInput,
+					unit
+				],
+				[
+					getStr("Minimum"),
+					this.rangeSelector.minResisterInput.inputBox,
+					unit
+				],
+				[
+					getStr("Maximum"),
+					this.rangeSelector.maxResisterInput.inputBox,
+					unit
+				],
+				[
+					getStr("Max Elements"),
+					this.numElementsInput.inputBox,
+					""
+				],
+				[
+					getStr("Top Topology"),
+					this.topTopologySelector,
+					""
+				],
+				[
+					getStr("Max Nests"),
+					this.maxDepthInput,
+					""
+				],
+				[
+					getStr("Target Value"),
+					this.resCombInputBox.inputBox,
+					unit
+				]
+			]),
+			this.resultBox
+		]);
+		this.rangeSelector.setOnChange(() => this.conditionChanged());
+		this.resCombInputBox.setOnChange(() => this.conditionChanged());
+		this.numElementsInput.setOnChange(() => this.conditionChanged());
+		this.topTopologySelector.addEventListener("change", () => this.conditionChanged());
+		this.maxDepthInput.addEventListener("change", () => this.conditionChanged());
+		this.workerAgent.onFinished = (e) => this.onFinished(e);
+		this.workerAgent.onAborted = (msg) => this.onAborted(msg);
+		this.conditionChanged();
+	}
+	conditionChanged() {
+		try {
+			const rangeSelector = this.rangeSelector;
+			const custom = rangeSelector.seriesSelect.value === "custom";
+			setVisible(parentTrOf(rangeSelector.customValuesInput), custom);
+			setVisible(parentTrOf(rangeSelector.minResisterInput.inputBox), !custom);
+			setVisible(parentTrOf(rangeSelector.maxResisterInput.inputBox), !custom);
+			const targetValue = this.resCombInputBox.value;
+			const topoConstr = parseInt(this.topTopologySelector.value);
+			const p = {
+				useWasm: false,
+				method: Method.FindCombination,
+				capacitor: this.capacitor,
+				values: rangeSelector.getAvailableValues(targetValue),
+				maxElements: this.numElementsInput.value,
+				topologyConstraint: topoConstr,
+				maxDepth: parseInt(this.maxDepthInput.value),
+				targetValue
+			};
+			this.workerAgent.requestStart(p);
+		} catch (e) {
+			this.workerAgent.cancelRequest();
+		}
+	}
+	onFinished(e) {
+		try {
+			this.resultBox.innerHTML = "";
+			if (e.error && e.error.length > 0) throw new Error(e.error);
+			const targetValue = e.params.targetValue;
+			const timeSpentMs = e.timeSpent;
+			const msg = `${getStr("<n> combinations found", { n: e.result.length })} (${getStr("Search Time")}: ${timeSpentMs.toFixed(2)} ms):`;
+			this.resultBox.appendChild(makeP(msg));
+			for (const combJson of e.result) {
+				const PADDING = 20;
+				const CAPTION_HEIGHT = 50;
+				const LEAD_LENGTH = 40 * SCALE;
+				const node = TreeNode.fromJSON(this.capacitor, combJson);
+				node.offset(-node.x, -node.y);
+				const DISP_W = 300;
+				const DISP_H = 300;
+				const EDGE_SIZE = Math.max(node.width + LEAD_LENGTH * 2 + PADDING * 2, node.height + CAPTION_HEIGHT + PADDING * 3);
+				const W = Math.max(DISP_W, EDGE_SIZE);
+				const H = Math.max(DISP_H, EDGE_SIZE);
+				const FIGURE_PLACE_W = W - PADDING * 2;
+				const FIGURE_PLACE_H = H - CAPTION_HEIGHT - PADDING * 3;
+				const canvas = document.createElement("canvas");
+				canvas.width = W;
+				canvas.height = H;
+				canvas.style.width = `${DISP_W}px`;
+				canvas.style.height = "auto";
+				canvas.className = "figure";
+				const ctx = canvas.getContext("2d");
+				ctx.fillStyle = "#fff";
+				ctx.fillRect(0, 0, W, H);
+				{
+					ctx.save();
+					ctx.strokeStyle = "#000";
+					const dx = PADDING + (FIGURE_PLACE_W - node.width) / 2;
+					const dy = PADDING + (FIGURE_PLACE_H - node.height) / 2;
+					ctx.translate(dx, dy);
+					node.draw(ctx);
+					const y = node.height / 2;
+					const x0 = -LEAD_LENGTH;
+					const x1 = 0;
+					const x2 = node.width;
+					const x3 = node.width + LEAD_LENGTH;
+					drawWire(ctx, x0, y, x1, y);
+					drawWire(ctx, x2, y, x3, y);
+					ctx.restore();
+				}
+				ctx.save();
+				ctx.translate(W / 2, H - PADDING - CAPTION_HEIGHT);
+				ctx.fillStyle = "#000";
+				ctx.textAlign = "center";
+				ctx.textBaseline = "top";
+				{
+					const text = formatValue(node.value, this.capacitor ? "F" : "Ω", true);
+					ctx.font = `${24 * SCALE}px sans-serif`;
+					ctx.fillText(text, 0, 0);
+				}
+				{
+					let error = (node.value - targetValue) / targetValue;
+					let errorStr = getStr("No Error");
+					ctx.save();
+					if (Math.abs(error) > targetValue / 1e9) {
+						errorStr = `${getStr("Error")}: ${error > 0 ? "+" : ""}${(error * 100).toFixed(4)}%`;
+						ctx.fillStyle = error > 0 ? "#c00" : "#00c";
+					}
+					ctx.font = `${16 * SCALE}px sans-serif`;
+					ctx.fillText(`(${errorStr})`, 0, 30);
+					ctx.restore();
+				}
+				ctx.restore();
+				this.resultBox.appendChild(canvas);
+				this.resultBox.appendChild(document.createTextNode(" "));
+			}
+		} catch (e$1) {
+			let msg = "Unknown error";
+			if (e$1.message) msg = e$1.message;
+			this.resultBox.textContent = getStr(msg);
+		}
+	}
+	onAborted(msg) {
+		this.resultBox.textContent = getStr(msg);
+	}
+};
+
+//#endregion
+//#region src/Ui.ts
+function makeDiv(children = [], className = null, center = false) {
+	const elm = document.createElement("div");
+	toElementArray(children).forEach((child) => elm.appendChild(child));
+	if (className) elm.classList.add(className);
+	if (center) elm.style.textAlign = "center";
+	return elm;
+}
+function toElementArray(children) {
+	if (children == null) return [];
+	if (!Array.isArray(children)) children = [children];
+	for (let i = 0; i < children.length; i++) if (typeof children[i] === "string") children[i] = document.createTextNode(children[i]);
+	else if (children[i] instanceof Node) {} else throw new Error("Invalid child element");
+	return children;
+}
 
 //#endregion
 //#region src/main.ts
-let core = null;
-async function main(container, wasmCore) {
-	if (wasmCore) core = wasmCore;
-	container.appendChild(makeDiv([
-		makeCombinatorUI(ComponentType.Resistor),
-		makeDividerCombinatorUI(),
-		makeCombinatorUI(ComponentType.Capacitor),
-		makeCurrentLimitingUI()
-	]));
-}
-function makeCombinatorUI(type) {
-	const cap = type === ComponentType.Capacitor;
-	const rangeSelector = new ValueRangeSelector(type);
-	const numElementsInput = makeNumElementInput(MAX_COMBINATION_ELEMENTS, 3);
-	const topTopologySelector = makeTopologySelector();
-	const maxDepthInput = makeDepthSelector();
-	const resultBox = makeDiv();
-	const resCombInputBox = new ValueBox(cap ? "3.14μ" : "5.1k");
-	const unit = cap ? "F" : "Ω";
-	const ui = makeDiv([
-		makeH2(getStr(cap ? "Find Capacitor Combinations" : "Find Resistor Combinations")),
-		makeTable([
-			[
-				getStr("Item"),
-				getStr("Value"),
-				getStr("Unit")
-			],
-			[
-				getStr("E Series"),
-				rangeSelector.seriesSelect,
-				""
-			],
-			[
-				getStr("Custom Values"),
-				rangeSelector.customValuesInput,
-				unit
-			],
-			[
-				getStr("Minimum"),
-				rangeSelector.minResisterInput.inputBox,
-				unit
-			],
-			[
-				getStr("Maximum"),
-				rangeSelector.maxResisterInput.inputBox,
-				unit
-			],
-			[
-				getStr("Max Elements"),
-				numElementsInput.inputBox,
-				""
-			],
-			[
-				getStr("Top Topology"),
-				topTopologySelector,
-				""
-			],
-			[
-				getStr("Max Nests"),
-				maxDepthInput,
-				""
-			],
-			[
-				getStr("Target Value"),
-				resCombInputBox.inputBox,
-				unit
-			]
-		]),
-		resultBox
-	]);
-	const callback = () => {
-		resultBox.innerHTML = "";
-		try {
-			const custom = rangeSelector.seriesSelect.value === "custom";
-			setVisible(parentTrOf(rangeSelector.customValuesInput), custom);
-			setVisible(parentTrOf(rangeSelector.minResisterInput.inputBox), !custom);
-			setVisible(parentTrOf(rangeSelector.maxResisterInput.inputBox), !custom);
-			const targetValue = resCombInputBox.value;
-			const availableValues = rangeSelector.getAvailableValues(targetValue);
-			const maxElements = numElementsInput.value;
-			const topoConstr = parseInt(topTopologySelector.value);
-			const maxDepth = parseInt(maxDepthInput.value);
-			const start = performance.now();
-			let combs = [];
-			if (core) {
-				const valueVector = new core.VectorDouble();
-				for (const v of availableValues) valueVector.push_back(v);
-				const retJson = JSON.parse(core.find_combinations(cap, valueVector, targetValue, maxElements, topoConstr, maxDepth));
-				if (retJson.error) throw new Error(getStr(retJson.error));
-				for (const combJson of retJson.result) {
-					const comb = Combination.fromJson(type, combJson);
-					combs.push(comb);
-				}
-				valueVector.delete();
-			} else combs = findCombinations(type, availableValues, targetValue, maxElements, topoConstr, maxDepth);
-			const end = performance.now();
-			console.log(`Computation time: ${(end - start).toFixed(2)} ms`);
-			if (combs.length > 0) {
-				resultBox.appendChild(makeP(getStr("Found <n> combination(s):", { n: combs.length })));
-				for (const comb of combs) {
-					resultBox.appendChild(comb.generateSvg(targetValue));
-					resultBox.appendChild(document.createTextNode(" "));
-				}
-			} else resultBox.appendChild(makeP(getStr("No combinations found.")));
-		} catch (e) {
-			resultBox.appendChild(makeP(`Error: ${e.message}`));
-		}
-	};
-	rangeSelector.setOnChange(callback);
-	resCombInputBox.setOnChange(callback);
-	numElementsInput.setOnChange(callback);
-	topTopologySelector.addEventListener("change", () => callback());
-	maxDepthInput.addEventListener("change", () => callback());
-	callback();
-	return ui;
-}
-function makeDividerCombinatorUI() {
-	const rangeSelector = new ValueRangeSelector(ComponentType.Resistor);
-	const targetInput = new ValueBox("3.3 / 5.0");
-	const totalMinBox = new ValueBox("10k");
-	const totalMaxBox = new ValueBox("100k");
-	const numElementsInput = makeNumElementInput(MAX_DIVIDER_ELEMENTS, 2);
-	const topTopologySelector = makeTopologySelector();
-	const maxDepthInput = makeDepthSelector();
-	const resultBox = makeDiv();
-	const ui = makeDiv([
-		makeH2(getStr("Find Voltage Dividers")),
-		makeP(`R1: ${getStr("Upper Resistor")}, R2: ${getStr("Lower Resistor")}, Vout / Vin = R2 / (R1 + R2)`),
-		makeTable([
-			[
-				getStr("Item"),
-				getStr("Value"),
-				getStr("Unit")
-			],
-			[
-				getStr("E Series"),
-				rangeSelector.seriesSelect,
-				""
-			],
-			[
-				getStr("Custom Values"),
-				rangeSelector.customValuesInput,
-				"Ω"
-			],
-			[
-				getStr("Minimum"),
-				rangeSelector.minResisterInput.inputBox,
-				"Ω"
-			],
-			[
-				getStr("Maximum"),
-				rangeSelector.maxResisterInput.inputBox,
-				"Ω"
-			],
-			[
-				getStr("Max Elements"),
-				numElementsInput.inputBox,
-				""
-			],
-			[
-				getStr("Top Topology"),
-				topTopologySelector,
-				""
-			],
-			[
-				getStr("Max Nests"),
-				maxDepthInput,
-				""
-			],
-			[
-				"R1 + R2 (min)",
-				totalMinBox.inputBox,
-				"Ω"
-			],
-			[
-				"R1 + R2 (max)",
-				totalMaxBox.inputBox,
-				"Ω"
-			],
-			[
-				"R2 / (R1 + R2)",
-				targetInput.inputBox,
-				""
-			]
-		]),
-		resultBox
-	]);
-	const callback = () => {
-		resultBox.innerHTML = "";
-		try {
-			const custom = rangeSelector.seriesSelect.value === "custom";
-			setVisible(parentTrOf(rangeSelector.customValuesInput), custom);
-			setVisible(parentTrOf(rangeSelector.minResisterInput.inputBox), !custom);
-			setVisible(parentTrOf(rangeSelector.maxResisterInput.inputBox), !custom);
-			const targetValue = targetInput.value;
-			const totalMin = totalMinBox.value;
-			const totalMax = totalMaxBox.value;
-			const availableValues = rangeSelector.getAvailableValues((totalMin + totalMax) / 2);
-			const maxElements = numElementsInput.value;
-			const topoConstr = parseInt(topTopologySelector.value);
-			const maxDepth = parseInt(maxDepthInput.value);
-			const start = performance.now();
-			let combs = [];
-			if (core) {
-				const valueVector = new core.VectorDouble();
-				for (const v of availableValues) valueVector.push_back(v);
-				const retJson = JSON.parse(core.find_dividers(valueVector, targetValue, totalMin, totalMax, maxElements, topoConstr, maxDepth));
-				if (retJson.error) throw new Error(getStr(retJson.error));
-				for (const combJson of retJson.result) {
-					const comb = DividerCombination.fromJson(ComponentType.Resistor, combJson);
-					combs.push(comb);
-				}
-				valueVector.delete();
-			} else combs = findDividers(ComponentType.Resistor, availableValues, targetValue, totalMin, totalMax, maxElements, topoConstr, maxDepth);
-			const end = performance.now();
-			console.log(`Computation time: ${(end - start).toFixed(2)} ms`);
-			if (combs.length > 0) {
-				resultBox.appendChild(makeP(getStr("Found <n> combination(s):", { n: combs.length })));
-				for (const comb of combs) {
-					resultBox.appendChild(comb.generateSvg(targetValue));
-					resultBox.appendChild(document.createTextNode(" "));
-				}
-			} else resultBox.appendChild(makeP(getStr("No combinations found.")));
-		} catch (e) {
-			resultBox.appendChild(makeP(`Error: ${e.message}`));
-		}
-	};
-	rangeSelector.setOnChange(callback);
-	targetInput.setOnChange(callback);
-	numElementsInput.setOnChange(callback);
-	topTopologySelector.addEventListener("change", () => callback());
-	maxDepthInput.addEventListener("change", () => callback());
-	totalMinBox.setOnChange(callback);
-	totalMaxBox.setOnChange(callback);
-	callback();
-	return ui;
-}
-function makeCurrentLimitingUI() {
-	const powerVoltageInput = new ValueBox("3.3");
-	const forwardVoltageInput = new ValueBox("2");
-	const forwardCurrentInput = new ValueBox("1m");
-	const resultBox = document.createElement("pre");
-	const ui = makeDiv([
-		makeH2(getStr("Find LED Current Limiting Resistor")),
-		makeTable([
-			[
-				getStr("Item"),
-				getStr("Value"),
-				getStr("Unit")
-			],
-			[
-				getStr("Power Voltage"),
-				powerVoltageInput.inputBox,
-				"V"
-			],
-			[
-				getStr("Forward Voltage"),
-				forwardVoltageInput.inputBox,
-				"V"
-			],
-			[
-				getStr("Forward Current"),
-				forwardCurrentInput.inputBox,
-				"A"
-			]
-		]),
-		resultBox
-	]);
-	const callback = () => {
-		try {
-			const vCC = powerVoltageInput.value;
-			const vF = forwardVoltageInput.value;
-			const iF = forwardCurrentInput.value;
-			const vR = vCC - vF;
-			const rIdeal = vR / iF;
-			let results = [{
-				label: getStr("Ideal Value"),
-				r: formatValue(rIdeal, "Ω"),
-				i: formatValue(iF, "A"),
-				p: formatValue(vR * iF, "W")
-			}];
-			let rLast = 0;
-			for (const seriesName in SERIESES) {
-				const series = makeAvaiableValues(seriesName);
-				let rApprox = 0;
-				{
-					const epsilon = iF * 1e-6;
-					let bestDiff = Infinity;
-					for (const r of series) {
-						const i = (vCC - vF) / r;
-						const diff = Math.abs(iF - i);
-						if (diff - epsilon < bestDiff) {
-							bestDiff = diff;
-							rApprox = r;
-						}
-					}
-				}
-				if (rApprox !== rLast) {
-					const iApprox = (vCC - vF) / rApprox;
-					const pApprox = vR * iApprox;
-					results.push({
-						label: `${getStr("<s> Approximation", { s: seriesName })}`,
-						r: formatValue(rApprox, "Ω"),
-						i: formatValue(iApprox, "A"),
-						p: formatValue(pApprox, "W")
-					});
-					if (Math.abs(rApprox - rIdeal) < rIdeal * 1e-6) break;
-				}
-				rLast = rApprox;
-			}
-			let resultText = "";
-			for (const res of results) resultText += `${res.label}: ${res.r} (${res.i}, ${res.p})\n`;
-			resultBox.textContent = resultText;
-		} catch (e) {
-			resultBox.textContent = `Error: ${e.message}`;
-		}
-	};
-	powerVoltageInput.setOnChange(callback);
-	forwardVoltageInput.setOnChange(callback);
-	forwardCurrentInput.setOnChange(callback);
-	callback();
-	return ui;
+function main(container) {
+	const resCombFinderUi = new CombinationFinderUi(false);
+	const capCombFinderUi = new CombinationFinderUi(true);
+	container.appendChild(makeDiv([resCombFinderUi.ui, capCombFinderUi.ui]));
 }
 
 //#endregion

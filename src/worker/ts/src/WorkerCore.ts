@@ -32,7 +32,10 @@ thisWorker.onmessage = async (e: MessageEvent<any>) => {
   let ret = {
     error: '',
     result: [],
+    timeSpent: 0,
   };
+
+  const start = performance.now();
 
   switch (method) {
     case RcmbJS.Method.FindCombination: {
@@ -65,6 +68,9 @@ thisWorker.onmessage = async (e: MessageEvent<any>) => {
       ret.error = 'Invalid method';
       break;
   }
+
+  const end = performance.now();
+  ret.timeSpent = end - start;
 
   thisWorker.postMessage(ret);
 };

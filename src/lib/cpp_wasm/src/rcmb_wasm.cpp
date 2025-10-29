@@ -3,7 +3,7 @@
 
 #include <emscripten/bind.h>
 
-#include "rccomb/rccomb.hpp"
+#include "rcmb/rcmb.hpp"
 
 #ifdef __cplusplus
 #define EXTERN extern "C"
@@ -11,7 +11,7 @@
 #define EXTERN
 #endif
 
-using namespace rccomb;
+using namespace rcmb;
 
 std::string findCombinations(bool capacitor, const std::vector<double>& values,
                               double target_value, int max_elements,
@@ -32,7 +32,7 @@ std::string findCombinations(bool capacitor, const std::vector<double>& values,
   options.max_depth = max_depth;
 
   std::vector<Combination> combinations;
-  auto ret = rccomb::search_combinations(options, combinations);
+  auto ret = rcmb::search_combinations(options, combinations);
   if (ret != result_t::SUCCESS) {
     return std::string("{\"error\":\"") + result_to_string(ret) + "\"}";
   }
@@ -67,7 +67,7 @@ std::string findDividers(const std::vector<double>& values,
   options.max_depth = max_depth;
 
   std::vector<DoubleCombination> combinations;
-  auto ret = rccomb::search_dividers(options, combinations);
+  auto ret = rcmb::search_dividers(options, combinations);
   if (ret != result_t::SUCCESS) {
     return std::string("{\"error\":\"") + result_to_string(ret) + "\"}";
   }

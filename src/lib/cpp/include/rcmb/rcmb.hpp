@@ -7,14 +7,14 @@
 #include <stack>
 #include <vector>
 
-#include "rccomb/combination.hpp"
-#include "rccomb/common.hpp"
-#include "rccomb/double_combination.hpp"
-#include "rccomb/search_state.hpp"
-#include "rccomb/topology.hpp"
-#include "rccomb/value_list.hpp"
+#include "rcmb/combination.hpp"
+#include "rcmb/common.hpp"
+#include "rcmb/double_combination.hpp"
+#include "rcmb/search_state.hpp"
+#include "rcmb/topology.hpp"
+#include "rcmb/value_list.hpp"
 
-namespace rccomb {
+namespace rcmb {
 
 struct ValueSearchOptions {
   const ComponentType type;
@@ -431,6 +431,6 @@ static void filter_unnormalized_combinations(std::vector<Combination>& combs) {
 
 #endif
 
-}  // namespace rccomb
+}  // namespace rcmb
 
 #endif

@@ -10,6 +10,10 @@ APP_TS_LIST := $(wildcard $(APP_SRC_DIR)/*.ts)
 APP_DIST_DIR := $(REPO_DIR)/docs/ui
 APP_JS := $(APP_DIST_DIR)/index.mjs
 
+LIB_DIR := ../../lib/ts
+LIB_SRC_DIR := $(LIB_DIR)/src
+LIB_TS_LIST := $(wildcard $(LIB_SRC_DIR)/*.ts)
+
 EXTRA_DEPENDENCIES := \
 	Makefile
 
@@ -17,7 +21,7 @@ all: build
 
 build: $(APP_JS)
 
-$(APP_JS): $(APP_TS_LIST) $(EXTRA_DEPENDENCIES)
+$(APP_JS): $(APP_TS_LIST) $(LIB_TS_LIST) $(EXTRA_DEPENDENCIES)
 	@mkdir -p $(dir $@)
 	cd $(APP_TS_DIR) && npx tsdown
 	cp $(APP_BUILD_DIR)/*.mjs $(APP_DIST_DIR)/.

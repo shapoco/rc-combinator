@@ -6,9 +6,9 @@
 #include <memory>
 #include <vector>
 
-#include "rccomb/common.hpp"
+#include "rcmb/common.hpp"
 
-namespace rccomb {
+namespace rcmb {
 
 class TopologyClass;
 using Topology = std::shared_ptr<TopologyClass>;
@@ -216,6 +216,6 @@ static void collect_children(NodeDivideContext& ctx, int num_parts) {
 
 #endif
 
-}  // namespace rccomb
+}  // namespace rcmb
 
 #endif

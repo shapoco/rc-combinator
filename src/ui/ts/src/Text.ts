@@ -21,7 +21,7 @@ const texts: {[key: string]: {[key: string]: string}} = {
     'Upper Resistor': '上側の抵抗',
     'Lower Resistor': '下側の抵抗',
     'No combinations found.': '組み合わせが見つかりませんでした。',
-    'Found <n> combination(s):': '<n> 件の組み合わせが見つかりました。',
+    '<n> combinations found': '<n> 件の組み合わせが見つかりました',
     'Parallel': '並列',
     'Series': '直列',
     'Ideal Value': '理想値',
@@ -31,6 +31,7 @@ const texts: {[key: string]: {[key: string]: string}} = {
     'No Limit': '制限なし',
     'Top Topology': '最上位トポロジー',
     'Max Nests': '最大ネスト数',
+    'Search Time': '探索時間',
   },
 };
 

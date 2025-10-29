@@ -7,11 +7,11 @@
 #include <stack>
 #include <vector>
 
-#include "rccomb/combination.hpp"
-#include "rccomb/common.hpp"
-#include "rccomb/topology.hpp"
+#include "rcmb/combination.hpp"
+#include "rcmb/common.hpp"
+#include "rcmb/topology.hpp"
 
-namespace rccomb {
+namespace rcmb {
 
 class SearchStateClass;
 using SearchState = std::shared_ptr<SearchStateClass>;
@@ -159,6 +159,6 @@ SearchState build_search_state_tree(ComponentType type,
 
 #endif
 
-}  // namespace rccomb
+}  // namespace rcmb
 
 #endif

@@ -327,3 +327,34 @@ class StringReader {
     return this.pos >= this.str.length;
   }
 }
+
+export function pow10(exp: number): number {
+  let ret = 1;
+  const neg = exp < 0;
+  if (neg) exp = -exp;
+  if (exp >= 16) {
+    ret *= 1e16;
+    exp -= 16;
+  }
+  if (exp >= 8) {
+    ret *= 1e8;
+    exp -= 8;
+  }
+  if (exp >= 4) {
+    ret *= 1e4;
+    exp -= 4;
+  }
+  if (exp >= 2) {
+    ret *= 1e2;
+    exp -= 2;
+  }
+  if (exp >= 1) {
+    ret *= 1e1;
+    exp -= 1;
+  }
+  ret *= Math.pow(10, exp);
+  if (neg) {
+    ret = 1 / ret;
+  }
+  return ret;
+}

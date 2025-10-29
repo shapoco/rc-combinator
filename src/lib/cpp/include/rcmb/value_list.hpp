@@ -1,12 +1,12 @@
 #ifndef RCCOMB_VALUE_LIST_HPP
 #define RCCOMB_VALUE_LIST_HPP
 
-#include "rccomb/common.hpp"
+#include "rcmb/common.hpp"
 
 #include <algorithm>
 #include <vector>
 
-namespace rccomb {
+namespace rcmb {
 class ValueList {
  public:
   const std::vector<value_t> values;
@@ -57,6 +57,6 @@ class ValueList {
   }
 };
 
-}  // namespace rccomb
+}  // namespace rcmb
 
 #endif

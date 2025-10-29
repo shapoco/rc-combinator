@@ -1551,6 +1551,7 @@ var Combination = class {
 		if (this.isLeaf) return this.value;
 		else return {
 			parallel: this.parallel,
+			value: this.value,
 			children: this.children.map((child) => child.toJson())
 		};
 	}
@@ -1807,8 +1808,10 @@ thisWorker.onmessage = async (e) => {
 	const maxDepth = args.maxDepth;
 	let ret = {
 		error: "",
-		result: []
+		result: [],
+		timeSpent: 0
 	};
+	const start = performance.now();
 	switch (method) {
 		case Method.FindCombination:
 			{
@@ -1831,6 +1834,7 @@ thisWorker.onmessage = async (e) => {
 			ret.error = "Invalid method";
 			break;
 	}
+	ret.timeSpent = performance.now() - start;
 	thisWorker.postMessage(ret);
 };
 

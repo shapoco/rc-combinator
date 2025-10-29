@@ -10,7 +10,7 @@ RCCOMB_SRC_DIR := ../src
 APP_SRC_DIR := .
 
 HPP_FILES := \
-	$(wildcard $(RCCOMB_INC_DIR)/rccomb/*.hpp)
+	$(wildcard $(RCCOMB_INC_DIR)/rcmb/*.hpp)
 CPP_FILES := \
 	$(wildcard $(RCCOMB_SRC_DIR)/*.cpp)  \
 	$(wildcard $(APP_SRC_DIR)/*.cpp)

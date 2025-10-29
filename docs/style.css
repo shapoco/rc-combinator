@@ -181,3 +181,8 @@ a.inactive {
   background: #ccc;
   color: #666;
 }
+
+.figure {
+  border: solid 1px #ccc;
+  border-radius: 5px;
+}

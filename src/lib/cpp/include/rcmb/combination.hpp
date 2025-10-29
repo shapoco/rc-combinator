@@ -3,10 +3,10 @@
 
 #include <cmath>
 
-#include "rccomb/common.hpp"
-#include "rccomb/topology.hpp"
+#include "rcmb/common.hpp"
+#include "rcmb/topology.hpp"
 
-namespace rccomb {
+namespace rcmb {
 
 class CombinationClass;
 using Combination = std::shared_ptr<CombinationClass>;
@@ -155,6 +155,6 @@ std::string CombinationClass::to_string() const {
 
 #endif
 
-}  // namespace rccomb
+}  // namespace rcmb
 
 #endif  // RCCOMB_COMBINATION_HPP

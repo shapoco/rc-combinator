@@ -16,23 +16,24 @@ CMD_UPDATE_POSTFIX := python3 $(BIN_DIR)/update_url_postfix.py
 all: build update_postfix
 
 build:
-	@make --no-print-directory -C $(UI_TS_DIR) build
-	@make --no-print-directory -C $(LIB_WASM_DIR) build
-	@make --no-print-directory -C $(WORKER_TS_DIR) build
+	make --no-print-directory -C $(LIB_WASM_DIR) build
+	make --no-print-directory -C $(WORKER_TS_DIR) build
+	make --no-print-directory -C $(UI_TS_DIR) build
 
 update_postfix:
 	$(CMD_UPDATE_POSTFIX) --base_dir $(DIST_DIR) --base_url $(BASE_URL) --file rccomb_core.js
 	$(CMD_UPDATE_POSTFIX) --base_dir $(DIST_DIR) --base_url $(BASE_URL) --file clock/index.html
 	$(CMD_UPDATE_POSTFIX) --base_dir $(DIST_DIR) --base_url $(BASE_URL) --file nowasm.html
 	$(CMD_UPDATE_POSTFIX) --base_dir $(DIST_DIR) --base_url $(BASE_URL) --file index.html
+	$(CMD_UPDATE_POSTFIX) --base_dir $(DIST_DIR) --base_url $(BASE_URL) --file worker-beta.html
 
 clean:
 	@make --no-print-directory -C $(UI_TS_DIR) clean
 	@make --no-print-directory -C $(LIB_WASM_DIR) clean
 
 test:
-#	python3 -m http.server -d $(DIST_DIR) $(TEST_PORT)
-	cd $(DIST_DIR) ; $(BIN_DIR)/test_server.sh $(TEST_PORT)
+	python3 -m http.server -d $(DIST_DIR) $(TEST_PORT)
+#	cd $(DIST_DIR) ; $(BIN_DIR)/test_server.sh $(TEST_PORT)
 
 setup:
 	cd $(BIN_DIR) && ./setup_emsdk.sh

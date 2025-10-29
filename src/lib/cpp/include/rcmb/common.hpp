@@ -13,7 +13,7 @@
 #include <string>
 #endif
 
-namespace rccomb {
+namespace rcmb {
 
 #ifdef RCCOMB_DEBUG
 #define RCCOMB_DEBUG_PRINT(fmt, ...)                              \
@@ -154,6 +154,6 @@ std::string value_to_json_string(value_t value) {
 
 #endif
 
-}  // namespace rccomb
+}  // namespace rcmb
 
 #endif

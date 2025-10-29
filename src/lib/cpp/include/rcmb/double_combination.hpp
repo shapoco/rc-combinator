@@ -4,10 +4,10 @@
 #include <memory>
 #include <vector>
 
-#include "rccomb/combination.hpp"
-#include "rccomb/common.hpp"
+#include "rcmb/combination.hpp"
+#include "rcmb/common.hpp"
 
-namespace rccomb {
+namespace rcmb {
 
 class DoubleCombinationClass;
 using DoubleCombination = std::shared_ptr<DoubleCombinationClass>;
@@ -116,6 +116,6 @@ std::string DoubleCombinationClass::to_string() const {
 
 #endif
 
-}  // namespace rccomb
+}  // namespace rcmb
 
 #endif

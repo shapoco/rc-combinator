@@ -36,7 +36,7 @@
     }
   </script>
 
-  <link rel="stylesheet" href="./style.css?d579dc70" type="text/css">
+  <link rel="stylesheet" href="./style.css?464208bb" type="text/css">
 
   <link href="https://www.shapoco.net/navi/style.css?20251026140800" rel="stylesheet" type="text/css">
   <script src="https://www.shapoco.net/navi/navi.js?20251026140800"></script>
@@ -62,48 +62,9 @@
     <script async src="./stamp/v1/widget.js?4fe6d3e3"></script>
 
     <div id="rcCombinator"></div>
-    <script src="./rccomb_core.js?0dc04731"></script>
     <script type="module">
-
-      async function main() {
-        //const workerJs = `
-        //  import {WorkerCore} from './worker/index.mjs';
-        //  onmessage = async (e) => {
-        //    console.log('Worker: Message received from main script.');
-        //    //const result = await WorkerCore.call(e.data);
-        //    //postMessage({ message: 'Computation completed.', result: result });
-        //  };
-        //  `;
-        //const workerUrl = URL.createObjectURL(new Blob([workerJs], { type: 'application/javascript' }));
-        //const worker = new Worker(workerUrl, { type: 'module' });
-        const worker = new Worker('./worker/index.mjs', { type: 'module' });
-
-        worker.postMessage({
-          useWasm: true,
-          method: 1,
-          capacitor: false,
-          values: [10000],
-          maxElements: 5,
-          topologyConstraint: 3,
-          maxDepth: 10,
-          targetValue: 5000,
-        });
-        console.log('Main: Message posted to worker.');
-
-        worker.addEventListener('message', (e) => {
-          console.log(`Worker: ${JSON.stringify(e.data)}`);
-        });
-        worker.addEventListener('error', (e) => {
-          console.error(`Worker Error: ${e.message} in ${e.filename}:${e.lineno}`);
-        });
-        worker.addEventListener('messageerror', (e) => {
-          console.error('Worker Message Error:', e);
-        });
-      }
-
-      window.addEventListener('DOMContentLoaded', async () => {
-        await main();
-      });
+      import { main } from './ui/index.mjs?f5db9a47';
+      main(document.querySelector('#rcCombinator'));
     </script>
 
     <h2>注意事項 (Caution)</h2>
