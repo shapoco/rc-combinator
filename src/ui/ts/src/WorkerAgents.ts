@@ -34,13 +34,17 @@ export class WorkerAgent {
     this.abortWorker();
 
     if (this.worker === null) {
+      console.log('Starting worker...');
       this.worker = new Worker('../worker/index.mjs', {type: 'module'});
+      console.log('Worker started.');
       this.worker.onmessage = (e) => this.onMessaged(e);
       this.worker.onerror = (e) => this.onError(e);
     }
 
     this.lastLaunchedParams = JSON.parse(JSON.stringify(this.startRequestParams));
+    console.log('Posting message to worker:', this.startRequestParams);
     this.worker.postMessage(this.startRequestParams);
+    console.log('Message posted.');
     this.workerRunning = true;
   }
 

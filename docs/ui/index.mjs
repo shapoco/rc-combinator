@@ -897,7 +897,9 @@ var WorkerAgent = class {
 	async startWorker() {
 		this.abortWorker();
 		if (this.worker === null) {
+			console.log("Starting worker...");
 			this.worker = new Worker("../worker/index.mjs", { type: "module" });
+			console.log("Worker started.");
 			this.worker.onmessage = (e) => this.onMessaged(e);
 			this.worker.onerror = (e) => this.onError(e);
 		}
