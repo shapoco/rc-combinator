@@ -38,7 +38,8 @@ export class WorkerAgent {
       this.worker = new Worker('../worker/index.mjs', {type: 'module'});
       console.log('Worker started.');
       this.worker.onmessage = (e) => this.onMessaged(e);
-      this.worker.onerror = (e) => this.onError(e);
+      this.worker.onerror = (e) => this.onError(e.message);
+      this.worker.onmessageerror = (e) => this.onError('Message error in worker');
       console.log('Worker event handlers set.');
     }
 
@@ -71,10 +72,10 @@ export class WorkerAgent {
     }
   }
 
-  onError(e: ErrorEvent): void {
+  onError(msg: string): void {
     this.abortWorker();
     if (this.onAborted) {
-      this.onAborted(e.message);
+      this.onAborted(msg);
     }
   }
 }

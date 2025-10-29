@@ -901,7 +901,8 @@ var WorkerAgent = class {
 			this.worker = new Worker("../worker/index.mjs", { type: "module" });
 			console.log("Worker started.");
 			this.worker.onmessage = (e) => this.onMessaged(e);
-			this.worker.onerror = (e) => this.onError(e);
+			this.worker.onerror = (e) => this.onError(e.message);
+			this.worker.onmessageerror = (e) => this.onError("Message error in worker");
 			console.log("Worker event handlers set.");
 		}
 		this.lastLaunchedParams = JSON.parse(JSON.stringify(this.startRequestParams));
@@ -930,9 +931,9 @@ var WorkerAgent = class {
 			this.startWorker();
 		}
 	}
-	onError(e) {
+	onError(msg) {
 		this.abortWorker();
-		if (this.onAborted) this.onAborted(e.message);
+		if (this.onAborted) this.onAborted(msg);
 	}
 };
 
