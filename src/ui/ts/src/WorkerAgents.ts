@@ -39,6 +39,7 @@ export class WorkerAgent {
       console.log('Worker started.');
       this.worker.onmessage = (e) => this.onMessaged(e);
       this.worker.onerror = (e) => this.onError(e);
+      console.log('Worker event handlers set.');
     }
 
     this.lastLaunchedParams = JSON.parse(JSON.stringify(this.startRequestParams));
