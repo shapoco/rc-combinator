@@ -13,7 +13,7 @@
 
 using namespace rccomb;
 
-std::string find_combinations(bool capacitor, const std::vector<double>& values,
+std::string findCombinations(bool capacitor, const std::vector<double>& values,
                               double target_value, int max_elements,
                               int topology_constraint, int max_depth) {
   auto type = capacitor ? ComponentType::Capacitor : ComponentType::Resistor;
@@ -49,7 +49,7 @@ std::string find_combinations(bool capacitor, const std::vector<double>& values,
   return result;
 }
 
-std::string find_dividers(const std::vector<double>& values,
+std::string findDividers(const std::vector<double>& values,
                           double target_ratio, double total_min,
                           double total_max, int max_elements,
                           int topology_constraint, int max_depth) {
@@ -86,6 +86,6 @@ std::string find_dividers(const std::vector<double>& values,
 
 EMSCRIPTEN_BINDINGS(RccombCore) {
   emscripten::register_vector<double>("VectorDouble");
-  emscripten::function("find_combinations", &find_combinations);
-  emscripten::function("find_dividers", &find_dividers);
+  emscripten::function("findCombinations", &findCombinations);
+  emscripten::function("findDividers", &findDividers);
 }

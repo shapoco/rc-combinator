@@ -4,7 +4,7 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/bin/emsdk/upstream/emscripten/system/include",
-                "${workspaceFolder}/src/cpp/include"
+                "${workspaceFolder}/src/lib/cpp/include"
             ],
             "defines": [
                 "RCCOMB_IMPLEMENTATION",

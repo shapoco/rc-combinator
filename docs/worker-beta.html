@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+
+  <meta name="keywords"
+    content="合成抵抗, 合成容量, 直列, 並列, 抵抗, コンデンサ, キャパシタ, 組み合わせ, 発見, 計算, ツール, Combined Resistance, Combined Capacitance, Series, Parallel, Resistor, Capacitor, Combination, Search, Calculation, Tool">
+  <meta name="description" content="A tool to calculate combined resistance and combined capacitance.">
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@shapoco" />
+  <meta property="og:url" content="https://shapoco.github.io/rc-combinator/" />
+  <meta property="og:title" content="RC Combinator: 合成抵抗・合成容量 探索ツール | シャポ庫" />
+  <meta property="og:description" content="A tool to calculate combined resistance and combined capacitance." />
+  <meta property="og:image" content="https://shapoco.github.io/rc-combinator/img/ogp_thumbnail.png?b0c749fb" />
+
+  <link rel="icon" href="https://shapoco.github.io/rc-combinator/favicon192.png?5a0bee84" sizes="192x192">
+  <link rel="apple-touch-icon" href="https://shapoco.github.io/rc-combinator/apple-touch-icon180.png?692115be"
+    sizes="180x180">
+  <link rel="shortcut icon" href="https://shapoco.github.io/rc-combinator/favicon.ico?d50b7e39">
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-KJ53WNQ22G"></script>
+  <script>
+    var remoteHost = window.location.hostname;
+    if (remoteHost == "localhost") {
+      console.log(`Google Analytics disabled on: '${remoteHost}'`);
+    }
+    else {
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { dataLayer.push(arguments); }
+      gtag('js', new Date());
+      gtag('config', 'G-KJ53WNQ22G');
+    }
+  </script>
+
+  <link rel="stylesheet" href="./style.css?d579dc70" type="text/css">
+
+  <link href="https://www.shapoco.net/navi/style.css?20251026140800" rel="stylesheet" type="text/css">
+  <script src="https://www.shapoco.net/navi/navi.js?20251026140800"></script>
+
+  <title>RC Combinator: 合成抵抗・合成容量 探索ツール (JS版) | シャポ庫</title>
+</head>
+
+<body>
+  <div id="root_navi"></div>
+
+  <main>
+    <p style="text-align: center;">
+      <img src="./img/logo.svg" style="width: 100px; height: auto;">
+    </p>
+    <h1>RC Combinator<br><span style="font-size: smaller;">合成抵抗・合成容量 探索ツール</span></h1>
+
+    <p style="text-align: center; padding: 10px 0px;">
+      <a class="mode-button inactive" href="./">WebAssembly 版</a>
+      <a class="mode-button active" href="./nowasm.html">JavaScript 版</a>
+    </p>
+
+    <p id="shpcstamp_wrap" style="text-align: center;"></p>
+    <script async src="./stamp/v1/widget.js?4fe6d3e3"></script>
+
+    <div id="rcCombinator"></div>
+    <script src="./rccomb_core.js?0dc04731"></script>
+    <script type="module">
+
+      async function main() {
+        //const workerJs = `
+        //  import {WorkerCore} from './worker/index.mjs';
+        //  onmessage = async (e) => {
+        //    console.log('Worker: Message received from main script.');
+        //    //const result = await WorkerCore.call(e.data);
+        //    //postMessage({ message: 'Computation completed.', result: result });
+        //  };
+        //  `;
+        //const workerUrl = URL.createObjectURL(new Blob([workerJs], { type: 'application/javascript' }));
+        //const worker = new Worker(workerUrl, { type: 'module' });
+        const worker = new Worker('./worker/index.mjs', { type: 'module' });
+
+        worker.postMessage({
+          useWasm: true,
+          method: 1,
+          capacitor: false,
+          values: [10000],
+          maxElements: 5,
+          topologyConstraint: 3,
+          maxDepth: 10,
+          targetValue: 5000,
+        });
+        console.log('Main: Message posted to worker.');
+
+        worker.addEventListener('message', (e) => {
+          console.log(`Worker: ${JSON.stringify(e.data)}`);
+        });
+        worker.addEventListener('error', (e) => {
+          console.error(`Worker Error: ${e.message} in ${e.filename}:${e.lineno}`);
+        });
+        worker.addEventListener('messageerror', (e) => {
+          console.error('Worker Message Error:', e);
+        });
+      }
+
+      window.addEventListener('DOMContentLoaded', async () => {
+        await main();
+      });
+    </script>
+
+    <h2>注意事項 (Caution)</h2>
+    <ul>
+      <li>
+        計算結果の正確性や再現性を保証するものではありません。
+        計算結果を使用する際はご自身で検算をお願いします。
+      </li>
+      <li>
+        計算をブラウザ上で行っているため、使用する抵抗の範囲を広げたり素子の数を増やしすぎると
+        探索に時間がかかり、プチフリが発生することがあります。
+        完全にフリーズするのを避けるため、探索空間が広すぎる場合はエラーにしています。
+        エラーになった場合は制約条件を狭めてみてください。
+      </li>
+      <li>
+        問題の報告や要望は <a href="https://github.com/shapoco/rc-combinator" target="_blank">GitHub リポジトリ</a>
+        または <a href="https://x.com/shapoco" target="_blank">X (Twitter)</a> へお願いします。
+      </li>
+    </ul>
+
+    <h2>おまけ (Bonus Contents)</h2>
+    <ul>
+      <li>
+        <a href="./clock/">合成抵抗時計 (Combined Resistance Clock)</a>
+      </li>
+    </ul>
+
+    <h2>SNS でシェア (Share on Social Media)</h2>
+    <ul>
+      <li>
+        <a href="https://x.com/shapoco/status/1980794711419097265" target="_blank">X (Twitter)</a>
+      </li>
+      <li>
+        <a href="https://misskey.io/notes/ae4u622j6o8h0afv" target="_blank">Misskey.io</a>
+      </li>
+      <li>
+        <a href="https://bsky.app/profile/shapoco.net/post/3m3qmmm7djk24" target="_blank">Bluesky</a>
+      </li>
+    </ul>
+
+    <h2>関連リンク (Related Links)</h2>
+    <ul>
+      <li>
+        <a href="https://github.com/shapoco/rc-combinator" target="_blank">GitHub Repository</a>
+      </li>
+    </ul>
+
+  </main>
+  <footer>
+  </footer>
+</body>
+
+</html>

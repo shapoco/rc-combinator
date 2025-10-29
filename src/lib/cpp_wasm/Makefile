@@ -8,18 +8,18 @@ RCCOMB_DIR := ../cpp
 RCCOMB_INC_DIR := $(RCCOMB_DIR)/include
 RCCOMB_SRC_DIR := $(RCCOMB_DIR)/src
 
-MODULE_NAME := rccomb_core
+MODULE_NAME := rcmb_wasm
 MODULE_SRC_DIR := src
 MODULE_WASM := $(BUILD_DIR)/$(MODULE_NAME).wasm
 MODULE_JS := $(BUILD_DIR)/$(MODULE_NAME).js
 
-DOCS_DIR := $(REPO_DIR)/docs
-DOCS_MODULE_WASM := $(DOCS_DIR)/$(MODULE_NAME).wasm
-DOCS_MODULE_JS := $(DOCS_DIR)/$(MODULE_NAME).js
+DIST_DIR := $(REPO_DIR)/docs/worker
+DIST_WASM := $(DIST_DIR)/$(MODULE_NAME).wasm
+#DIST_JS := $(DIST_DIR)/$(MODULE_NAME).js
 
 all: build
 
-build: $(DOCS_MODULE_JS)
+build: $(DIST_WASM)
 
 CPP_FILES := \
 	$(wildcard $(RCCOMB_SRC_DIR)/*.cpp)  \
@@ -39,20 +39,16 @@ CXXFLAGS := \
 	--bind \
 	-s MODULARIZE=1 \
 	-s ALLOW_MEMORY_GROWTH=1 \
-	-s EXPORT_NAME="createModule"
+	-s EXPORT_NAME="createRcmbWasm"
 
 #	-s EXPORTED_RUNTIME_METHODS='["ccall","cwrap"]' \
 #	-s EXPORTED_FUNCTIONS='["_malloc","_free"]' 
 #	-fwasm-exceptions
 
-$(DOCS_MODULE_JS): $(MODULE_JS)
-	@mkdir -p $(DOCS_DIR)
-	@cp $(MODULE_WASM) $(DOCS_MODULE_WASM)
-	@cp $(MODULE_JS) $(DOCS_MODULE_JS)
-
-$(MODULE_JS): $(DEPENDENCIES)
+$(MODULE_WASM): $(DEPENDENCIES)
 	@mkdir -p $(BUILD_DIR)
 	emcc $(CXXFLAGS) -o $(MODULE_JS) $(CPP_FILES)
+	cp $(MODULE_WASM) $(DIST_WASM)
 
 clean:
 	@rm -rf $(BUILD_DIR)
