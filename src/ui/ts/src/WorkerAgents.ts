@@ -10,9 +10,9 @@ export class WorkerAgent {
   onFinished: ((e: any) => void)|null = null;
   onAborted: ((msg: string) => void)|null = null;
 
-  requestStart(p: any): void {
+  requestStart(p: any): boolean {
     if (JSON.stringify(p) === JSON.stringify(this.startRequestParams)) {
-      return;
+      return false;
     }
 
     this.cancelRequest();
@@ -21,6 +21,8 @@ export class WorkerAgent {
       this.startRequestTimerId = null;
       await this.startWorker();
     }, 100);
+
+    return true;
   }
 
   cancelRequest(): void {
@@ -54,6 +56,7 @@ export class WorkerAgent {
   }
 
   abortWorker(): void {
+    if (!this.workerRunning) return;
     if (this.worker !== null) {
       this.worker!.terminate();
       this.worker = null;

@@ -1,4 +1,5 @@
 import {CombinationFinderUi} from './CombinationFinderUi';
+import * as RcmbUi from './RcmbUi';
 import * as Core from './Core';
 import createModule from './Core';
 import * as RcComb from './RcComb';
@@ -6,17 +7,20 @@ import * as Svg from './Svg';
 import {getStr} from './Text';
 import * as Ui from './Ui';
 
-
 let core: Core.RccombCore|null = null;
 
 export function main(container: HTMLElement): void {
-  const resCombFinderUi = new CombinationFinderUi(false);
-  const capCombFinderUi = new CombinationFinderUi(true);
+  const commonSettingsUi = new RcmbUi.CommonSettingsUi();
+  const resCombFinderUi = new CombinationFinderUi(commonSettingsUi, false);
+  const capCombFinderUi = new CombinationFinderUi(commonSettingsUi, true);
   container.appendChild(Ui.makeDiv([
+    commonSettingsUi.ui,
     resCombFinderUi.ui!,
     capCombFinderUi.ui!,
   ]));
 }
+
+
 
 async function oldMain(container: HTMLElement, wasmCore: Core.RccombCore|null) {
   if (wasmCore) {

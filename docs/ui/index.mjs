@@ -375,7 +375,9 @@ const texts = { "ja": {
 	"No Limit": "制限なし",
 	"Top Topology": "最上位トポロジー",
 	"Max Nests": "最大ネスト数",
-	"Search Time": "探索時間"
+	"Search Time": "探索時間",
+	"Use WebAssembly": "WebAssembly 使用",
+	"Show Color Code": "カラーコード表示"
 } };
 function getStr(key, vars) {
 	let ret = key;
@@ -390,6 +392,25 @@ function getStr(key, vars) {
 
 //#endregion
 //#region src/RcmbUi.ts
+var CommonSettingsUi = class {
+	useWasmCheckbox = makeCheckbox(getStr("Use WebAssembly"), true);
+	showColorCodeCheckbox = makeCheckbox(getStr("Show Color Code"), true);
+	ui = makeDiv$1([
+		document.createElement("hr"),
+		this.useWasmCheckbox.parentNode,
+		" | ",
+		this.showColorCodeCheckbox.parentNode
+	], null, true);
+	onChanged = [];
+	constructor() {
+		this.useWasmCheckbox.addEventListener("change", () => {
+			this.onChanged.forEach((callback) => callback());
+		});
+		this.showColorCodeCheckbox.addEventListener("change", () => {
+			this.onChanged.forEach((callback) => callback());
+		});
+	}
+};
 var ValueRangeSelector = class {
 	seriesSelect = makeSeriesSelector();
 	customValuesInput = document.createElement("textarea");
@@ -584,6 +605,15 @@ function makeTextBox(value = null) {
 	if (value) elm.value = value;
 	return elm;
 }
+function makeCheckbox(labelStr, value = false) {
+	const label = document.createElement("label");
+	const elm = document.createElement("input");
+	elm.type = "checkbox";
+	elm.checked = value;
+	label.appendChild(elm);
+	label.appendChild(document.createTextNode(" " + labelStr));
+	return elm;
+}
 function makeSeriesSelector() {
 	let items = [];
 	for (const key of Object.keys(Series)) items.push({
@@ -699,31 +729,33 @@ const COLOR_CODE_TABLE = [
 	"#888",
 	"#fff"
 ];
-function drawResistor(ctx, x, y, value) {
+function drawResistor(ctx, x, y, value, showColorCode) {
 	ctx.save();
 	ctx.translate(x, y);
-	let colors;
-	if (value >= 1e-6) {
-		const exp = Math.floor(Math.log10(value) + 1e-10) - 1;
-		const frac = Math.round(value / Math.pow(10, exp));
-		const digits1 = Math.floor(frac / 10) % 10;
-		const digits2 = frac % 10;
-		const digits3 = exp;
-		colors = [
-			COLOR_CODE_TABLE[digits1],
-			COLOR_CODE_TABLE[digits2],
-			COLOR_CODE_TABLE[digits3],
-			"#870"
-		];
-	} else colors = [COLOR_CODE_TABLE[0]];
-	const bandWidth = R_WIDTH * .125;
-	const bandGap = bandWidth / 2;
-	const bandX0 = (R_WIDTH - (bandWidth * colors.length + bandGap * (colors.length - 1))) / 2;
 	y += (ELEMENT_SIZE - R_HEIGHT) / 2;
-	for (let i = 0; i < colors.length; i++) {
-		const x$1 = bandX0 + i * (bandWidth + bandGap);
-		ctx.fillStyle = colors[i];
-		ctx.fillRect(x$1, y, bandWidth, R_HEIGHT);
+	if (showColorCode) {
+		let colors;
+		if (value >= 1e-6) {
+			const exp = Math.floor(Math.log10(value) + 1e-10) - 1;
+			const frac = Math.round(value / Math.pow(10, exp));
+			const digits1 = Math.floor(frac / 10) % 10;
+			const digits2 = frac % 10;
+			const digits3 = exp;
+			colors = [
+				COLOR_CODE_TABLE[digits1],
+				COLOR_CODE_TABLE[digits2],
+				COLOR_CODE_TABLE[digits3],
+				"#870"
+			];
+		} else colors = [COLOR_CODE_TABLE[0]];
+		const bandWidth = R_WIDTH * .125;
+		const bandGap = bandWidth / 2;
+		const bandX0 = (R_WIDTH - (bandWidth * colors.length + bandGap * (colors.length - 1))) / 2;
+		for (let i = 0; i < colors.length; i++) {
+			const x$1 = bandX0 + i * (bandWidth + bandGap);
+			ctx.fillStyle = colors[i];
+			ctx.fillRect(x$1, y, bandWidth, R_HEIGHT);
+		}
 	}
 	ctx.lineWidth = 2 * SCALE;
 	ctx.strokeRect(0, y, R_WIDTH, R_HEIGHT);
@@ -833,11 +865,11 @@ var TreeNode = class TreeNode {
 		this.x += dx;
 		this.y += dy;
 	}
-	draw(ctx) {
+	draw(ctx, showColorCode) {
 		ctx.save();
 		ctx.translate(this.x, this.y);
 		if (this.isLeaf) if (this.capacitor) drawCapacitor(ctx, 0, 0, this.value);
-		else drawResistor(ctx, 0, 0, this.value);
+		else drawResistor(ctx, 0, 0, this.value, showColorCode);
 		else if (this.parallel) {
 			let y0 = 0;
 			let y1 = 0;
@@ -861,7 +893,7 @@ var TreeNode = class TreeNode {
 				drawWire(ctx, x0, y, x1, y);
 			}
 		}
-		for (const c of this.children) c.draw(ctx);
+		for (const c of this.children) c.draw(ctx, showColorCode);
 		ctx.restore();
 	}
 	get isLeaf() {
@@ -880,13 +912,14 @@ var WorkerAgent = class {
 	onFinished = null;
 	onAborted = null;
 	requestStart(p) {
-		if (JSON.stringify(p) === JSON.stringify(this.startRequestParams)) return;
+		if (JSON.stringify(p) === JSON.stringify(this.startRequestParams)) return false;
 		this.cancelRequest();
 		this.startRequestParams = p;
 		this.startRequestTimerId = window.setTimeout(async () => {
 			this.startRequestTimerId = null;
 			await this.startWorker();
 		}, 100);
+		return true;
 	}
 	cancelRequest() {
 		if (this.startRequestTimerId !== null) {
@@ -912,6 +945,7 @@ var WorkerAgent = class {
 		this.workerRunning = true;
 	}
 	abortWorker() {
+		if (!this.workerRunning) return;
 		if (this.worker !== null) {
 			this.worker.terminate();
 			this.worker = null;
@@ -948,7 +982,9 @@ var CombinationFinderUi = class {
 	resCombInputBox = null;
 	ui = null;
 	workerAgent = new WorkerAgent();
-	constructor(capacitor) {
+	lastResult = null;
+	constructor(commonSettingsUi, capacitor) {
+		this.commonSettingsUi = commonSettingsUi;
 		this.capacitor = capacitor;
 		const unit = capacitor ? "F" : "Ω";
 		this.rangeSelector = new ValueRangeSelector(capacitor);
@@ -1004,6 +1040,7 @@ var CombinationFinderUi = class {
 			]),
 			this.resultBox
 		]);
+		this.commonSettingsUi.onChanged.push(() => this.conditionChanged());
 		this.rangeSelector.setOnChange(() => this.conditionChanged());
 		this.resCombInputBox.setOnChange(() => this.conditionChanged());
 		this.numElementsInput.setOnChange(() => this.conditionChanged());
@@ -1023,7 +1060,7 @@ var CombinationFinderUi = class {
 			const targetValue = this.resCombInputBox.value;
 			const topoConstr = parseInt(this.topTopologySelector.value);
 			const p = {
-				useWasm: false,
+				useWasm: this.commonSettingsUi.useWasmCheckbox.checked,
 				method: Method.FindCombination,
 				capacitor: this.capacitor,
 				values: rangeSelector.getAvailableValues(targetValue),
@@ -1032,20 +1069,31 @@ var CombinationFinderUi = class {
 				maxDepth: parseInt(this.maxDepthInput.value),
 				targetValue
 			};
-			this.workerAgent.requestStart(p);
+			if (!this.workerAgent.requestStart(p)) this.showResult();
 		} catch (e) {
 			this.workerAgent.cancelRequest();
 		}
 	}
 	onFinished(e) {
+		this.lastResult = e;
+		this.showResult();
+	}
+	onAborted(msg) {
+		console.log(`Aborted with message: '${msg}'`);
+		this.resultBox.textContent = getStr(msg);
+	}
+	showResult() {
+		this.resultBox.innerHTML = "";
+		const ret = this.lastResult;
+		if (ret === null) return;
 		try {
 			this.resultBox.innerHTML = "";
-			if (e.error && e.error.length > 0) throw new Error(e.error);
-			const targetValue = e.params.targetValue;
-			const timeSpentMs = e.timeSpent;
-			const msg = `${getStr("<n> combinations found", { n: e.result.length })} (${getStr("Search Time")}: ${timeSpentMs.toFixed(2)} ms):`;
+			if (ret.error && ret.error.length > 0) throw new Error(ret.error);
+			const targetValue = ret.params.targetValue;
+			const timeSpentMs = ret.timeSpent;
+			const msg = `${getStr("<n> combinations found", { n: ret.result.length })} (${getStr("Search Time")}: ${timeSpentMs.toFixed(2)} ms):`;
 			this.resultBox.appendChild(makeP(msg));
-			for (const combJson of e.result) {
+			for (const combJson of ret.result) {
 				const PADDING = 20;
 				const CAPTION_HEIGHT = 50;
 				const LEAD_LENGTH = 40 * SCALE;
@@ -1073,7 +1121,7 @@ var CombinationFinderUi = class {
 					const dx = PADDING + (FIGURE_PLACE_W - node.width) / 2;
 					const dy = PADDING + (FIGURE_PLACE_H - node.height) / 2;
 					ctx.translate(dx, dy);
-					node.draw(ctx);
+					node.draw(ctx, this.commonSettingsUi.showColorCodeCheckbox.checked);
 					const y = node.height / 2;
 					const x0 = -LEAD_LENGTH;
 					const x1 = 0;
@@ -1109,15 +1157,11 @@ var CombinationFinderUi = class {
 				this.resultBox.appendChild(canvas);
 				this.resultBox.appendChild(document.createTextNode(" "));
 			}
-		} catch (e$1) {
+		} catch (e) {
 			let msg = "Unknown error";
-			if (e$1.message) msg = e$1.message;
+			if (e.message) msg = e.message;
 			this.resultBox.textContent = getStr(msg);
 		}
-	}
-	onAborted(msg) {
-		console.log(`Aborted with message: '${msg}'`);
-		this.resultBox.textContent = getStr(msg);
 	}
 };
 
@@ -1141,9 +1185,14 @@ function toElementArray(children) {
 //#endregion
 //#region src/main.ts
 function main(container) {
-	const resCombFinderUi = new CombinationFinderUi(false);
-	const capCombFinderUi = new CombinationFinderUi(true);
-	container.appendChild(makeDiv([resCombFinderUi.ui, capCombFinderUi.ui]));
+	const commonSettingsUi = new CommonSettingsUi();
+	const resCombFinderUi = new CombinationFinderUi(commonSettingsUi, false);
+	const capCombFinderUi = new CombinationFinderUi(commonSettingsUi, true);
+	container.appendChild(makeDiv([
+		commonSettingsUi.ui,
+		resCombFinderUi.ui,
+		capCombFinderUi.ui
+	]));
 }
 
 //#endregion

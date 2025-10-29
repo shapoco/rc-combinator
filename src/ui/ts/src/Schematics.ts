@@ -23,38 +23,45 @@ const COLOR_CODE_TABLE = [
 ];
 
 function drawResistor(
-    ctx: CanvasRenderingContext2D, x: number, y: number, value: number) {
+    ctx: CanvasRenderingContext2D, x: number, y: number, value: number,
+    showColorCode: boolean) {
   ctx.save();
   ctx.translate(x, y);
-  let colors: string[];
-  if (value >= 1e-6) {
-    const exp = Math.floor(Math.log10(value) + 1e-10) - 1;
-    const frac = Math.round(value / Math.pow(10, exp));
-    const digits1 = Math.floor(frac / 10) % 10;
-    const digits2 = frac % 10;
-    const digits3 = exp;
-    colors = [
-      COLOR_CODE_TABLE[digits1],
-      COLOR_CODE_TABLE[digits2],
-      COLOR_CODE_TABLE[digits3],
-      '#870',
-    ]
-  } else {
-    colors = [COLOR_CODE_TABLE[0]];
-  }
-
-  const bandWidth = R_WIDTH * 0.125;
-  const bandGap = bandWidth / 2;
-  const bandX0 =
-      (R_WIDTH - (bandWidth * colors.length + bandGap * (colors.length - 1))) /
-      2;
 
   y += (ELEMENT_SIZE - R_HEIGHT) / 2;
-  for (let i = 0; i < colors.length; i++) {
-    const x = bandX0 + i * (bandWidth + bandGap);
-    ctx.fillStyle = colors[i];
-    ctx.fillRect(x, y, bandWidth, R_HEIGHT);
+
+  if (showColorCode) {
+    let colors: string[];
+    if (value >= 1e-6) {
+      const exp = Math.floor(Math.log10(value) + 1e-10) - 1;
+      const frac = Math.round(value / Math.pow(10, exp));
+      const digits1 = Math.floor(frac / 10) % 10;
+      const digits2 = frac % 10;
+      const digits3 = exp;
+      colors = [
+        COLOR_CODE_TABLE[digits1],
+        COLOR_CODE_TABLE[digits2],
+        COLOR_CODE_TABLE[digits3],
+        '#870',
+      ]
+    } else {
+      colors = [COLOR_CODE_TABLE[0]];
+    }
+
+    const bandWidth = R_WIDTH * 0.125;
+    const bandGap = bandWidth / 2;
+    const bandX0 =
+        (R_WIDTH -
+         (bandWidth * colors.length + bandGap * (colors.length - 1))) /
+        2;
+
+    for (let i = 0; i < colors.length; i++) {
+      const x = bandX0 + i * (bandWidth + bandGap);
+      ctx.fillStyle = colors[i];
+      ctx.fillRect(x, y, bandWidth, R_HEIGHT);
+    }
   }
+
   ctx.lineWidth = 2 * SCALE;
   ctx.strokeRect(0, y, R_WIDTH, R_HEIGHT);
 
@@ -190,7 +197,7 @@ export class TreeNode {
     this.y += dy;
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, showColorCode: boolean) {
     ctx.save();
     ctx.translate(this.x, this.y);
     if (this.isLeaf) {
@@ -198,7 +205,7 @@ export class TreeNode {
       if (this.capacitor) {
         drawCapacitor(ctx, 0, 0, this.value);
       } else {
-        drawResistor(ctx, 0, 0, this.value);
+        drawResistor(ctx, 0, 0, this.value, showColorCode);
       }
     } else if (this.parallel) {
       // 並列接続の描画
@@ -226,7 +233,7 @@ export class TreeNode {
       }
     }
     for (const c of this.children) {
-      c.draw(ctx);
+      c.draw(ctx, showColorCode);
     }
     ctx.restore();
   }

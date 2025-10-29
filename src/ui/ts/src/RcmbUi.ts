@@ -3,6 +3,27 @@ import * as Series from './Series';
 import * as RcmbJS from '../../../lib/ts/src/RcmbJS';
 import {getStr} from './Text';
 
+export class CommonSettingsUi {
+  useWasmCheckbox = makeCheckbox(getStr('Use WebAssembly'), true);
+  showColorCodeCheckbox = makeCheckbox(getStr('Show Color Code'), true);
+  ui = makeDiv([
+    document.createElement('hr'),
+    this.useWasmCheckbox.parentNode as HTMLLabelElement,
+    ' | ',
+    this.showColorCodeCheckbox.parentNode as HTMLLabelElement,
+  ], null, true);
+  onChanged: (() => void)[] = [];
+
+  constructor() {
+    this.useWasmCheckbox.addEventListener('change', () => {
+      this.onChanged.forEach(callback => callback());
+    });
+    this.showColorCodeCheckbox.addEventListener('change', () => {
+      this.onChanged.forEach(callback => callback());
+    });
+  }
+}
+
 export class ValueRangeSelector {
   seriesSelect = makeSeriesSelector();
   customValuesInput = document.createElement('textarea') as HTMLTextAreaElement;
@@ -259,6 +280,17 @@ export function makeTextBox(value: string|null = null): HTMLInputElement {
   if (value) {
     elm.value = value;
   }
+  return elm;
+}
+
+export function makeCheckbox(
+    labelStr: string, value: boolean = false): HTMLInputElement {
+  const label = document.createElement('label');
+  const elm = document.createElement('input');
+  elm.type = 'checkbox';
+  elm.checked = value;
+  label.appendChild(elm);
+  label.appendChild(document.createTextNode(' ' + labelStr));
   return elm;
 }
 

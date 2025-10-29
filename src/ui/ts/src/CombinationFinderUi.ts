@@ -17,7 +17,11 @@ export class CombinationFinderUi {
 
   workerAgent = new WorkerAgent();
 
-  constructor(public capacitor: boolean) {
+  lastResult: any = null;
+
+  constructor(
+      public commonSettingsUi: RcmbUi.CommonSettingsUi,
+      public capacitor: boolean) {
     const unit = capacitor ? 'F' : 'Ω';
     this.rangeSelector = new RcmbUi.ValueRangeSelector(capacitor);
     this.resCombInputBox = new RcmbUi.ValueBox(capacitor ? '3.14μ' : '5.1k');
@@ -40,6 +44,7 @@ export class CombinationFinderUi {
       this.resultBox,
     ]);
 
+    this.commonSettingsUi.onChanged.push(() => this.conditionChanged());
     this.rangeSelector.setOnChange(() => this.conditionChanged());
     this.resCombInputBox.setOnChange(() => this.conditionChanged());
     this.numElementsInput.setOnChange(() => this.conditionChanged());
@@ -70,7 +75,7 @@ export class CombinationFinderUi {
           parseInt(this.topTopologySelector.value) as RcmbJS.TopologyConstraint
 
       const p = {
-        useWasm: false,
+        useWasm: this.commonSettingsUi.useWasmCheckbox.checked,
         method: RcmbJS.Method.FindCombination,
         capacitor: this.capacitor,
         values: rangeSelector.getAvailableValues(targetValue),
@@ -80,26 +85,43 @@ export class CombinationFinderUi {
         targetValue: targetValue,
       };
 
-      this.workerAgent.requestStart(p);
+      if (!this.workerAgent.requestStart(p)) {
+        this.showResult();
+      }
     } catch (e) {
       this.workerAgent.cancelRequest();
     }
   }
 
   onFinished(e: any): void {
+    this.lastResult = e;
+    this.showResult();
+  }
+
+  onAborted(msg: string): void {
+    console.log(`Aborted with message: '${msg}'`);
+    this.resultBox.textContent = getStr(msg);
+  }
+
+  showResult(): void {
+    this.resultBox.innerHTML = '';
+    const ret = this.lastResult;
+    if (ret === null) return;
+
     try {
       this.resultBox.innerHTML = '';
-      if (e.error && e.error.length > 0) {
-        throw new Error(e.error);
+      if (ret.error && ret.error.length > 0) {
+        throw new Error(ret.error);
       }
 
-      const targetValue = e.params.targetValue as number;
-      const timeSpentMs = e.timeSpent as number;
+      const targetValue = ret.params.targetValue as number;
+      const timeSpentMs = ret.timeSpent as number;
 
-      const msg = `${getStr('<n> combinations found', {n: e.result.length})} (${
-          getStr('Search Time')}: ${timeSpentMs.toFixed(2)} ms):`;
+      const msg = `${getStr('<n> combinations found', {
+        n: ret.result.length
+      })} (${getStr('Search Time')}: ${timeSpentMs.toFixed(2)} ms):`;
       this.resultBox.appendChild(RcmbUi.makeP(msg));
-      for (const combJson of e.result) {
+      for (const combJson of ret.result) {
         const PADDING = 20;
         const CAPTION_HEIGHT = 50;
         const LEAD_LENGTH = 40 * Schematics.SCALE;
@@ -138,7 +160,7 @@ export class CombinationFinderUi {
           const dx = PADDING + (FIGURE_PLACE_W - node.width) / 2;
           const dy = PADDING + (FIGURE_PLACE_H - node.height) / 2;
           ctx.translate(dx, dy);
-          node.draw(ctx);
+          node.draw(ctx, this.commonSettingsUi.showColorCodeCheckbox.checked);
           const y = node.height / 2;
           const x0 = -LEAD_LENGTH;
           const x1 = 0;
@@ -183,10 +205,5 @@ export class CombinationFinderUi {
       if (e.message) msg = e.message;
       this.resultBox.textContent = getStr(msg);
     }
-  }
-
-  onAborted(msg: string): void {
-    console.log(`Aborted with message: '${msg}'`);
-    this.resultBox.textContent = getStr(msg);
   }
 }

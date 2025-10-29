@@ -141,7 +141,8 @@ export class ValueBox {
   }
 }
 
-export function makeNumElementInput(max: number, defaultValue: number): IntegerBox {
+export function makeNumElementInput(
+    max: number, defaultValue: number): IntegerBox {
   return new IntegerBox(defaultValue, 1, max, max, `(${getStr('No Limit')})`);
 }
 
@@ -166,10 +167,10 @@ export function makeTopologySelector(): HTMLSelectElement {
 export function makeDepthSelector(): HTMLSelectElement {
   const noLimit = '999';
   const items = [
-    { value: '1', label: '1' },
-    { value: '2', label: '2' },
-    { value: '3', label: '3' },
-    { value: noLimit, label: getStr('No Limit') },
+    {value: '1', label: '1'},
+    {value: '2', label: '2'},
+    {value: '3', label: '3'},
+    {value: noLimit, label: getStr('No Limit')},
   ];
   return makeSelectBox(items, noLimit);
 }

@@ -32,6 +32,8 @@ const texts: {[key: string]: {[key: string]: string}} = {
     'Top Topology': '最上位トポロジー',
     'Max Nests': '最大ネスト数',
     'Search Time': '探索時間',
+    'Use WebAssembly': 'WebAssembly 使用',
+    'Show Color Code': 'カラーコード表示',
   },
 };
 
