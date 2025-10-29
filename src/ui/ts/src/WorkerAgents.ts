@@ -35,7 +35,7 @@ export class WorkerAgent {
 
     if (this.worker === null) {
       console.log('Starting worker...');
-      this.worker = new Worker('../worker/index.mjs', {type: 'module'});
+      this.worker = new Worker('../worker/index.mjs?12345678', {type: 'module'});
       console.log('Worker started.');
       this.worker.onmessage = (e) => this.onMessaged(e);
       this.worker.onerror = (e) => this.onError(e.message);
@@ -73,7 +73,6 @@ export class WorkerAgent {
   }
 
   onError(msg: string): void {
-    console.log(`[Worker] Aborted with message: '${msg}'`);
     this.abortWorker();
     if (this.onAborted) {
       this.onAborted(msg);

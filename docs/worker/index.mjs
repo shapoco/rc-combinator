@@ -1798,7 +1798,11 @@ thisWorker.onmessage = async (e) => {
 	const args = e.data;
 	const useWasm = args.useWasm;
 	if (useWasm) {
-		if (!wasmCore) wasmCore = await (0, import_rcmb_wasm.default)();
+		if (!wasmCore) {
+			console.log("Loading WASM module in worker...");
+			wasmCore = await (0, import_rcmb_wasm.default)();
+			console.log("WASM module loaded in worker.");
+		}
 	}
 	const capacitor = args.capacitor;
 	const method = args.method;

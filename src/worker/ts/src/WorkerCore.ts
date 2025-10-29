@@ -17,7 +17,9 @@ thisWorker.onmessage = async (e: MessageEvent<any>) => {
   const useWasm = args.useWasm as boolean;
   if (useWasm) {
     if (!wasmCore) {
+      console.log('Loading WASM module in worker...');
       wasmCore = (await createRcmbWasm()) as RcmbWasm.RcmbWasm;
+      console.log('WASM module loaded in worker.');
     }
   }
 
