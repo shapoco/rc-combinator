@@ -1803,22 +1803,26 @@ thisWorker.onmessage = async (e) => {
 			wasmCore = await (0, import_rcmb_wasm.default)();
 			console.log("WASM module loaded in worker.");
 		}
-	}
+	} else console.log("Using JS core in worker.");
 	const capacitor = args.capacitor;
 	const method = args.method;
 	const values = args.values;
 	const maxElements = args.maxElements;
 	const topologyConstraint = args.topologyConstraint;
 	const maxDepth = args.maxDepth;
+	console.log("A");
 	let ret = {
 		error: "",
 		result: [],
 		timeSpent: 0
 	};
+	console.log("B");
 	const start = performance.now();
+	console.log("C");
 	switch (method) {
 		case Method.FindCombination:
 			{
+				console.log("D");
 				const targetValue = args.targetValue;
 				if (useWasm) {
 					const vec = new wasmCore.VectorDouble();
@@ -1827,6 +1831,7 @@ thisWorker.onmessage = async (e) => {
 					vec.delete();
 					ret = JSON.parse(retStr);
 				} else ret = findCombinations(capacitor, values, targetValue, maxElements, topologyConstraint, maxDepth);
+				console.log("E");
 			}
 			break;
 		case Method.FindDivider:
@@ -1838,8 +1843,11 @@ thisWorker.onmessage = async (e) => {
 			ret.error = "Invalid method";
 			break;
 	}
+	console.log("F");
 	ret.timeSpent = performance.now() - start;
+	console.log("G");
 	thisWorker.postMessage(ret);
+	console.log("H");
 };
 
 //#endregion
