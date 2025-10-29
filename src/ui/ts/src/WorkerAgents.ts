@@ -37,8 +37,16 @@ export class WorkerAgent {
 
     if (this.worker === null) {
       console.log('Starting worker...');
-      this.worker =
-          new Worker('../worker/index.mjs?123456789', {type: 'module'});
+      // this.worker =
+      //     new Worker('../worker/index.mjs?123456789', {type: 'module'});
+      const nowMin = Math.floor(Date.now() / (1000 * 60));
+      if (window.location.hostname === 'localhost') {
+        this.worker =
+            new Worker(`/worker/index.mjs?${nowMin}`, {type: 'module'});
+      } else {
+        this.worker = new Worker(
+            `/rc-combinator/worker/index.mjs?${nowMin}`, {type: 'module'});
+      }
       console.log('Worker started.');
       this.worker.onmessage = (e) => this.onMessaged(e);
       this.worker.onerror = (e) => this.onError(e.message);
