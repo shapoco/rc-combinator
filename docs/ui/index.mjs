@@ -897,9 +897,8 @@ var WorkerAgent = class {
 	async startWorker() {
 		this.abortWorker();
 		if (this.worker === null) {
-			const mjsUrl = `${window.location.hostname === "localhost" ? ".." : "https://shapoco.github.io/rc-combinator"}/worker/index.mjs`;
-			console.log(`Starting worker...: '${mjsUrl}'`);
-			this.worker = new Worker(mjsUrl, { type: "module" });
+			console.log("Starting worker...");
+			this.worker = new Worker("../worker/index.mjs?fda53fa5", { type: "module" });
 			console.log("Worker started.");
 			this.worker.onmessage = (e) => this.onMessaged(e);
 			this.worker.onerror = (e) => this.onError(e.message);

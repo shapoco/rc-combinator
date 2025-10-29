@@ -141,7 +141,7 @@ var require_rcmb_wasm = /* @__PURE__ */ __commonJS({ "../../lib/cpp_wasm/build/r
 			}
 			var wasmBinaryFile;
 			function findWasmBinary() {
-				return locateFile("rcmb_wasm.wasm");
+				return locateFile("rcmb_wasm.wasm?21cd91a0");
 			}
 			function getBinarySync(file) {
 				if (file == wasmBinaryFile && wasmBinary) return new Uint8Array(wasmBinary);

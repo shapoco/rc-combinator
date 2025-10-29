@@ -31,6 +31,7 @@ def main() -> None:
     html = fix_url(base_dir, html, r'<meta\s+property="og:image"\s+[^>]*content="([^"]+)"[^>]*>', 1)
     html = fix_url(base_dir, html, r'fetch\s*\(\s*["\']([^\'"]+)["\']\s*\)', 1)
     html = fix_url(base_dir, html, r'locateFile\s*\(\s*["\']([^\'"]+)["\']\s*\)', 1)
+    html = fix_url(base_dir, html, r'new\s+Worker\s*\(\s*["\']([^\'"]+)["\']\s*', 1)
     html = fix_url(base_dir, html, r'import.+from\s*["\']([^\'"]+)["\']', 1)
     
     os.chdir(base_dir)

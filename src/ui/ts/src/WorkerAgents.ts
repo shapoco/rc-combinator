@@ -34,12 +34,9 @@ export class WorkerAgent {
     this.abortWorker();
 
     if (this.worker === null) {
-      const baseUrl = window.location.hostname === 'localhost' ?
-          '..' :
-          'https://shapoco.github.io/rc-combinator';
-      const mjsUrl = `${baseUrl}/worker/index.mjs`;
-      console.log(`Starting worker...: '${mjsUrl}'`);
-      this.worker = new Worker(mjsUrl, {type: 'module'});
+      console.log('Starting worker...');
+      this.worker =
+          new Worker('../worker/index.mjs?123456789', {type: 'module'});
       console.log('Worker started.');
       this.worker.onmessage = (e) => this.onMessaged(e);
       this.worker.onerror = (e) => this.onError(e.message);

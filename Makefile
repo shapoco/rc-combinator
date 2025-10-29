@@ -26,7 +26,8 @@ update_postfix:
 	$(CMD_UPDATE_POSTFIX) --base_dir $(DIST_DIR) --base_url $(BASE_URL) --file nowasm.html
 	$(CMD_UPDATE_POSTFIX) --base_dir $(DIST_DIR) --base_url $(BASE_URL) --file index.html
 	$(CMD_UPDATE_POSTFIX) --base_dir $(DIST_DIR) --base_url $(BASE_URL) --file worker-beta.html
-
+	$(CMD_UPDATE_POSTFIX) --base_dir $(DIST_DIR) --base_url $(BASE_URL) --file ui/index.mjs
+	$(CMD_UPDATE_POSTFIX) --base_dir $(DIST_DIR) --base_url $(BASE_URL) --file worker/index.mjs
 clean:
 	@make --no-print-directory -C $(UI_TS_DIR) clean
 	@make --no-print-directory -C $(LIB_WASM_DIR) clean
