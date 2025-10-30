@@ -377,7 +377,8 @@ const texts = { "ja": {
 	"Max Nests": "最大ネスト数",
 	"Search Time": "探索時間",
 	"Use WebAssembly": "WebAssembly 使用",
-	"Show Color Code": "カラーコード表示"
+	"Show Color Code": "カラーコード表示",
+	"Searching...": "探索しています..."
 } };
 function getStr(key, vars) {
 	let ret = key;
@@ -577,7 +578,7 @@ function makeDiv$1(children = [], className = null, center = false) {
 	if (center) elm.style.textAlign = "center";
 	return elm;
 }
-function makeP(children, className = null, center = false) {
+function makeP(children = [], className = null, center = false) {
 	const elm = document.createElement("p");
 	toElementArray$1(children).forEach((child) => elm.appendChild(child));
 	if (className) elm.classList.add(className);
@@ -904,12 +905,13 @@ var TreeNode = class TreeNode {
 //#endregion
 //#region src/WorkerAgents.ts
 var WorkerAgent = class {
-	urlPostfix = Math.floor(Date.now() / (1e3 * 60)).toString();
+	urlPostfix = Math.floor(Date.now() / (60 * 1e3)).toString();
 	worker = null;
 	workerRunning = false;
 	startRequestParams = {};
 	startRequestTimerId = null;
 	lastLaunchedParams = {};
+	onLaunched = null;
 	onFinished = null;
 	onAborted = null;
 	requestStart(p) {
@@ -942,6 +944,7 @@ var WorkerAgent = class {
 		this.lastLaunchedParams = JSON.parse(JSON.stringify(this.startRequestParams));
 		this.worker.postMessage(this.startRequestParams);
 		this.workerRunning = true;
+		if (this.onLaunched) this.onLaunched(this.lastLaunchedParams);
 	}
 	abortWorker() {
 		if (!this.workerRunning) return;
@@ -982,8 +985,9 @@ var CombinationFinderUi = class {
 	numElementsInput = makeNumElementInput(MAX_COMBINATION_ELEMENTS, 3);
 	topTopologySelector = makeTopologySelector();
 	maxDepthInput = makeDepthSelector();
+	statusBox = makeP();
 	resultBox = makeDiv$1();
-	resCombInputBox = null;
+	targetInput = null;
 	ui = null;
 	workerAgent = new WorkerAgent();
 	lastResult = null;
@@ -992,7 +996,7 @@ var CombinationFinderUi = class {
 		this.capacitor = capacitor;
 		const unit = capacitor ? "F" : "Ω";
 		this.rangeSelector = new ValueRangeSelector(capacitor);
-		this.resCombInputBox = new ValueBox(capacitor ? "3.14μ" : "5.1k");
+		this.targetInput = new ValueBox(capacitor ? "3.14μ" : "5.1k");
 		this.ui = makeDiv$1([
 			makeH2(this.capacitor ? getStr("Find Capacitor Combinations") : getStr("Find Resistor Combinations")),
 			makeTable([
@@ -1038,18 +1042,20 @@ var CombinationFinderUi = class {
 				],
 				[
 					getStr("Target Value"),
-					this.resCombInputBox.inputBox,
+					this.targetInput.inputBox,
 					unit
 				]
 			]),
+			this.statusBox,
 			this.resultBox
 		]);
 		this.commonSettingsUi.onChanged.push(() => this.conditionChanged());
 		this.rangeSelector.setOnChange(() => this.conditionChanged());
-		this.resCombInputBox.setOnChange(() => this.conditionChanged());
 		this.numElementsInput.setOnChange(() => this.conditionChanged());
 		this.topTopologySelector.addEventListener("change", () => this.conditionChanged());
 		this.maxDepthInput.addEventListener("change", () => this.conditionChanged());
+		this.targetInput.setOnChange(() => this.conditionChanged());
+		this.workerAgent.onLaunched = (p) => this.onLaunched(p);
 		this.workerAgent.onFinished = (e) => this.onFinished(e);
 		this.workerAgent.onAborted = (msg) => this.onAborted(msg);
 		this.conditionChanged();
@@ -1061,7 +1067,7 @@ var CombinationFinderUi = class {
 			setVisible(parentTrOf(rangeSelector.customValuesInput), custom);
 			setVisible(parentTrOf(rangeSelector.minResisterInput.inputBox), !custom);
 			setVisible(parentTrOf(rangeSelector.maxResisterInput.inputBox), !custom);
-			const targetValue = this.resCombInputBox.value;
+			const targetValue = this.targetInput.value;
 			const topoConstr = parseInt(this.topTopologySelector.value);
 			const p = {
 				useWasm: this.commonSettingsUi.useWasmCheckbox.checked,
@@ -1078,38 +1084,45 @@ var CombinationFinderUi = class {
 			this.workerAgent.cancelRequest();
 		}
 	}
+	onLaunched(p) {
+		this.statusBox.style.color = "";
+		this.statusBox.textContent = getStr("Searching...");
+		this.resultBox.style.opacity = "0.5";
+	}
 	onFinished(e) {
 		this.lastResult = e;
 		this.showResult();
 	}
 	onAborted(msg) {
 		console.log(`Aborted with message: '${msg}'`);
-		this.resultBox.textContent = getStr(msg);
+		this.statusBox.textContent = getStr(msg);
+		this.resultBox.innerHTML = "";
 	}
 	showResult() {
 		this.resultBox.innerHTML = "";
+		this.statusBox.innerHTML = "";
 		const ret = this.lastResult;
 		if (ret === null) return;
 		try {
-			this.resultBox.innerHTML = "";
 			if (ret.error && ret.error.length > 0) throw new Error(ret.error);
 			const targetValue = ret.params.targetValue;
 			const timeSpentMs = ret.timeSpent;
 			const msg = `${getStr("<n> combinations found", { n: ret.result.length })} (${getStr("Search Time")}: ${timeSpentMs.toFixed(2)} ms):`;
-			this.resultBox.appendChild(makeP(msg));
+			this.statusBox.textContent = msg;
 			for (const combJson of ret.result) {
 				const PADDING = 20;
+				const TOP_PADDING = 20;
 				const CAPTION_HEIGHT = 50;
 				const LEAD_LENGTH = 40 * SCALE;
-				const node = TreeNode.fromJSON(this.capacitor, combJson);
-				node.offset(-node.x, -node.y);
+				const tree = TreeNode.fromJSON(this.capacitor, combJson);
+				tree.offset(-tree.x, -tree.y);
 				const DISP_W = 300;
 				const DISP_H = 300;
-				const EDGE_SIZE = Math.max(node.width + LEAD_LENGTH * 2 + PADDING * 2, node.height + CAPTION_HEIGHT + PADDING * 3);
+				const EDGE_SIZE = Math.max(tree.width + LEAD_LENGTH * 2 + PADDING * 2, tree.height + CAPTION_HEIGHT + TOP_PADDING + PADDING * 3);
 				const W = Math.max(DISP_W, EDGE_SIZE);
 				const H = Math.max(DISP_H, EDGE_SIZE);
 				const FIGURE_PLACE_W = W - PADDING * 2;
-				const FIGURE_PLACE_H = H - CAPTION_HEIGHT - PADDING * 3;
+				const FIGURE_PLACE_H = H - CAPTION_HEIGHT - TOP_PADDING - PADDING * 3;
 				const canvas = document.createElement("canvas");
 				canvas.width = W;
 				canvas.height = H;
@@ -1122,15 +1135,15 @@ var CombinationFinderUi = class {
 				{
 					ctx.save();
 					ctx.strokeStyle = "#000";
-					const dx = PADDING + (FIGURE_PLACE_W - node.width) / 2;
-					const dy = PADDING + (FIGURE_PLACE_H - node.height) / 2;
+					const dx = PADDING + (FIGURE_PLACE_W - tree.width) / 2;
+					const dy = PADDING + (FIGURE_PLACE_H - tree.height) / 2 + TOP_PADDING;
 					ctx.translate(dx, dy);
-					node.draw(ctx, this.commonSettingsUi.showColorCodeCheckbox.checked);
-					const y = node.height / 2;
+					tree.draw(ctx, this.commonSettingsUi.showColorCodeCheckbox.checked);
+					const y = tree.height / 2;
 					const x0 = -LEAD_LENGTH;
 					const x1 = 0;
-					const x2 = node.width;
-					const x3 = node.width + LEAD_LENGTH;
+					const x2 = tree.width;
+					const x3 = tree.width + LEAD_LENGTH;
 					drawWire(ctx, x0, y, x1, y);
 					drawWire(ctx, x2, y, x3, y);
 					ctx.restore();
@@ -1141,12 +1154,12 @@ var CombinationFinderUi = class {
 				ctx.textAlign = "center";
 				ctx.textBaseline = "top";
 				{
-					const text = formatValue(node.value, this.capacitor ? "F" : "Ω", true);
+					const text = formatValue(tree.value, this.capacitor ? "F" : "Ω", true);
 					ctx.font = `${24 * SCALE}px sans-serif`;
 					ctx.fillText(text, 0, 0);
 				}
 				{
-					let error = (node.value - targetValue) / targetValue;
+					let error = (tree.value - targetValue) / targetValue;
 					let errorStr = getStr("No Error");
 					ctx.save();
 					if (Math.abs(error) > targetValue / 1e9) {
@@ -1161,11 +1174,273 @@ var CombinationFinderUi = class {
 				this.resultBox.appendChild(canvas);
 				this.resultBox.appendChild(document.createTextNode(" "));
 			}
+			this.statusBox.style.color = "";
+			this.resultBox.style.opacity = "";
 		} catch (e) {
 			let msg = "Unknown error";
 			if (e.message) msg = e.message;
-			this.resultBox.textContent = getStr(msg);
+			this.statusBox.style.color = "#c00";
+			this.statusBox.textContent = `Error: ${getStr(msg)}`;
+			this.resultBox.innerHTML = "";
 		}
+	}
+};
+
+//#endregion
+//#region src/DividerFinderUi.ts
+var DividerFinderUi = class {
+	rangeSelector = null;
+	numElementsInput = makeNumElementInput(MAX_COMBINATION_ELEMENTS, 4);
+	topTopologySelector = makeTopologySelector();
+	maxDepthInput = makeDepthSelector();
+	statusBox = makeP();
+	resultBox = makeDiv$1();
+	totalMinBox = new ValueBox("10k");
+	totalMaxBox = new ValueBox("100k");
+	targetInput = null;
+	ui = null;
+	workerAgent = new WorkerAgent();
+	lastResult = null;
+	constructor(commonSettingsUi) {
+		this.commonSettingsUi = commonSettingsUi;
+		this.rangeSelector = new ValueRangeSelector(false);
+		this.targetInput = new ValueBox("3.3 / 5.0");
+		this.ui = makeDiv$1([
+			makeH2(getStr("Find Voltage Dividers")),
+			makeP(`R1: ${getStr("Upper Resistor")}, R2: ${getStr("Lower Resistor")}, Vout / Vin = R2 / (R1 + R2)`),
+			makeTable([
+				[
+					getStr("Item"),
+					getStr("Value"),
+					getStr("Unit")
+				],
+				[
+					getStr("E Series"),
+					this.rangeSelector.seriesSelect,
+					""
+				],
+				[
+					getStr("Custom Values"),
+					this.rangeSelector.customValuesInput,
+					"Ω"
+				],
+				[
+					getStr("Minimum"),
+					this.rangeSelector.minResisterInput.inputBox,
+					"Ω"
+				],
+				[
+					getStr("Maximum"),
+					this.rangeSelector.maxResisterInput.inputBox,
+					"Ω"
+				],
+				[
+					getStr("Max Elements"),
+					this.numElementsInput.inputBox,
+					""
+				],
+				[
+					getStr("Top Topology"),
+					this.topTopologySelector,
+					""
+				],
+				[
+					getStr("Max Nests"),
+					this.maxDepthInput,
+					""
+				],
+				[
+					"R1 + R2 (min)",
+					this.totalMinBox.inputBox,
+					"Ω"
+				],
+				[
+					"R1 + R2 (max)",
+					this.totalMaxBox.inputBox,
+					"Ω"
+				],
+				[
+					"R2 / (R1 + R2)",
+					this.targetInput.inputBox,
+					""
+				]
+			]),
+			this.statusBox,
+			this.resultBox
+		]);
+		this.commonSettingsUi.onChanged.push(() => this.conditionChanged());
+		this.rangeSelector.setOnChange(() => this.conditionChanged());
+		this.numElementsInput.setOnChange(() => this.conditionChanged());
+		this.topTopologySelector.addEventListener("change", () => this.conditionChanged());
+		this.maxDepthInput.addEventListener("change", () => this.conditionChanged());
+		this.totalMinBox.setOnChange(() => this.conditionChanged());
+		this.totalMaxBox.setOnChange(() => this.conditionChanged());
+		this.targetInput.setOnChange(() => this.conditionChanged());
+		this.workerAgent.onLaunched = (p) => this.onLaunched(p);
+		this.workerAgent.onFinished = (e) => this.onFinished(e);
+		this.workerAgent.onAborted = (msg) => this.onAborted(msg);
+		this.conditionChanged();
+	}
+	conditionChanged() {
+		try {
+			const rangeSelector = this.rangeSelector;
+			const custom = rangeSelector.seriesSelect.value === "custom";
+			setVisible(parentTrOf(rangeSelector.customValuesInput), custom);
+			setVisible(parentTrOf(rangeSelector.minResisterInput.inputBox), !custom);
+			setVisible(parentTrOf(rangeSelector.maxResisterInput.inputBox), !custom);
+			const targetRatio = this.targetInput.value;
+			const topoConstr = parseInt(this.topTopologySelector.value);
+			const p = {
+				useWasm: this.commonSettingsUi.useWasmCheckbox.checked,
+				method: Method.FindDivider,
+				capacitor: false,
+				values: rangeSelector.getAvailableValues(targetRatio),
+				maxElements: this.numElementsInput.value,
+				topologyConstraint: topoConstr,
+				maxDepth: parseInt(this.maxDepthInput.value),
+				totalMin: this.totalMinBox.value,
+				totalMax: this.totalMaxBox.value,
+				targetRatio
+			};
+			if (!this.workerAgent.requestStart(p)) this.showResult();
+		} catch (e) {
+			this.workerAgent.cancelRequest();
+		}
+	}
+	onLaunched(p) {
+		this.statusBox.style.color = "";
+		this.statusBox.textContent = getStr("Searching...");
+		this.resultBox.style.opacity = "0.5";
+	}
+	onFinished(e) {
+		this.lastResult = e;
+		this.showResult();
+	}
+	onAborted(msg) {
+		console.log(`Aborted with message: '${msg}'`);
+		this.statusBox.textContent = getStr(msg);
+		this.resultBox.innerHTML = "";
+	}
+	showResult() {
+		this.resultBox.innerHTML = "";
+		this.statusBox.innerHTML = "";
+		const ret = this.lastResult;
+		if (ret === null) return;
+		try {
+			if (ret.error && ret.error.length > 0) throw new Error(ret.error);
+			ret.params.targetValue;
+			const timeSpentMs = ret.timeSpent;
+			const msg = `${getStr("<n> combinations found", { n: ret.result.length })} (${getStr("Search Time")}: ${timeSpentMs.toFixed(2)} ms):`;
+			this.statusBox.textContent = msg;
+			for (const combJson of ret.result) {
+				const resultUi = new ResultUi(this.commonSettingsUi, ret.params, combJson);
+				this.resultBox.appendChild(resultUi.ui);
+				this.resultBox.appendChild(document.createTextNode(" "));
+			}
+			this.statusBox.style.color = "";
+			this.resultBox.style.opacity = "";
+		} catch (e) {
+			let msg = "Unknown error";
+			if (e.message) msg = e.message;
+			this.statusBox.style.color = "#c00";
+			this.statusBox.textContent = `Error: ${getStr(msg)}`;
+			this.resultBox.innerHTML = "";
+		}
+	}
+};
+var ResultUi = class {
+	uppers = [];
+	lowers = [];
+	buttons = makeP();
+	canvas = document.createElement("canvas");
+	ui = makeDiv$1([this.buttons, this.canvas]);
+	constructor(commonSettingsUi, params, combJson) {
+		this.commonSettingsUi = commonSettingsUi;
+		this.params = params;
+		this.ui.className = "figure";
+		for (const upperJson of combJson.uppers) {
+			const tree = TreeNode.fromJSON(false, upperJson);
+			this.uppers.push(tree);
+		}
+		for (const lowerJson of combJson.lowers) {
+			const tree = TreeNode.fromJSON(false, lowerJson);
+			this.lowers.push(tree);
+		}
+		this.selectUpperLower(0, 0);
+	}
+	selectUpperLower(iUpper, iLower) {
+		const upperTree = this.uppers[iUpper];
+		const lowerTree = this.lowers[iLower];
+		const totalValue = upperTree.value + lowerTree.value;
+		const resultRatio = lowerTree.value / totalValue;
+		const targetRatio = this.params.targetRatio;
+		const tree = new TreeNode(false, false, [upperTree, lowerTree], totalValue);
+		lowerTree.x += 40 * SCALE;
+		tree.width += 40 * SCALE;
+		const PADDING = 20;
+		const TOP_PADDING = 20;
+		const CAPTION_HEIGHT = 50;
+		const LEAD_LENGTH = 40 * SCALE;
+		tree.offset(-tree.x, -tree.y);
+		const VIEW_W = 500;
+		const VIEW_H = 300;
+		const REQ_W = tree.width + LEAD_LENGTH * 2 + PADDING * 2;
+		const REQ_H = tree.height + CAPTION_HEIGHT + TOP_PADDING + PADDING * 3;
+		const X_SCALE = Math.max(1, REQ_W / VIEW_W);
+		const Y_SCALE = Math.max(1, REQ_H / VIEW_H);
+		const SCALE$1 = Math.max(X_SCALE, Y_SCALE);
+		const W = VIEW_W * SCALE$1;
+		const H = VIEW_H * SCALE$1;
+		const FIGURE_PLACE_W = W - PADDING * 2;
+		const FIGURE_PLACE_H = H - CAPTION_HEIGHT - TOP_PADDING - PADDING * 3;
+		const canvas = this.canvas;
+		canvas.width = W;
+		canvas.height = H;
+		canvas.style.width = `${VIEW_W}px`;
+		canvas.style.height = "auto";
+		const ctx = canvas.getContext("2d");
+		ctx.fillStyle = "#fff";
+		ctx.fillRect(0, 0, W, H);
+		{
+			ctx.save();
+			ctx.strokeStyle = "#000";
+			const dx = PADDING + (FIGURE_PLACE_W - tree.width) / 2;
+			const dy = PADDING + (FIGURE_PLACE_H - tree.height) / 2 + TOP_PADDING;
+			ctx.translate(dx, dy);
+			tree.draw(ctx, this.commonSettingsUi.showColorCodeCheckbox.checked);
+			const y = tree.height / 2;
+			const x0 = -LEAD_LENGTH;
+			const x1 = 0;
+			const x2 = tree.width;
+			const x3 = tree.width + LEAD_LENGTH;
+			drawWire(ctx, x0, y, x1, y);
+			drawWire(ctx, x2, y, x3, y);
+			ctx.restore();
+		}
+		ctx.save();
+		ctx.translate(W / 2, H - PADDING - CAPTION_HEIGHT);
+		ctx.fillStyle = "#000";
+		ctx.textAlign = "center";
+		ctx.textBaseline = "top";
+		{
+			const text = `R2 / (R1 + R2) = ${formatValue(resultRatio)}`;
+			ctx.font = `${24 * SCALE}px sans-serif`;
+			ctx.fillText(text, 0, 0);
+		}
+		{
+			let error = (resultRatio - targetRatio) / targetRatio;
+			console.log(`resultRatio=${resultRatio}, targetRatio=${targetRatio}, error=${error}`);
+			let errorStr = getStr("No Error");
+			ctx.save();
+			if (Math.abs(error) > 1e-9) {
+				errorStr = `${getStr("Error")}: ${error > 0 ? "+" : ""}${(error * 100).toFixed(4)}%`;
+				ctx.fillStyle = error > 0 ? "#c00" : "#00c";
+			}
+			ctx.font = `${16 * SCALE}px sans-serif`;
+			ctx.fillText(`(${errorStr})`, 0, 30);
+			ctx.restore();
+		}
+		ctx.restore();
 	}
 };
 
@@ -1192,9 +1467,11 @@ function main(container) {
 	const commonSettingsUi = new CommonSettingsUi();
 	const resCombFinderUi = new CombinationFinderUi(commonSettingsUi, false);
 	const capCombFinderUi = new CombinationFinderUi(commonSettingsUi, true);
+	const dividerFinderUi = new DividerFinderUi(commonSettingsUi);
 	container.appendChild(makeDiv([
 		commonSettingsUi.ui,
 		resCombFinderUi.ui,
+		dividerFinderUi.ui,
 		capCombFinderUi.ui
 	]));
 }

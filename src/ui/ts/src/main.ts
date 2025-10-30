@@ -1,8 +1,9 @@
 import {CombinationFinderUi} from './CombinationFinderUi';
-import * as RcmbUi from './RcmbUi';
 import * as Core from './Core';
 import createModule from './Core';
+import {DividerFinderUi} from './DividerFinderUi';
 import * as RcComb from './RcComb';
+import * as RcmbUi from './RcmbUi';
 import * as Svg from './Svg';
 import {getStr} from './Text';
 import * as Ui from './Ui';
@@ -13,14 +14,14 @@ export function main(container: HTMLElement): void {
   const commonSettingsUi = new RcmbUi.CommonSettingsUi();
   const resCombFinderUi = new CombinationFinderUi(commonSettingsUi, false);
   const capCombFinderUi = new CombinationFinderUi(commonSettingsUi, true);
+  const dividerFinderUi = new DividerFinderUi(commonSettingsUi);
   container.appendChild(Ui.makeDiv([
     commonSettingsUi.ui,
     resCombFinderUi.ui!,
+    dividerFinderUi.ui!,
     capCombFinderUi.ui!,
   ]));
 }
-
-
 
 async function oldMain(container: HTMLElement, wasmCore: Core.RccombCore|null) {
   if (wasmCore) {
@@ -139,13 +140,13 @@ function makeCombinatorUI(type: RcComb.ComponentType): HTMLDivElement {
 function makeDividerCombinatorUI(): HTMLDivElement {
   const rangeSelector =
       new Ui.ValueRangeSelector(RcComb.ComponentType.Resistor);
-  const targetInput = new Ui.ValueBox('3.3 / 5.0');
   const totalMinBox = new Ui.ValueBox('10k');
   const totalMaxBox = new Ui.ValueBox('100k');
   const numElementsInput =
       Ui.makeNumElementInput(RcComb.MAX_DIVIDER_ELEMENTS, 2);
   const topTopologySelector = Ui.makeTopologySelector();
   const maxDepthInput = Ui.makeDepthSelector();
+  const targetInput = new Ui.ValueBox('3.3 / 5.0');
   const resultBox = Ui.makeDiv();
 
   const ui = Ui.makeDiv([

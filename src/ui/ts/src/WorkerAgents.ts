@@ -1,5 +1,5 @@
 export class WorkerAgent {
-  urlPostfix = Math.floor(Date.now() / (1000 * 60)).toString();
+  urlPostfix = Math.floor(Date.now() / (60 * 1000)).toString();
 
   worker: Worker|null = null;
   workerRunning = false;
@@ -9,6 +9,7 @@ export class WorkerAgent {
 
   lastLaunchedParams: any = {};
 
+  onLaunched: ((p: any) => void)|null = null;
   onFinished: ((e: any) => void)|null = null;
   onAborted: ((msg: string) => void)|null = null;
 
@@ -54,6 +55,10 @@ export class WorkerAgent {
         JSON.parse(JSON.stringify(this.startRequestParams));
     this.worker.postMessage(this.startRequestParams);
     this.workerRunning = true;
+
+    if (this.onLaunched) {
+      this.onLaunched(this.lastLaunchedParams);
+    }
   }
 
   abortWorker(): void {

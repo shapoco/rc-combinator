@@ -119,7 +119,7 @@ std::string CombinationClass::to_json_string() const {
     std::string s = "{";
     s += std::string("\"parallel\":") +
          (topology->parallel ? "true" : "false") + ",";
-    s += std::string("\"value\":\"") + value_to_json_string(value) + "\",";
+    s += std::string("\"value\":") + value_to_json_string(value) + ",";
     s += "\"children\":[";
     for (size_t i = 0; i < children.size(); i++) {
       s += children[i]->to_json_string();

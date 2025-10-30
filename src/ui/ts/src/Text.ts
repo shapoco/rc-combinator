@@ -34,6 +34,7 @@ const texts: {[key: string]: {[key: string]: string}} = {
     'Search Time': '探索時間',
     'Use WebAssembly': 'WebAssembly 使用',
     'Show Color Code': 'カラーコード表示',
+    'Searching...': '探索しています...',
   },
 };
 

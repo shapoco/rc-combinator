@@ -221,7 +221,7 @@ export function makeDiv(
 }
 
 export function makeP(
-    children: string|Node|Array<string|Node>|null,
+    children: string|Node|Array<string|Node>|null = [],
     className: string|null = null,
     center: boolean = false): HTMLParagraphElement {
   const elm = document.createElement('p');

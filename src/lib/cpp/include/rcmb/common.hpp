@@ -103,6 +103,7 @@ static inline hash_t crc32_add_u32(hash_t h, uint32_t data) {
 }
 
 value_t pow10(float exp);
+uint32_t valueKeyOf(value_t value);
 std::string value_to_json_string(value_t value);
 
 #ifdef RCCOMB_IMPLEMENTATION
@@ -140,6 +141,11 @@ value_t pow10(float exp) {
   }
   ret *= pow(10.0, exp - exp_i);
   return ret;
+}
+
+uint32_t valueKeyOf(value_t value) {
+  int exp = std::floor(std::log10(value) + 1e-9);
+  return static_cast<uint32_t>(std::round(value / pow10(exp - 6)));
 }
 
 std::string value_to_json_string(value_t value) {

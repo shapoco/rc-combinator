@@ -183,6 +183,7 @@ a.inactive {
 }
 
 .figure {
+  display: inline-block;
   border: solid 1px #ccc;
   border-radius: 5px;
 }

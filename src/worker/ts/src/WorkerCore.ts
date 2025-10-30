@@ -36,7 +36,7 @@ thisWorker.onmessage = async (e: MessageEvent<any>) => {
     result: [],
     timeSpent: 0,
   };
-  
+
   const start = performance.now();
 
   switch (method) {
@@ -63,6 +63,22 @@ thisWorker.onmessage = async (e: MessageEvent<any>) => {
       const targetRatio = args.targetRatio as number;
       const totalMin = args.totalMin as number;
       const totalMax = args.totalMax as number;
+      if (useWasm) {
+        const vec = new wasmCore!.VectorDouble();
+        for (const v of values) {
+          vec.push_back(v);
+        }
+        const retStr = wasmCore!.findDividers(
+            vec, targetRatio, totalMin, totalMax, maxElements,
+            topologyConstraint, maxDepth);
+        vec.delete();
+        ret = JSON.parse(retStr);
+      }
+      else {
+        ret = RcmbJS.findDividers(
+            values, targetRatio, totalMin, totalMax, maxElements,
+            topologyConstraint, maxDepth);
+      }
     } break;
 
     default:

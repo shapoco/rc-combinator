@@ -11,8 +11,9 @@ export class CombinationFinderUi {
       RcmbUi.makeNumElementInput(RcmbJS.MAX_COMBINATION_ELEMENTS, 3);
   topTopologySelector = RcmbUi.makeTopologySelector();
   maxDepthInput = RcmbUi.makeDepthSelector();
+  statusBox = RcmbUi.makeP();
   resultBox = RcmbUi.makeDiv();
-  resCombInputBox: RcmbUi.ValueBox|null = null;
+  targetInput: RcmbUi.ValueBox|null = null;
   ui: HTMLDivElement|null = null;
 
   workerAgent = new WorkerAgent();
@@ -24,7 +25,7 @@ export class CombinationFinderUi {
       public capacitor: boolean) {
     const unit = capacitor ? 'F' : 'Ω';
     this.rangeSelector = new RcmbUi.ValueRangeSelector(capacitor);
-    this.resCombInputBox = new RcmbUi.ValueBox(capacitor ? '3.14μ' : '5.1k');
+    this.targetInput = new RcmbUi.ValueBox(capacitor ? '3.14μ' : '5.1k');
 
     this.ui = RcmbUi.makeDiv([
       RcmbUi.makeH2(
@@ -39,20 +40,22 @@ export class CombinationFinderUi {
         [getStr('Max Elements'), this.numElementsInput.inputBox, ''],
         [getStr('Top Topology'), this.topTopologySelector, ''],
         [getStr('Max Nests'), this.maxDepthInput, ''],
-        [getStr('Target Value'), this.resCombInputBox.inputBox, unit],
+        [getStr('Target Value'), this.targetInput.inputBox, unit],
       ]),
+      this.statusBox,
       this.resultBox,
     ]);
 
     this.commonSettingsUi.onChanged.push(() => this.conditionChanged());
     this.rangeSelector.setOnChange(() => this.conditionChanged());
-    this.resCombInputBox.setOnChange(() => this.conditionChanged());
     this.numElementsInput.setOnChange(() => this.conditionChanged());
     this.topTopologySelector.addEventListener(
         'change', () => this.conditionChanged());
     this.maxDepthInput.addEventListener(
         'change', () => this.conditionChanged());
+    this.targetInput.setOnChange(() => this.conditionChanged());
 
+    this.workerAgent.onLaunched = (p) => this.onLaunched(p);
     this.workerAgent.onFinished = (e) => this.onFinished(e);
     this.workerAgent.onAborted = (msg) => this.onAborted(msg);
 
@@ -70,7 +73,7 @@ export class CombinationFinderUi {
       RcmbUi.setVisible(
           RcmbUi.parentTrOf(rangeSelector.maxResisterInput.inputBox)!, !custom);
 
-      const targetValue = this.resCombInputBox!.value;
+      const targetValue = this.targetInput!.value;
       const topoConstr =
           parseInt(this.topTopologySelector.value) as RcmbJS.TopologyConstraint
 
@@ -93,6 +96,12 @@ export class CombinationFinderUi {
     }
   }
 
+  onLaunched(p: any): void {
+    this.statusBox.style.color = '';
+    this.statusBox.textContent = getStr('Searching...');
+    this.resultBox.style.opacity = '0.5';
+  }
+
   onFinished(e: any): void {
     this.lastResult = e;
     this.showResult();
@@ -100,16 +109,17 @@ export class CombinationFinderUi {
 
   onAborted(msg: string): void {
     console.log(`Aborted with message: '${msg}'`);
-    this.resultBox.textContent = getStr(msg);
+    this.statusBox.textContent = getStr(msg);
+    this.resultBox.innerHTML = '';
   }
 
   showResult(): void {
     this.resultBox.innerHTML = '';
+    this.statusBox.innerHTML = '';
     const ret = this.lastResult;
     if (ret === null) return;
 
     try {
-      this.resultBox.innerHTML = '';
       if (ret.error && ret.error.length > 0) {
         throw new Error(ret.error);
       }
@@ -120,27 +130,28 @@ export class CombinationFinderUi {
       const msg = `${getStr('<n> combinations found', {
         n: ret.result.length
       })} (${getStr('Search Time')}: ${timeSpentMs.toFixed(2)} ms):`;
-      this.resultBox.appendChild(RcmbUi.makeP(msg));
+      this.statusBox.textContent = msg;
       for (const combJson of ret.result) {
         const PADDING = 20;
+        const TOP_PADDING = 20;
         const CAPTION_HEIGHT = 50;
         const LEAD_LENGTH = 40 * Schematics.SCALE;
 
-        const node = Schematics.TreeNode.fromJSON(this.capacitor, combJson);
-        node.offset(-node.x, -node.y);
+        const tree = Schematics.TreeNode.fromJSON(this.capacitor, combJson);
+        tree.offset(-tree.x, -tree.y);
 
         const DISP_W = 300;
         const DISP_H = 300;
 
         const EDGE_SIZE = Math.max(
-            node.width + LEAD_LENGTH * 2 + PADDING * 2,
-            node.height + CAPTION_HEIGHT + PADDING * 3);
+            tree.width + LEAD_LENGTH * 2 + PADDING * 2,
+            tree.height + CAPTION_HEIGHT + TOP_PADDING + PADDING * 3);
 
         const W = Math.max(DISP_W, EDGE_SIZE);
         const H = Math.max(DISP_H, EDGE_SIZE);
 
         const FIGURE_PLACE_W = W - PADDING * 2;
-        const FIGURE_PLACE_H = H - CAPTION_HEIGHT - PADDING * 3;
+        const FIGURE_PLACE_H = H - CAPTION_HEIGHT - TOP_PADDING - PADDING * 3;
 
         const canvas = document.createElement('canvas');
         canvas.width = W;
@@ -157,15 +168,15 @@ export class CombinationFinderUi {
         {
           ctx.save();
           ctx.strokeStyle = '#000';
-          const dx = PADDING + (FIGURE_PLACE_W - node.width) / 2;
-          const dy = PADDING + (FIGURE_PLACE_H - node.height) / 2;
+          const dx = PADDING + (FIGURE_PLACE_W - tree.width) / 2;
+          const dy = PADDING + (FIGURE_PLACE_H - tree.height) / 2 + TOP_PADDING;
           ctx.translate(dx, dy);
-          node.draw(ctx, this.commonSettingsUi.showColorCodeCheckbox.checked);
-          const y = node.height / 2;
+          tree.draw(ctx, this.commonSettingsUi.showColorCodeCheckbox.checked);
+          const y = tree.height / 2;
           const x0 = -LEAD_LENGTH;
           const x1 = 0;
-          const x2 = node.width;
-          const x3 = node.width + LEAD_LENGTH;
+          const x2 = tree.width;
+          const x3 = tree.width + LEAD_LENGTH;
           Schematics.drawWire(ctx, x0, y, x1, y);
           Schematics.drawWire(ctx, x2, y, x3, y);
           ctx.restore();
@@ -178,12 +189,12 @@ export class CombinationFinderUi {
         ctx.textBaseline = 'top';
         {
           const text =
-              RcmbUi.formatValue(node.value, this.capacitor ? 'F' : 'Ω', true);
+              RcmbUi.formatValue(tree.value, this.capacitor ? 'F' : 'Ω', true);
           ctx.font = `${24 * Schematics.SCALE}px sans-serif`;
           ctx.fillText(text, 0, 0);
         }
         {
-          let error = (node.value - targetValue) / targetValue;
+          let error = (tree.value - targetValue) / targetValue;
           let errorStr = getStr('No Error');
           ctx.save();
           if (Math.abs(error) > targetValue / 1e9) {
@@ -200,10 +211,15 @@ export class CombinationFinderUi {
         this.resultBox.appendChild(canvas);
         this.resultBox.appendChild(document.createTextNode(' '));
       }
+
+      this.statusBox.style.color = '';
+      this.resultBox.style.opacity = '';
     } catch (e: any) {
       let msg = 'Unknown error';
       if (e.message) msg = e.message;
-      this.resultBox.textContent = getStr(msg);
+      this.statusBox.style.color = '#c00';
+      this.statusBox.textContent = `Error: ${getStr(msg)}`;
+      this.resultBox.innerHTML = '';
     }
   }
 }

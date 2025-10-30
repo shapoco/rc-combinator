@@ -229,16 +229,14 @@ static void filter_unnormalized_combinations(std::vector<Combination>& combs);
 result_t search_combinations(ValueSearchOptions& options,
                              std::vector<Combination>& best_combs) {
   // 探索空間の大きさをチェック
-  const double search_space =
-      std::pow((double)options.available_values.size(), options.max_elements);
-  if (options.max_elements > 10 || search_space > 1e7) {
+  if (options.max_elements > 10) {
     return result_t::SEARCH_SPACE_TOO_LARGE;
   }
 
   const value_t epsilon = options.target / 1e9;
 
   value_t best_error = std::numeric_limits<value_t>::infinity();
-  int best_num_elems = std::numeric_limits<int>::max();
+  int best_elems = std::numeric_limits<int>::max();
 
   const int topo_constr = static_cast<int>(options.topology_constraint);
 
@@ -264,13 +262,18 @@ result_t search_combinations(ValueSearchOptions& options,
                                options.target);
         const auto cb = [&](ValueSearchContext& ctx, value_t value) {
           const auto error = std::abs(value - options.target);
-          if (error < best_error - epsilon) {
+          if (error - epsilon > best_error) {
+            return;
+          }
+          if (error + epsilon >= best_error && num_elems > best_elems) {
+            return;
+          }
+          if (error + epsilon < best_error || num_elems < best_elems) {
             best_combs.clear();
           }
-          if (error < best_error + epsilon && num_elems <= best_num_elems) {
-            best_error = error;
-            best_combs.push_back(ctx.root_state->bake(options.type));
-          }
+          best_combs.push_back(ctx.root_state->bake(options.type));
+          best_error = error;
+          best_elems = num_elems;
         };
         search_combinations_recursive(ctx, 0, cb);
       }
@@ -301,14 +304,13 @@ result_t search_dividers(DividerSearchOptions& options,
   const value_t epsilon = 1e-9;
 
   // 探索空間の大きさをチェック
-  const double search_space = std::pow((double)options.available_values.size(),
-                                       2 * options.max_elements);
-  if (options.max_elements > 10 || search_space > 1e8) {
+  if (options.max_elements > 10) {
     return result_t::SEARCH_SPACE_TOO_LARGE;
   }
 
   value_t best_error = VALUE_POSITIVE_INFINITY;
-  std::map<value_t, DoubleCombination> result_memo;
+  int best_elems = std::numeric_limits<int>::max();
+  std::map<uint32_t, DoubleCombination> result_memo;
 
   const value_t ratio_min = options.target_ratio / 2;
   const value_t ratio_max = 1.0 - (1.0 - options.target_ratio) / 2;
@@ -324,7 +326,8 @@ result_t search_dividers(DividerSearchOptions& options,
 
   // 下側の抵抗値を列挙する
   std::vector<bool> parallels = {false, true};
-  for (int num_lowers = 1; num_lowers <= options.max_elements; num_lowers++) {
+  for (int num_lowers = 1; num_lowers <= options.max_elements - 1;
+       num_lowers++) {
     //  並列・直列パターンを全部試す
     for (bool parallel : parallels) {
       // 1 素子の場合は直列のみ探索
@@ -333,6 +336,16 @@ result_t search_dividers(DividerSearchOptions& options,
       // 全トポロジーを試す
       auto& topos = get_topologies(num_lowers, parallel);
       for (auto& topo : topos) {
+        // 上側の最大素子数
+        int upper_max_elements = options.max_elements - num_lowers;
+        if (best_error < epsilon) {
+          // 既に誤差の無い組み合わせが見つかっている場合は素子数を絞る
+          upper_max_elements = best_elems - num_lowers;
+          if (upper_max_elements <= 0) {
+            break;
+          }
+        }
+
         int t = topo->parallel
                     ? static_cast<int>(topology_constraint_t::PARALLEL)
                     : static_cast<int>(topology_constraint_t::SERIES);
@@ -349,16 +362,22 @@ result_t search_dividers(DividerSearchOptions& options,
             return;
           }
 
-          if (result_memo.contains(lower_value)) {
+          const uint32_t lower_key = valueKeyOf(lower_value);
+          if (result_memo.contains(lower_key)) {
             // 既知の結果の lower と一致
-            const auto lower_comb = ctx.root_state->bake(options.type);
-            result_memo[lower_value]->lowers.push_back(lower_comb);
+            auto& memo = result_memo[lower_key];
+            const int memo_lowers = memo->lowers[0]->num_leafs();
+            const int memo_elems = memo_lowers + memo->uppers[0]->num_leafs();
+            if (num_lowers <= memo_lowers && memo_elems <= best_elems) {
+              const auto lower_comb = ctx.root_state->bake(options.type);
+              memo->lowers.push_back(lower_comb);
+            }
             return;
           }
 
           // 下側の抵抗値に対応する上側の抵抗を列挙する
           ValueSearchOptions vso(options.type, options.available_values,
-                                 upper_min, upper_max, options.max_elements,
+                                 upper_min, upper_max, upper_max_elements,
                                  target_upper_value);
           vso.topology_constraint = options.topology_constraint;
           vso.max_depth = options.max_depth;
@@ -376,33 +395,34 @@ result_t search_dividers(DividerSearchOptions& options,
 
           const value_t ratio =
               lower_value / (upper_combs[0]->value + lower_value);
+          const int num_elems = num_lowers + upper_combs[0]->num_leafs();
+
           const value_t error = std::abs(ratio - options.target_ratio);
           if (error - epsilon > best_error) {
-            // 既知の組み合わせより悪い
             return;
           }
-
-          if (error + epsilon < best_error) {
-            // 既知の組み合わせより良い
+          if (error + epsilon >= best_error && num_elems > best_elems) {
+            return;
+          }
+          if (error + epsilon < best_error || num_elems < best_elems) {
             best_combs.clear();
           }
 
           auto double_comb = create_double_combination(ratio);
           double_comb->uppers = upper_combs;
           double_comb->lowers.push_back(ctx.root_state->bake(options.type));
-          result_memo[lower_value] = double_comb;
+          result_memo[lower_key] = double_comb;
           best_combs.push_back(double_comb);
           best_error = error;
+          best_elems = num_elems;
         };
+
         search_combinations_recursive(vsc, 0, cb);
+
         if (upper_error != result_t::SUCCESS) {
           return upper_error;
         }
       }
-    }
-
-    if (best_error <= epsilon) {
-      break;
     }
   }
 
