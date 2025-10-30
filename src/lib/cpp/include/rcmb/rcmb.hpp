@@ -25,10 +25,11 @@ struct ValueSearchOptions {
   topology_constraint_t topology_constraint = topology_constraint_t::NO_LIMIT;
   int max_depth = 9999;
   const value_t target;
+  filter_t filter = filter_t::NEAREST;
 
   ValueSearchOptions(ComponentType type, const ValueList& values,
                      value_t min_val, value_t max_val, int max_elems,
-                     value_t target = VALUE_NONE)
+                     value_t target)
       : type(type),
         available_values(values),
         min_value(min_val),
@@ -46,6 +47,7 @@ struct DividerSearchOptions {
   int max_elements;
   topology_constraint_t topology_constraint = topology_constraint_t::NO_LIMIT;
   int max_depth = 9999;
+  filter_t filter = filter_t::NEAREST;
 
   DividerSearchOptions(ComponentType type, const ValueList& values,
                        value_t target_rat, value_t total_min_val,
@@ -261,6 +263,13 @@ result_t search_combinations(ValueSearchOptions& options,
                                options.min_value, options.max_value,
                                options.target);
         const auto cb = [&](ValueSearchContext& ctx, value_t value) {
+          if (!(options.filter & filter_t::BELOW) && value < options.target - epsilon) {
+            return;
+          }
+          else if (!(options.filter & filter_t::ABOVE) && value > options.target + epsilon) {
+            return;
+          }
+
           const auto error = std::abs(value - options.target);
           if (error - epsilon > best_error) {
             return;
@@ -395,6 +404,13 @@ result_t search_dividers(DividerSearchOptions& options,
 
           const value_t ratio =
               lower_value / (upper_combs[0]->value + lower_value);
+          if (!(options.filter & filter_t::BELOW) && ratio < options.target_ratio - epsilon) {
+            return;
+          }
+          else if (!(options.filter & filter_t::ABOVE) && ratio > options.target_ratio + epsilon) {
+            return;
+          }
+
           const int num_elems = num_lowers + upper_combs[0]->num_leafs();
 
           const value_t error = std::abs(ratio - options.target_ratio);

@@ -141,7 +141,7 @@ var require_rcmb_wasm = /* @__PURE__ */ __commonJS({ "../../lib/cpp_wasm/build/r
 			}
 			var wasmBinaryFile;
 			function findWasmBinary() {
-				return locateFile("rcmb_wasm.wasm?93416e86");
+				return locateFile("rcmb_wasm.wasm?65380060");
 			}
 			function getBinarySync(file) {
 				if (file == wasmBinaryFile && wasmBinary) return new Uint8Array(wasmBinary);
@@ -1486,6 +1486,13 @@ let Method = /* @__PURE__ */ function(Method$1) {
 	Method$1[Method$1["FindDivider"] = 2] = "FindDivider";
 	return Method$1;
 }({});
+let Filter = /* @__PURE__ */ function(Filter$1) {
+	Filter$1[Filter$1["Exact"] = 0] = "Exact";
+	Filter$1[Filter$1["Below"] = 1] = "Below";
+	Filter$1[Filter$1["Above"] = 2] = "Above";
+	Filter$1[Filter$1["Nearest"] = 3] = "Nearest";
+	return Filter$1;
+}({});
 let TopologyConstraint = /* @__PURE__ */ function(TopologyConstraint$1) {
 	TopologyConstraint$1[TopologyConstraint$1["Series"] = 1] = "Series";
 	TopologyConstraint$1[TopologyConstraint$1["Parallel"] = 2] = "Parallel";
@@ -1581,11 +1588,11 @@ var DoubleCombination = class {
 	}
 };
 const topologies = /* @__PURE__ */ new Map();
-function findCombinations(capacitor, values, targetValue, maxElements, topoConstr, maxDepth) {
+function findCombinations(capacitor, values, targetValue, maxElements, topoConstr, maxDepth, filter) {
 	try {
 		return {
 			error: "",
-			result: searchCombinations(capacitor, values, targetValue, maxElements, topoConstr, maxDepth).map((comb) => comb.toJson())
+			result: searchCombinations(capacitor, values, targetValue, maxElements, topoConstr, maxDepth, filter).map((comb) => comb.toJson())
 		};
 	} catch (e) {
 		return {
@@ -1594,11 +1601,11 @@ function findCombinations(capacitor, values, targetValue, maxElements, topoConst
 		};
 	}
 }
-function findDividers(values, targetRatio, totalMin, totalMax, maxElements, topoConstr, maxDepth) {
+function findDividers(values, targetRatio, totalMin, totalMax, maxElements, topoConstr, maxDepth, filter) {
 	try {
 		return {
 			error: "",
-			result: searchDividers(values, targetRatio, totalMin, totalMax, maxElements, topoConstr, maxDepth).map((comb) => comb.toJson())
+			result: searchDividers(values, targetRatio, totalMin, totalMax, maxElements, topoConstr, maxDepth, filter).map((comb) => comb.toJson())
 		};
 	} catch (e) {
 		return {
@@ -1607,7 +1614,7 @@ function findDividers(values, targetRatio, totalMin, totalMax, maxElements, topo
 		};
 	}
 }
-function searchCombinations(capacitor, values, targetValue, maxElements, topoConstr, maxDepth) {
+function searchCombinations(capacitor, values, targetValue, maxElements, topoConstr, maxDepth, filter) {
 	const epsilon = targetValue * 1e-9;
 	const retMin = targetValue / 2;
 	const retMax = targetValue * 2;
@@ -1625,6 +1632,8 @@ function searchCombinations(capacitor, values, targetValue, maxElements, topoCon
 				if (topo.depth > maxDepth) continue;
 				const value = calcValue(capacitor, values, indices, topo, null, retMin, retMax);
 				if (isNaN(value)) continue;
+				if ((filter & Filter.Below) === 0 && value < targetValue - epsilon) continue;
+				else if ((filter & Filter.Above) === 0 && value > targetValue + epsilon) continue;
 				const error = Math.abs(value - targetValue);
 				if (error - epsilon > bestError) continue;
 				if (error + epsilon >= bestError && numElem > bestElems) continue;
@@ -1641,7 +1650,7 @@ function searchCombinations(capacitor, values, targetValue, maxElements, topoCon
 	}
 	return filterUnnormalizedCombinations(bestCombinations);
 }
-function searchDividers(values, targetRatio, totalMin, totalMax, maxElements, topoConstr, maxDepth) {
+function searchDividers(values, targetRatio, totalMin, totalMax, maxElements, topoConstr, maxDepth, filter) {
 	const epsilon = 1e-9;
 	if (maxElements > MAX_COMBINATION_ELEMENTS) throw new Error("The search space is too large.");
 	let bestError = Number.POSITIVE_INFINITY;
@@ -1678,9 +1687,11 @@ function searchDividers(values, targetRatio, totalMin, totalMax, maxElements, to
 					}
 					continue;
 				}
-				const upperCombs = searchCombinations(false, values, upperTargetValue, upperMaxElements, topoConstr, maxDepth);
+				const upperCombs = searchCombinations(false, values, upperTargetValue, upperMaxElements, topoConstr, maxDepth, filter);
 				if (upperCombs.length === 0) continue;
 				const ratio = lowerValue / (upperCombs[0].value + lowerValue);
+				if ((filter & Filter.Below) === 0 && ratio < targetRatio - epsilon) continue;
+				else if ((filter & Filter.Above) === 0 && ratio > targetRatio + epsilon) continue;
 				const numElems = lowerElems + upperCombs[0].numLeafs;
 				const error = Math.abs(ratio - targetRatio);
 				if (error - epsilon > bestError) continue;
@@ -1915,6 +1926,7 @@ thisWorker.onmessage = async (e) => {
 	const maxElements = args.maxElements;
 	const topologyConstraint = args.topologyConstraint;
 	const maxDepth = args.maxDepth;
+	const filter = args.filter;
 	let ret = {
 		error: "",
 		result: [],
@@ -1928,10 +1940,10 @@ thisWorker.onmessage = async (e) => {
 				if (useWasm) {
 					const vec = new wasmCore.VectorDouble();
 					for (const v of values) vec.push_back(v);
-					const retStr = wasmCore.findCombinations(capacitor, vec, targetValue, maxElements, topologyConstraint, maxDepth);
+					const retStr = wasmCore.findCombinations(capacitor, vec, targetValue, maxElements, topologyConstraint, maxDepth, filter);
 					vec.delete();
 					ret = JSON.parse(retStr);
-				} else ret = findCombinations(capacitor, values, targetValue, maxElements, topologyConstraint, maxDepth);
+				} else ret = findCombinations(capacitor, values, targetValue, maxElements, topologyConstraint, maxDepth, filter);
 			}
 			break;
 		case Method.FindDivider:
@@ -1942,10 +1954,10 @@ thisWorker.onmessage = async (e) => {
 				if (useWasm) {
 					const vec = new wasmCore.VectorDouble();
 					for (const v of values) vec.push_back(v);
-					const retStr = wasmCore.findDividers(vec, targetRatio, totalMin, totalMax, maxElements, topologyConstraint, maxDepth);
+					const retStr = wasmCore.findDividers(vec, targetRatio, totalMin, totalMax, maxElements, topologyConstraint, maxDepth, filter);
 					vec.delete();
 					ret = JSON.parse(retStr);
-				} else ret = findDividers(values, targetRatio, totalMin, totalMax, maxElements, topologyConstraint, maxDepth);
+				} else ret = findDividers(values, targetRatio, totalMin, totalMax, maxElements, topologyConstraint, maxDepth, filter);
 			}
 			break;
 		default:

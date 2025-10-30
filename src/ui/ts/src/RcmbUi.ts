@@ -1,26 +1,29 @@
+import * as RcmbJS from '../../../lib/ts/src/RcmbJS';
+
 import * as Calc from './Calc';
 import * as Series from './Series';
-import * as RcmbJS from '../../../lib/ts/src/RcmbJS';
 import {getStr} from './Text';
 
 export class CommonSettingsUi {
   useWasmCheckbox = makeCheckbox(getStr('Use WebAssembly'), true);
-  showColorCodeCheckbox = makeCheckbox(getStr('Show Color Code'), true);
-  ui = makeDiv([
-    document.createElement('hr'),
-    this.useWasmCheckbox.parentNode as HTMLLabelElement,
-    ' | ',
-    this.showColorCodeCheckbox.parentNode as HTMLLabelElement,
-  ], null, true);
+  showColorCodeCheckbox = makeCheckbox(getStr('Show Color Code'), false);
+  ui = makeDiv(
+      [
+        document.createElement('hr'),
+        this.useWasmCheckbox.parentNode as HTMLLabelElement,
+        //' | ',
+        // this.showColorCodeCheckbox.parentNode as HTMLLabelElement,
+      ],
+      null, true);
   onChanged: (() => void)[] = [];
 
   constructor() {
     this.useWasmCheckbox.addEventListener('change', () => {
       this.onChanged.forEach(callback => callback());
     });
-    this.showColorCodeCheckbox.addEventListener('change', () => {
-      this.onChanged.forEach(callback => callback());
-    });
+    //this.showColorCodeCheckbox.addEventListener('change', () => {
+    //  this.onChanged.forEach(callback => callback());
+    //});
   }
 }
 
@@ -163,7 +166,62 @@ export class ValueBox {
   }
 }
 
-export function makeNumElementInput(max: number, defaultValue: number): IntegerBox {
+export class FilterBox {
+  /*
+  aboveCheckbox = makeCheckbox('＞' + getStr('Target'), true);
+  belowCheckbox = makeCheckbox('＜' + getStr('Target'), true);
+  ui = makeSpan([
+    this.aboveCheckbox.parentNode as HTMLLabelElement,
+    makeBr(),
+    this.belowCheckbox.parentNode as HTMLLabelElement,
+  ]);*/
+  selector = makeSelectBox(
+      [
+        {value: RcmbJS.Filter.Exact.toString(), label: getStr('Exact')},
+        {value: RcmbJS.Filter.Below.toString(), label: getStr('Below')},
+        {value: RcmbJS.Filter.Above.toString(), label: getStr('Above')},
+        {value: RcmbJS.Filter.Nearest.toString(), label: getStr('Nearest')},
+      ],
+      RcmbJS.Filter.Nearest.toString())
+  ui = this.selector;
+
+  callbacks: (() => void)[] = [];
+
+  constructor() {
+    /*
+    this.aboveCheckbox.addEventListener('change', () => {
+      this.callbacks.forEach(cb => cb());
+    });
+    this.belowCheckbox.addEventListener('change', () => {
+      this.callbacks.forEach(cb => cb());
+    });*/
+    this.selector.addEventListener('change', () => {
+      this.callbacks.forEach(cb => cb());
+    });
+  }
+
+  setOnChange(callback: () => void) {
+    this.callbacks.push(callback);
+  }
+
+  get value(): RcmbJS.Filter {
+    /*const above = this.aboveCheckbox.checked;
+    const below = this.belowCheckbox.checked;
+    if (above && below) {
+      return RcmbJS.Filter.Nearest;
+    } else if (above) {
+      return RcmbJS.Filter.Above;
+    } else if (below) {
+      return RcmbJS.Filter.Below;
+    } else {
+      return RcmbJS.Filter.Exact;
+    }*/
+    return parseInt(this.selector.value) as RcmbJS.Filter;
+  }
+}
+
+export function makeNumElementInput(
+    max: number, defaultValue: number): IntegerBox {
   return new IntegerBox(defaultValue, 1, max, max, `(${getStr('No Limit')})`);
 }
 
@@ -188,10 +246,10 @@ export function makeTopologySelector(): HTMLSelectElement {
 export function makeDepthSelector(): HTMLSelectElement {
   const noLimit = '999';
   const items = [
-    { value: '1', label: '1' },
-    { value: '2', label: '2' },
-    { value: '3', label: '3' },
-    { value: noLimit, label: getStr('No Limit') },
+    {value: '1', label: '1'},
+    {value: '2', label: '2'},
+    {value: '3', label: '3'},
+    {value: noLimit, label: getStr('No Limit')},
   ];
   return makeSelectBox(items, noLimit);
 }
@@ -263,6 +321,13 @@ export function makeSpan(
   return elm;
 }
 
+export function strong(children: string|Node|Array<string|Node>|null = null):
+    HTMLElement {
+  const elm = document.createElement('strong');
+  toElementArray(children).forEach(child => elm.appendChild(child));
+  return elm;
+}
+
 export function makeLabel(
     label: string, input: HTMLElement, unit: string|null = null) {
   const elm = document.createElement('label');
@@ -296,7 +361,7 @@ export function makeCheckbox(
 
 export function makeSeriesSelector() {
   let items: Array<{value: string, label: string, tip?: string}> = [];
-  for (const key of Object.keys(Series.Series)) {
+  for (const key of Object.keys(Series.Serieses)) {
     items.push({value: key, label: key});
   }
   items.push({value: 'custom', label: getStr('Custom')});

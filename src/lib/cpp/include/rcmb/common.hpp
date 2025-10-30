@@ -41,6 +41,16 @@ enum class topology_constraint_t {
   NO_LIMIT = 3,
 };
 
+enum class filter_t {
+  EXACT = 0,
+  BELOW = 1,
+  ABOVE = 2,
+  NEAREST = 3,
+};
+inline bool operator&(filter_t a, filter_t b) {
+  return (static_cast<int>(a) & static_cast<int>(b)) != 0;
+}
+
 static inline const char* result_to_string(result_t res) {
   switch (res) {
     case result_t::SUCCESS:

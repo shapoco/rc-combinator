@@ -11,15 +11,17 @@ const C_HEIGHT = Math.round(ELEMENT_SIZE * 0.7);
 
 const COLOR_CODE_TABLE = [
   '#000',
-  '#864',
+  '#963',
   '#c00',
   '#f80',
-  '#cc0',
+  '#fe0',
   '#080',
   '#04c',
   '#c4c',
   '#888',
   '#fff',
+  'gold',
+  'silver',
 ];
 
 function drawResistor(
@@ -31,34 +33,73 @@ function drawResistor(
   y += (ELEMENT_SIZE - R_HEIGHT) / 2;
 
   if (showColorCode) {
-    let colors: string[];
+    let colors: string[] = [];
     if (value >= 1e-6) {
-      const exp = Math.floor(Math.log10(value) + 1e-10) - 1;
+      const exp = Math.floor(Math.log10(value) + 1e-10) - 2;
       const frac = Math.round(value / Math.pow(10, exp));
-      const digits1 = Math.floor(frac / 10) % 10;
-      const digits2 = frac % 10;
-      const digits3 = exp;
-      colors = [
-        COLOR_CODE_TABLE[digits1],
-        COLOR_CODE_TABLE[digits2],
-        COLOR_CODE_TABLE[digits3],
-        '#870',
-      ]
+      const digit0 = Math.floor(frac / 100) % 10;
+      const digit1 = Math.floor(frac / 10) % 10;
+      const digit2 = frac % 10;
+      const digit3 = Math.floor(frac * 10) % 10;
+      const digit4 = (digit2 !== 0) ? exp : (exp + 1);
+
+      const color4 = (digit4 <= -2) ? 'silver' :
+          (digit4 === -1)           ? 'gold' :
+          (digit4 >= 10)            ? '#fff' :
+                                      COLOR_CODE_TABLE[digit4];
+
+      if (digit3 !== 0 || digit4 < -2 || digit4 > 9) {
+        // nothing to do
+      } else if (digit2 !== 0) {
+        colors = [
+          COLOR_CODE_TABLE[digit0],
+          COLOR_CODE_TABLE[digit1],
+          COLOR_CODE_TABLE[digit2],
+          color4,
+          COLOR_CODE_TABLE[1],
+        ];
+      } else {
+        colors = [
+          COLOR_CODE_TABLE[digit0],
+          COLOR_CODE_TABLE[digit1],
+          color4,
+          COLOR_CODE_TABLE[1],
+        ];
+      }
     } else {
       colors = [COLOR_CODE_TABLE[0]];
     }
 
-    const bandWidth = R_WIDTH * 0.125;
-    const bandGap = bandWidth / 2;
-    const bandX0 =
-        (R_WIDTH -
-         (bandWidth * colors.length + bandGap * (colors.length - 1))) /
-        2;
+    if (colors.length > 0) {
+      const bandWidth = R_WIDTH * 0.12;
+      const bandGap = bandWidth / 2;
+      const bandX0 =
+          (R_WIDTH -
+           (bandWidth * colors.length + bandGap * (colors.length - 1))) /
+          2;
 
-    for (let i = 0; i < colors.length; i++) {
-      const x = bandX0 + i * (bandWidth + bandGap);
-      ctx.fillStyle = colors[i];
-      ctx.fillRect(x, y, bandWidth, R_HEIGHT);
+      ctx.fillStyle = '#ccc';
+      ctx.fillRect(0, y, R_WIDTH, R_HEIGHT);
+
+      for (let i = 0; i < colors.length; i++) {
+        const x = bandX0 + i * (bandWidth + bandGap);
+        if (colors[i] === 'silver' || colors[i] === 'gold') {
+          const gradient = ctx.createLinearGradient(0, y, 0, y + R_HEIGHT);
+          if (colors[i] === 'gold') {
+            gradient.addColorStop(0, '#fff');
+            gradient.addColorStop(0.5, '#fc0');
+            gradient.addColorStop(1, '#840');
+          } else {
+            gradient.addColorStop(0, '#fff');
+            gradient.addColorStop(0.5, '#888');
+            gradient.addColorStop(1, '#444');
+          }
+          ctx.fillStyle = gradient;
+        } else {
+          ctx.fillStyle = colors[i];
+        }
+        ctx.fillRect(x, y, bandWidth, R_HEIGHT);
+      }
     }
   }
 

@@ -30,6 +30,7 @@ thisWorker.onmessage = async (e: MessageEvent<any>) => {
   const topologyConstraint =
       args.topologyConstraint as RcmbJS.TopologyConstraint;
   const maxDepth = args.maxDepth as number;
+  const filter = args.filter as RcmbJS.Filter;
 
   let ret = {
     error: '',
@@ -49,13 +50,13 @@ thisWorker.onmessage = async (e: MessageEvent<any>) => {
         }
         const retStr = wasmCore!.findCombinations(
             capacitor, vec, targetValue, maxElements, topologyConstraint,
-            maxDepth);
+            maxDepth, filter);
         vec.delete();
         ret = JSON.parse(retStr);
       } else {
         ret = RcmbJS.findCombinations(
             capacitor, values, targetValue, maxElements, topologyConstraint,
-            maxDepth);
+            maxDepth, filter);
       }
     } break;
 
@@ -70,14 +71,14 @@ thisWorker.onmessage = async (e: MessageEvent<any>) => {
         }
         const retStr = wasmCore!.findDividers(
             vec, targetRatio, totalMin, totalMax, maxElements,
-            topologyConstraint, maxDepth);
+            topologyConstraint, maxDepth, filter);
         vec.delete();
         ret = JSON.parse(retStr);
       }
       else {
         ret = RcmbJS.findDividers(
             values, targetRatio, totalMin, totalMax, maxElements,
-            topologyConstraint, maxDepth);
+            topologyConstraint, maxDepth, filter);
       }
     } break;
 

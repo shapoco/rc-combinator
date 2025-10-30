@@ -4,6 +4,13 @@ let Method = /* @__PURE__ */ function(Method$1) {
 	Method$1[Method$1["FindDivider"] = 2] = "FindDivider";
 	return Method$1;
 }({});
+let Filter = /* @__PURE__ */ function(Filter$1) {
+	Filter$1[Filter$1["Exact"] = 0] = "Exact";
+	Filter$1[Filter$1["Below"] = 1] = "Below";
+	Filter$1[Filter$1["Above"] = 2] = "Above";
+	Filter$1[Filter$1["Nearest"] = 3] = "Nearest";
+	return Filter$1;
+}({});
 let TopologyConstraint = /* @__PURE__ */ function(TopologyConstraint$1) {
 	TopologyConstraint$1[TopologyConstraint$1["Series"] = 1] = "Series";
 	TopologyConstraint$1[TopologyConstraint$1["Parallel"] = 2] = "Parallel";
@@ -11,6 +18,78 @@ let TopologyConstraint = /* @__PURE__ */ function(TopologyConstraint$1) {
 	return TopologyConstraint$1;
 }({});
 const MAX_COMBINATION_ELEMENTS = 10;
+function formatValue$1(value, unit = "", usePrefix = null) {
+	if (!isFinite(value) || isNaN(value)) return "NaN";
+	if (usePrefix === null) usePrefix = unit !== "";
+	let prefix = "";
+	if (usePrefix) {
+		if (value >= 999999e6) {
+			value /= 0xe8d4a51000;
+			prefix = "T";
+		} else if (value >= 999999e3) {
+			value /= 1e9;
+			prefix = "G";
+		} else if (value >= 999999) {
+			value /= 1e6;
+			prefix = "M";
+		} else if (value >= 999.999) {
+			value /= 1e3;
+			prefix = "k";
+		} else if (value >= .999999) prefix = "";
+		else if (value >= 999999e-9) {
+			value *= 1e3;
+			prefix = "m";
+		} else if (value >= 9.99999e-7) {
+			value *= 1e6;
+			prefix = "μ";
+		} else if (value >= 999999e-15) {
+			value *= 1e9;
+			prefix = "n";
+		} else if (value >= 999999e-18) {
+			value *= 0xe8d4a51000;
+			prefix = "p";
+		}
+	}
+	const minDigits = usePrefix ? 3 : 6;
+	value = Math.round(value * pow10$1(minDigits));
+	let s = "";
+	while (s.length <= minDigits + 1 || value > 0) {
+		const digit = value % 10;
+		value = Math.floor(value / 10);
+		s = digit.toString() + s;
+		if (s.length === minDigits) s = "." + s;
+	}
+	s = s.replace(/\.?0+$/, "");
+	return `${s} ${prefix}${unit}`.trim();
+}
+function pow10$1(exp) {
+	let ret = 1;
+	const neg = exp < 0;
+	if (neg) exp = -exp;
+	if (exp >= 16) {
+		ret *= 0x2386f26fc10000;
+		exp -= 16;
+	}
+	if (exp >= 8) {
+		ret *= 1e8;
+		exp -= 8;
+	}
+	if (exp >= 4) {
+		ret *= 1e4;
+		exp -= 4;
+	}
+	if (exp >= 2) {
+		ret *= 100;
+		exp -= 2;
+	}
+	if (exp >= 1) {
+		ret *= 10;
+		exp -= 1;
+	}
+	ret *= Math.pow(10, exp);
+	if (neg) ret = 1 / ret;
+	return ret;
+}
 
 //#endregion
 //#region src/Calc.ts
@@ -269,7 +348,7 @@ function pow10(exp) {
 
 //#endregion
 //#region src/Series.ts
-const Series = {
+const Serieses = {
 	"E1": [100],
 	"E3": [
 		100,
@@ -323,10 +402,352 @@ const Series = {
 		750,
 		820,
 		910
+	],
+	"E48": [
+		100,
+		105,
+		110,
+		115,
+		121,
+		127,
+		133,
+		140,
+		147,
+		154,
+		162,
+		169,
+		178,
+		187,
+		196,
+		205,
+		215,
+		226,
+		237,
+		249,
+		261,
+		274,
+		287,
+		301,
+		316,
+		332,
+		348,
+		365,
+		383,
+		402,
+		422,
+		442,
+		464,
+		487,
+		511,
+		536,
+		562,
+		590,
+		619,
+		649,
+		681,
+		715,
+		750,
+		787,
+		825,
+		866,
+		909,
+		953
+	],
+	"E96": [
+		100,
+		102,
+		105,
+		107,
+		110,
+		113,
+		115,
+		118,
+		121,
+		124,
+		127,
+		130,
+		133,
+		137,
+		140,
+		143,
+		147,
+		150,
+		154,
+		158,
+		162,
+		165,
+		169,
+		174,
+		178,
+		182,
+		187,
+		191,
+		196,
+		200,
+		205,
+		210,
+		215,
+		221,
+		226,
+		232,
+		237,
+		243,
+		249,
+		255,
+		261,
+		267,
+		274,
+		280,
+		287,
+		294,
+		301,
+		309,
+		316,
+		324,
+		332,
+		340,
+		348,
+		357,
+		365,
+		374,
+		383,
+		392,
+		402,
+		412,
+		422,
+		432,
+		442,
+		453,
+		464,
+		475,
+		487,
+		499,
+		511,
+		523,
+		536,
+		549,
+		562,
+		576,
+		590,
+		604,
+		619,
+		634,
+		649,
+		665,
+		681,
+		698,
+		715,
+		732,
+		750,
+		768,
+		787,
+		806,
+		825,
+		845,
+		866,
+		887,
+		909,
+		931,
+		953,
+		976
+	],
+	"E192": [
+		100,
+		101,
+		102,
+		104,
+		105,
+		106,
+		107,
+		109,
+		110,
+		111,
+		113,
+		114,
+		115,
+		117,
+		118,
+		120,
+		121,
+		123,
+		124,
+		126,
+		127,
+		129,
+		130,
+		132,
+		133,
+		135,
+		137,
+		138,
+		140,
+		142,
+		143,
+		145,
+		147,
+		149,
+		150,
+		152,
+		154,
+		156,
+		158,
+		160,
+		162,
+		164,
+		165,
+		167,
+		169,
+		172,
+		174,
+		176,
+		178,
+		180,
+		182,
+		184,
+		187,
+		189,
+		191,
+		193,
+		196,
+		198,
+		200,
+		203,
+		205,
+		208,
+		210,
+		213,
+		215,
+		218,
+		221,
+		223,
+		226,
+		229,
+		232,
+		234,
+		237,
+		240,
+		243,
+		246,
+		249,
+		252,
+		255,
+		258,
+		261,
+		264,
+		267,
+		271,
+		274,
+		277,
+		280,
+		284,
+		287,
+		291,
+		294,
+		298,
+		301,
+		305,
+		309,
+		312,
+		316,
+		320,
+		324,
+		328,
+		332,
+		336,
+		340,
+		344,
+		348,
+		352,
+		357,
+		361,
+		365,
+		370,
+		374,
+		379,
+		383,
+		388,
+		392,
+		397,
+		402,
+		407,
+		412,
+		417,
+		422,
+		427,
+		432,
+		437,
+		442,
+		448,
+		453,
+		459,
+		464,
+		470,
+		475,
+		481,
+		487,
+		493,
+		499,
+		505,
+		511,
+		517,
+		523,
+		530,
+		536,
+		542,
+		549,
+		556,
+		562,
+		569,
+		576,
+		583,
+		590,
+		597,
+		604,
+		612,
+		619,
+		626,
+		634,
+		642,
+		649,
+		657,
+		665,
+		673,
+		681,
+		690,
+		698,
+		706,
+		715,
+		723,
+		732,
+		741,
+		750,
+		759,
+		768,
+		777,
+		787,
+		796,
+		806,
+		816,
+		825,
+		835,
+		845,
+		856,
+		866,
+		876,
+		887,
+		898,
+		909,
+		920,
+		931,
+		942,
+		953,
+		965,
+		976,
+		988
 	]
 };
 function makeAvaiableValues(series, minValue = 1e-12, maxValue = 0xe8d4a51000) {
-	const baseValues = Series[series];
+	const baseValues = Serieses[series];
 	if (!baseValues) throw new Error(`Unknown series: ${series}`);
 	const values = [];
 	for (let exp = -11; exp <= 15; exp++) {
@@ -350,8 +771,8 @@ const texts = { "ja": {
 	"Find LED Current Limiting Resistor": "LEDの電流制限抵抗を見つける",
 	"Power Voltage": "電源電圧",
 	"Forward Voltage": "順方向電圧",
-	"Forward Current": "順方向電流",
-	"E Series": "シリーズ",
+	"Target Current": "目標電流",
+	"E Series": "E系列",
 	"Item": "項目",
 	"Value": "値",
 	"Unit": "単位",
@@ -364,7 +785,7 @@ const texts = { "ja": {
 	"The search space is too large.": "探索空間が大きすぎます。",
 	"Upper Resistor": "上側の抵抗",
 	"Lower Resistor": "下側の抵抗",
-	"No combinations found.": "組み合わせが見つかりませんでした。",
+	"No combinations found": "組み合わせが見つかりませんでした",
 	"<n> combinations found": "<n> 件の組み合わせが見つかりました",
 	"Parallel": "並列",
 	"Series": "直列",
@@ -378,7 +799,18 @@ const texts = { "ja": {
 	"Search Time": "探索時間",
 	"Use WebAssembly": "WebAssembly 使用",
 	"Show Color Code": "カラーコード表示",
-	"Searching...": "探索しています..."
+	"Searching...": "探索しています...",
+	"Power Loss": "損失",
+	"Current": "電流",
+	"Resistor": "抵抗",
+	"Same as Above": "同上",
+	"Filter": "フィルター",
+	"Target": "目標値",
+	"Exact": "一致",
+	"Above": "目標以上",
+	"Below": "目標以下",
+	"Nearest": "近似値",
+	"None": "なし"
 } };
 function getStr(key, vars) {
 	let ret = key;
@@ -395,19 +827,11 @@ function getStr(key, vars) {
 //#region src/RcmbUi.ts
 var CommonSettingsUi = class {
 	useWasmCheckbox = makeCheckbox(getStr("Use WebAssembly"), true);
-	showColorCodeCheckbox = makeCheckbox(getStr("Show Color Code"), true);
-	ui = makeDiv$1([
-		document.createElement("hr"),
-		this.useWasmCheckbox.parentNode,
-		" | ",
-		this.showColorCodeCheckbox.parentNode
-	], null, true);
+	showColorCodeCheckbox = makeCheckbox(getStr("Show Color Code"), false);
+	ui = makeDiv([document.createElement("hr"), this.useWasmCheckbox.parentNode], null, true);
 	onChanged = [];
 	constructor() {
 		this.useWasmCheckbox.addEventListener("change", () => {
-			this.onChanged.forEach((callback) => callback());
-		});
-		this.showColorCodeCheckbox.addEventListener("change", () => {
 			this.onChanged.forEach((callback) => callback());
 		});
 	}
@@ -526,6 +950,39 @@ var ValueBox = class {
 		this.onChangeCallback();
 	}
 };
+var FilterBox = class {
+	selector = makeSelectBox([
+		{
+			value: Filter.Exact.toString(),
+			label: getStr("Exact")
+		},
+		{
+			value: Filter.Below.toString(),
+			label: getStr("Below")
+		},
+		{
+			value: Filter.Above.toString(),
+			label: getStr("Above")
+		},
+		{
+			value: Filter.Nearest.toString(),
+			label: getStr("Nearest")
+		}
+	], Filter.Nearest.toString());
+	ui = this.selector;
+	callbacks = [];
+	constructor() {
+		this.selector.addEventListener("change", () => {
+			this.callbacks.forEach((cb) => cb());
+		});
+	}
+	setOnChange(callback) {
+		this.callbacks.push(callback);
+	}
+	get value() {
+		return parseInt(this.selector.value);
+	}
+};
 function makeNumElementInput(max, defaultValue) {
 	return new IntegerBox(defaultValue, 1, max, max, `(${getStr("No Limit")})`);
 }
@@ -571,16 +1028,16 @@ function makeH2(label = "") {
 	elm.textContent = label;
 	return elm;
 }
-function makeDiv$1(children = [], className = null, center = false) {
+function makeDiv(children = [], className = null, center = false) {
 	const elm = document.createElement("div");
-	toElementArray$1(children).forEach((child) => elm.appendChild(child));
+	toElementArray(children).forEach((child) => elm.appendChild(child));
 	if (className) elm.classList.add(className);
 	if (center) elm.style.textAlign = "center";
 	return elm;
 }
 function makeP(children = [], className = null, center = false) {
 	const elm = document.createElement("p");
-	toElementArray$1(children).forEach((child) => elm.appendChild(child));
+	toElementArray(children).forEach((child) => elm.appendChild(child));
 	if (className) elm.classList.add(className);
 	if (center) elm.style.textAlign = "center";
 	return elm;
@@ -592,13 +1049,18 @@ function makeTable(rows) {
 		const row = document.createElement("tr");
 		for (const cellData of rowData) {
 			const cell = document.createElement(head ? "th" : "td");
-			toElementArray$1(cellData).forEach((child) => cell.appendChild(child));
+			toElementArray(cellData).forEach((child) => cell.appendChild(child));
 			row.appendChild(cell);
 		}
 		head = false;
 		table.appendChild(row);
 	}
 	return table;
+}
+function strong(children = null) {
+	const elm = document.createElement("strong");
+	toElementArray(children).forEach((child) => elm.appendChild(child));
+	return elm;
 }
 function makeTextBox(value = null) {
 	const elm = document.createElement("input");
@@ -617,7 +1079,7 @@ function makeCheckbox(labelStr, value = false) {
 }
 function makeSeriesSelector() {
 	let items = [];
-	for (const key of Object.keys(Series)) items.push({
+	for (const key of Object.keys(Serieses)) items.push({
 		value: key,
 		label: key
 	});
@@ -639,7 +1101,7 @@ function makeSelectBox(items, defaultValue) {
 	select.value = defaultValue.toString();
 	return select;
 }
-function toElementArray$1(children) {
+function toElementArray(children) {
 	if (children == null) return [];
 	if (!Array.isArray(children)) children = [children];
 	for (let i = 0; i < children.length; i++) if (typeof children[i] === "string") children[i] = document.createTextNode(children[i]);
@@ -720,42 +1182,70 @@ const C_WIDTH = Math.round(ELEMENT_SIZE * .3);
 const C_HEIGHT = Math.round(ELEMENT_SIZE * .7);
 const COLOR_CODE_TABLE = [
 	"#000",
-	"#864",
+	"#963",
 	"#c00",
 	"#f80",
-	"#cc0",
+	"#fe0",
 	"#080",
 	"#04c",
 	"#c4c",
 	"#888",
-	"#fff"
+	"#fff",
+	"gold",
+	"silver"
 ];
 function drawResistor(ctx, x, y, value, showColorCode) {
 	ctx.save();
 	ctx.translate(x, y);
 	y += (ELEMENT_SIZE - R_HEIGHT) / 2;
 	if (showColorCode) {
-		let colors;
+		let colors = [];
 		if (value >= 1e-6) {
-			const exp = Math.floor(Math.log10(value) + 1e-10) - 1;
+			const exp = Math.floor(Math.log10(value) + 1e-10) - 2;
 			const frac = Math.round(value / Math.pow(10, exp));
-			const digits1 = Math.floor(frac / 10) % 10;
-			const digits2 = frac % 10;
-			const digits3 = exp;
-			colors = [
-				COLOR_CODE_TABLE[digits1],
-				COLOR_CODE_TABLE[digits2],
-				COLOR_CODE_TABLE[digits3],
-				"#870"
+			const digit0 = Math.floor(frac / 100) % 10;
+			const digit1 = Math.floor(frac / 10) % 10;
+			const digit2 = frac % 10;
+			const digit3 = Math.floor(frac * 10) % 10;
+			const digit4 = digit2 !== 0 ? exp : exp + 1;
+			const color4 = digit4 <= -2 ? "silver" : digit4 === -1 ? "gold" : digit4 >= 10 ? "#fff" : COLOR_CODE_TABLE[digit4];
+			if (digit3 !== 0 || digit4 < -2 || digit4 > 9) {} else if (digit2 !== 0) colors = [
+				COLOR_CODE_TABLE[digit0],
+				COLOR_CODE_TABLE[digit1],
+				COLOR_CODE_TABLE[digit2],
+				color4,
+				COLOR_CODE_TABLE[1]
+			];
+			else colors = [
+				COLOR_CODE_TABLE[digit0],
+				COLOR_CODE_TABLE[digit1],
+				color4,
+				COLOR_CODE_TABLE[1]
 			];
 		} else colors = [COLOR_CODE_TABLE[0]];
-		const bandWidth = R_WIDTH * .125;
-		const bandGap = bandWidth / 2;
-		const bandX0 = (R_WIDTH - (bandWidth * colors.length + bandGap * (colors.length - 1))) / 2;
-		for (let i = 0; i < colors.length; i++) {
-			const x$1 = bandX0 + i * (bandWidth + bandGap);
-			ctx.fillStyle = colors[i];
-			ctx.fillRect(x$1, y, bandWidth, R_HEIGHT);
+		if (colors.length > 0) {
+			const bandWidth = R_WIDTH * .12;
+			const bandGap = bandWidth / 2;
+			const bandX0 = (R_WIDTH - (bandWidth * colors.length + bandGap * (colors.length - 1))) / 2;
+			ctx.fillStyle = "#ccc";
+			ctx.fillRect(0, y, R_WIDTH, R_HEIGHT);
+			for (let i = 0; i < colors.length; i++) {
+				const x$1 = bandX0 + i * (bandWidth + bandGap);
+				if (colors[i] === "silver" || colors[i] === "gold") {
+					const gradient = ctx.createLinearGradient(0, y, 0, y + R_HEIGHT);
+					if (colors[i] === "gold") {
+						gradient.addColorStop(0, "#fff");
+						gradient.addColorStop(.5, "#fc0");
+						gradient.addColorStop(1, "#840");
+					} else {
+						gradient.addColorStop(0, "#fff");
+						gradient.addColorStop(.5, "#888");
+						gradient.addColorStop(1, "#444");
+					}
+					ctx.fillStyle = gradient;
+				} else ctx.fillStyle = colors[i];
+				ctx.fillRect(x$1, y, bandWidth, R_HEIGHT);
+			}
 		}
 	}
 	ctx.lineWidth = 2 * SCALE;
@@ -986,8 +1476,9 @@ var CombinationFinderUi = class {
 	topTopologySelector = makeTopologySelector();
 	maxDepthInput = makeDepthSelector();
 	statusBox = makeP();
-	resultBox = makeDiv$1();
+	resultBox = makeDiv();
 	targetInput = null;
+	filterSelector = new FilterBox();
 	ui = null;
 	workerAgent = new WorkerAgent();
 	lastResult = null;
@@ -997,7 +1488,7 @@ var CombinationFinderUi = class {
 		const unit = capacitor ? "F" : "Ω";
 		this.rangeSelector = new ValueRangeSelector(capacitor);
 		this.targetInput = new ValueBox(capacitor ? "3.14μ" : "5.1k");
-		this.ui = makeDiv$1([
+		this.ui = makeDiv([
 			makeH2(this.capacitor ? getStr("Find Capacitor Combinations") : getStr("Find Resistor Combinations")),
 			makeTable([
 				[
@@ -1041,9 +1532,14 @@ var CombinationFinderUi = class {
 					""
 				],
 				[
-					getStr("Target Value"),
+					strong(getStr("Target Value")),
 					this.targetInput.inputBox,
 					unit
+				],
+				[
+					getStr("Filter"),
+					this.filterSelector.ui,
+					""
 				]
 			]),
 			this.statusBox,
@@ -1055,6 +1551,7 @@ var CombinationFinderUi = class {
 		this.topTopologySelector.addEventListener("change", () => this.conditionChanged());
 		this.maxDepthInput.addEventListener("change", () => this.conditionChanged());
 		this.targetInput.setOnChange(() => this.conditionChanged());
+		this.filterSelector.setOnChange(() => this.conditionChanged());
 		this.workerAgent.onLaunched = (p) => this.onLaunched(p);
 		this.workerAgent.onFinished = (e) => this.onFinished(e);
 		this.workerAgent.onAborted = (msg) => this.onAborted(msg);
@@ -1077,7 +1574,8 @@ var CombinationFinderUi = class {
 				maxElements: this.numElementsInput.value,
 				topologyConstraint: topoConstr,
 				maxDepth: parseInt(this.maxDepthInput.value),
-				targetValue
+				targetValue,
+				filter: this.filterSelector.value
 			};
 			if (!this.workerAgent.requestStart(p)) this.showResult();
 		} catch (e) {
@@ -1107,7 +1605,9 @@ var CombinationFinderUi = class {
 			if (ret.error && ret.error.length > 0) throw new Error(ret.error);
 			const targetValue = ret.params.targetValue;
 			const timeSpentMs = ret.timeSpent;
-			const msg = `${getStr("<n> combinations found", { n: ret.result.length })} (${getStr("Search Time")}: ${timeSpentMs.toFixed(2)} ms):`;
+			let msg = getStr("No combinations found");
+			if (ret.result.length > 0) msg = `${getStr("<n> combinations found", { n: ret.result.length })}`;
+			msg += ` (${timeSpentMs.toFixed(2)} ms):`;
 			this.statusBox.textContent = msg;
 			for (const combJson of ret.result) {
 				const PADDING = 20;
@@ -1187,6 +1687,139 @@ var CombinationFinderUi = class {
 };
 
 //#endregion
+//#region src/CurrentLimitterFinderUi.ts
+var CurrentLimitterFinderUi = class {
+	powerVoltageInput = new ValueBox("3.3");
+	forwardVoltageInput = new ValueBox("2");
+	forwardCurrentInput = new ValueBox("1m");
+	filterSelector = new FilterBox();
+	resultBox = makeDiv();
+	ui = makeDiv([
+		makeH2(getStr("Find LED Current Limiting Resistor")),
+		makeTable([
+			[
+				getStr("Item"),
+				getStr("Value"),
+				getStr("Unit")
+			],
+			[
+				getStr("Power Voltage"),
+				this.powerVoltageInput.inputBox,
+				"V"
+			],
+			[
+				getStr("Forward Voltage"),
+				this.forwardVoltageInput.inputBox,
+				"V"
+			],
+			[
+				strong(getStr("Target Current")),
+				this.forwardCurrentInput.inputBox,
+				"A"
+			],
+			[
+				getStr("Filter"),
+				this.filterSelector.ui,
+				""
+			]
+		]),
+		makeP("結果:"),
+		this.resultBox
+	]);
+	constructor() {
+		this.powerVoltageInput.setOnChange(() => this.conditionChanged());
+		this.forwardVoltageInput.setOnChange(() => this.conditionChanged());
+		this.forwardCurrentInput.setOnChange(() => this.conditionChanged());
+		this.filterSelector.setOnChange(() => this.conditionChanged());
+		this.conditionChanged();
+	}
+	conditionChanged() {
+		this.resultBox.innerHTML = "";
+		try {
+			const vCC = this.powerVoltageInput.value;
+			const vF = this.forwardVoltageInput.value;
+			const iF = this.forwardCurrentInput.value;
+			const vR = vCC - vF;
+			const rIdeal = vR / iF;
+			let results = [{
+				label: getStr("Ideal Value"),
+				r: formatValue$1(rIdeal, "", true),
+				i: formatValue$1(iF, "", true),
+				e: "",
+				p: formatValue$1(vR * iF, "", true)
+			}];
+			let rLast = 0;
+			for (const seriesName in Serieses) {
+				const series = makeAvaiableValues(seriesName);
+				const filter = this.filterSelector.value;
+				let rApprox = NaN;
+				{
+					const epsilon = iF * 1e-6;
+					let bestDiff = Number.MAX_VALUE;
+					for (const r of series) {
+						const i = (vCC - vF) / r;
+						if ((filter & Filter.Below) === 0 && i < iF - epsilon) continue;
+						if ((filter & Filter.Above) === 0 && i > iF + epsilon) continue;
+						const diff = Math.abs(iF - i);
+						if (diff - epsilon < bestDiff) {
+							bestDiff = diff;
+							rApprox = r;
+						}
+					}
+				}
+				if (isNaN(rApprox)) results.push({
+					label: `${getStr("<s> Approximation", { s: seriesName })}`,
+					r: `(${getStr("None")})`,
+					i: "",
+					e: "",
+					p: ""
+				});
+				else if (rApprox === rLast) results.push({
+					label: `${getStr("<s> Approximation", { s: seriesName })}`,
+					r: `(${getStr("Same as Above")})`,
+					i: "",
+					e: "",
+					p: ""
+				});
+				else {
+					const iApprox = (vCC - vF) / rApprox;
+					const pApprox = vR * iApprox;
+					const eApprox = Math.round((iApprox - iF) / iF * 1e4) / 100;
+					results.push({
+						label: `${getStr("<s> Approximation", { s: seriesName })}`,
+						r: formatValue$1(rApprox, "", true),
+						i: formatValue$1(iApprox, "", true),
+						e: (eApprox > 0 ? "+" : "") + eApprox.toFixed(2),
+						p: formatValue$1(pApprox, "", true)
+					});
+					if (Math.abs(rApprox - rIdeal) < rIdeal * 1e-6) break;
+				}
+				rLast = rApprox;
+			}
+			let rows = [[
+				getStr("E Series"),
+				getStr("Resistor") + " [Ω]",
+				getStr("Current") + " [A]",
+				getStr("Error") + " [%]",
+				getStr("Power Loss") + " [W]"
+			]];
+			for (const res of results) rows.push([
+				res.label,
+				res.r,
+				res.i,
+				res.e,
+				res.p
+			]);
+			const table = makeTable(rows);
+			this.resultBox.appendChild(table);
+		} catch (e) {
+			const msg = getStr("Invalid input");
+			this.resultBox.appendChild(makeP(`Error: ${msg}`));
+		}
+	}
+};
+
+//#endregion
 //#region src/DividerFinderUi.ts
 var DividerFinderUi = class {
 	rangeSelector = null;
@@ -1194,10 +1827,11 @@ var DividerFinderUi = class {
 	topTopologySelector = makeTopologySelector();
 	maxDepthInput = makeDepthSelector();
 	statusBox = makeP();
-	resultBox = makeDiv$1();
+	resultBox = makeDiv();
 	totalMinBox = new ValueBox("10k");
 	totalMaxBox = new ValueBox("100k");
 	targetInput = null;
+	filterSelector = new FilterBox();
 	ui = null;
 	workerAgent = new WorkerAgent();
 	lastResult = null;
@@ -1205,7 +1839,7 @@ var DividerFinderUi = class {
 		this.commonSettingsUi = commonSettingsUi;
 		this.rangeSelector = new ValueRangeSelector(false);
 		this.targetInput = new ValueBox("3.3 / 5.0");
-		this.ui = makeDiv$1([
+		this.ui = makeDiv([
 			makeH2(getStr("Find Voltage Dividers")),
 			makeP(`R1: ${getStr("Upper Resistor")}, R2: ${getStr("Lower Resistor")}, Vout / Vin = R2 / (R1 + R2)`),
 			makeTable([
@@ -1260,8 +1894,13 @@ var DividerFinderUi = class {
 					"Ω"
 				],
 				[
-					"R2 / (R1 + R2)",
+					strong("R2 / (R1 + R2)"),
 					this.targetInput.inputBox,
+					""
+				],
+				[
+					getStr("Filter"),
+					this.filterSelector.ui,
 					""
 				]
 			]),
@@ -1276,6 +1915,7 @@ var DividerFinderUi = class {
 		this.totalMinBox.setOnChange(() => this.conditionChanged());
 		this.totalMaxBox.setOnChange(() => this.conditionChanged());
 		this.targetInput.setOnChange(() => this.conditionChanged());
+		this.filterSelector.setOnChange(() => this.conditionChanged());
 		this.workerAgent.onLaunched = (p) => this.onLaunched(p);
 		this.workerAgent.onFinished = (e) => this.onFinished(e);
 		this.workerAgent.onAborted = (msg) => this.onAborted(msg);
@@ -1300,7 +1940,8 @@ var DividerFinderUi = class {
 				maxDepth: parseInt(this.maxDepthInput.value),
 				totalMin: this.totalMinBox.value,
 				totalMax: this.totalMaxBox.value,
-				targetRatio
+				targetRatio,
+				filter: this.filterSelector.value
 			};
 			if (!this.workerAgent.requestStart(p)) this.showResult();
 		} catch (e) {
@@ -1328,9 +1969,10 @@ var DividerFinderUi = class {
 		if (ret === null) return;
 		try {
 			if (ret.error && ret.error.length > 0) throw new Error(ret.error);
-			ret.params.targetValue;
 			const timeSpentMs = ret.timeSpent;
-			const msg = `${getStr("<n> combinations found", { n: ret.result.length })} (${getStr("Search Time")}: ${timeSpentMs.toFixed(2)} ms):`;
+			let msg = getStr("No combinations found");
+			if (ret.result.length > 0) msg = `${getStr("<n> combinations found", { n: ret.result.length })}`;
+			msg += ` (${timeSpentMs.toFixed(2)} ms):`;
 			this.statusBox.textContent = msg;
 			for (const combJson of ret.result) {
 				const resultUi = new ResultUi(this.commonSettingsUi, ret.params, combJson);
@@ -1353,7 +1995,7 @@ var ResultUi = class {
 	lowers = [];
 	buttons = makeP();
 	canvas = document.createElement("canvas");
-	ui = makeDiv$1([this.buttons, this.canvas]);
+	ui = makeDiv([this.buttons, this.canvas]);
 	constructor(commonSettingsUi, params, combJson) {
 		this.commonSettingsUi = commonSettingsUi;
 		this.params = params;
@@ -1445,33 +2087,18 @@ var ResultUi = class {
 };
 
 //#endregion
-//#region src/Ui.ts
-function makeDiv(children = [], className = null, center = false) {
-	const elm = document.createElement("div");
-	toElementArray(children).forEach((child) => elm.appendChild(child));
-	if (className) elm.classList.add(className);
-	if (center) elm.style.textAlign = "center";
-	return elm;
-}
-function toElementArray(children) {
-	if (children == null) return [];
-	if (!Array.isArray(children)) children = [children];
-	for (let i = 0; i < children.length; i++) if (typeof children[i] === "string") children[i] = document.createTextNode(children[i]);
-	else if (children[i] instanceof Node) {} else throw new Error("Invalid child element");
-	return children;
-}
-
-//#endregion
 //#region src/main.ts
 function main(container) {
 	const commonSettingsUi = new CommonSettingsUi();
 	const resCombFinderUi = new CombinationFinderUi(commonSettingsUi, false);
 	const capCombFinderUi = new CombinationFinderUi(commonSettingsUi, true);
+	const currLimitFinderUi = new CurrentLimitterFinderUi();
 	const dividerFinderUi = new DividerFinderUi(commonSettingsUi);
 	container.appendChild(makeDiv([
 		commonSettingsUi.ui,
 		resCombFinderUi.ui,
 		dividerFinderUi.ui,
+		currLimitFinderUi.ui,
 		capCombFinderUi.ui
 	]));
 }

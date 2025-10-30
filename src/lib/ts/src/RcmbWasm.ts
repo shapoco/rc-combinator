@@ -12,11 +12,11 @@ declare interface RcmbWasm {
   findCombinations:
       (capacitor: boolean, values: VectorDouble, target_value: number,
        max_elements: number, topology_constraint: number,
-       max_depth: number) => string;
+       max_depth: number, filter: number) => string;
   findDividers:
       (values: VectorDouble, target_ratio: number, total_min: number,
        total_max: number, max_elements: number, topology_constraint: number,
-       max_depth: number) => string;
+       max_depth: number, filter: number) => string;
   VectorDouble: new() => VectorDouble;
   //_malloc: (size: number) => number;
   //_free: (ptr: number) => void;

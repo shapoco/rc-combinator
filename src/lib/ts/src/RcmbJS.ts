@@ -4,6 +4,13 @@ export const enum Method {
   FindDivider = 2,
 }
 
+export const enum Filter {
+  Exact = 0,
+  Below = 1,
+  Above = 2,
+  Nearest = 3,
+}
+
 export const enum TopologyConstraint {
   Series = 1,
   Parallel = 2,
@@ -119,11 +126,12 @@ const topologies = new Map<number, Topology[]>();
 
 export function findCombinations(
     capacitor: boolean, values: number[], targetValue: number,
-    maxElements: number, topoConstr: TopologyConstraint,
-    maxDepth: number): any {
+    maxElements: number, topoConstr: TopologyConstraint, maxDepth: number,
+    filter: Filter): any {
   try {
     const ret = searchCombinations(
-        capacitor, values, targetValue, maxElements, topoConstr, maxDepth);
+        capacitor, values, targetValue, maxElements, topoConstr, maxDepth,
+        filter);
     return {
       error: '',
       result: ret.map(comb => comb.toJson()),
@@ -138,12 +146,12 @@ export function findCombinations(
 
 export function findDividers(
     values: number[], targetRatio: number, totalMin: number, totalMax: number,
-    maxElements: number, topoConstr: TopologyConstraint,
-    maxDepth: number): any {
+    maxElements: number, topoConstr: TopologyConstraint, maxDepth: number,
+    filter: Filter): any {
   try {
     const ret = searchDividers(
         values, targetRatio, totalMin, totalMax, maxElements, topoConstr,
-        maxDepth);
+        maxDepth, filter);
     return {
       error: '',
       result: ret.map(comb => comb.toJson()),
@@ -158,8 +166,8 @@ export function findDividers(
 
 function searchCombinations(
     capacitor: boolean, values: number[], targetValue: number,
-    maxElements: number, topoConstr: TopologyConstraint,
-    maxDepth: number): Combination[] {
+    maxElements: number, topoConstr: TopologyConstraint, maxDepth: number,
+    filter: Filter): Combination[] {
   const epsilon = targetValue * 1e-9;
   const retMin = targetValue / 2;
   const retMax = targetValue * 2;
@@ -186,6 +194,14 @@ function searchCombinations(
         if (isNaN(value)) {
           continue;
         }
+
+        if ((filter & Filter.Below) === 0 && value < targetValue - epsilon) {
+          continue;
+        } else if (
+            (filter & Filter.Above) === 0 && value > targetValue + epsilon) {
+          continue;
+        }
+
         const error = Math.abs(value - targetValue);
 
         if (error - epsilon > bestError) {
@@ -219,8 +235,8 @@ function searchCombinations(
 
 function searchDividers(
     values: number[], targetRatio: number, totalMin: number, totalMax: number,
-    maxElements: number, topoConstr: TopologyConstraint,
-    maxDepth: number): DoubleCombination[] {
+    maxElements: number, topoConstr: TopologyConstraint, maxDepth: number,
+    filter: Filter): DoubleCombination[] {
   const epsilon = 1e-9;
 
   if (maxElements > MAX_COMBINATION_ELEMENTS) {
@@ -280,12 +296,20 @@ function searchDividers(
 
         const upperCombs = searchCombinations(
             false, values, upperTargetValue, upperMaxElements, topoConstr,
-            maxDepth);
+            maxDepth, filter);
         if (upperCombs.length === 0) {
           continue;
         }
 
         const ratio = lowerValue / (upperCombs[0].value + lowerValue);
+
+        if ((filter & Filter.Below) === 0 && ratio < targetRatio - epsilon) {
+          continue;
+        } else if (
+            (filter & Filter.Above) === 0 && ratio > targetRatio + epsilon) {
+          continue;
+        }
+
         const numElems = lowerElems + upperCombs[0].numLeafs;
         const error = Math.abs(ratio - targetRatio);
 

@@ -14,6 +14,7 @@ export class CombinationFinderUi {
   statusBox = RcmbUi.makeP();
   resultBox = RcmbUi.makeDiv();
   targetInput: RcmbUi.ValueBox|null = null;
+  filterSelector = new RcmbUi.FilterBox();
   ui: HTMLDivElement|null = null;
 
   workerAgent = new WorkerAgent();
@@ -39,8 +40,11 @@ export class CombinationFinderUi {
         [getStr('Maximum'), this.rangeSelector.maxResisterInput.inputBox, unit],
         [getStr('Max Elements'), this.numElementsInput.inputBox, ''],
         [getStr('Top Topology'), this.topTopologySelector, ''],
-        [getStr('Max Nests'), this.maxDepthInput, ''],
-        [getStr('Target Value'), this.targetInput.inputBox, unit],
+        [getStr('Max Nests'), this.maxDepthInput, ''],  
+        [
+          RcmbUi.strong(getStr('Target Value')), this.targetInput.inputBox, unit
+        ],
+        [getStr('Filter'), this.filterSelector.ui, ''],
       ]),
       this.statusBox,
       this.resultBox,
@@ -54,6 +58,7 @@ export class CombinationFinderUi {
     this.maxDepthInput.addEventListener(
         'change', () => this.conditionChanged());
     this.targetInput.setOnChange(() => this.conditionChanged());
+    this.filterSelector.setOnChange(() => this.conditionChanged());
 
     this.workerAgent.onLaunched = (p) => this.onLaunched(p);
     this.workerAgent.onFinished = (e) => this.onFinished(e);
@@ -86,6 +91,7 @@ export class CombinationFinderUi {
         topologyConstraint: topoConstr,
         maxDepth: parseInt(this.maxDepthInput.value),
         targetValue: targetValue,
+        filter: this.filterSelector.value,
       };
 
       if (!this.workerAgent.requestStart(p)) {
@@ -127,9 +133,11 @@ export class CombinationFinderUi {
       const targetValue = ret.params.targetValue as number;
       const timeSpentMs = ret.timeSpent as number;
 
-      const msg = `${getStr('<n> combinations found', {
-        n: ret.result.length
-      })} (${getStr('Search Time')}: ${timeSpentMs.toFixed(2)} ms):`;
+      let msg = getStr('No combinations found');
+      if (ret.result.length > 0) {
+        msg = `${getStr('<n> combinations found', {n: ret.result.length})}`;
+      }
+      msg += ` (${timeSpentMs.toFixed(2)} ms):`;
       this.statusBox.textContent = msg;
       for (const combJson of ret.result) {
         const PADDING = 20;
