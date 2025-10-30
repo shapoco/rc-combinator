@@ -205,7 +205,7 @@ export class CombinationFinderUi {
           let error = (tree.value - targetValue) / targetValue;
           let errorStr = getStr('No Error');
           ctx.save();
-          if (Math.abs(error) > targetValue / 1e9) {
+          if (Math.abs(error) > 1e-9) {
             errorStr = `${getStr('Error')}: ${error > 0 ? '+' : ''}${
                 (error * 100).toFixed(4)}%`;
             ctx.fillStyle = error > 0 ? '#c00' : '#00c';
