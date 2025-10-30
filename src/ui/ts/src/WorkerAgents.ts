@@ -1,4 +1,6 @@
 export class WorkerAgent {
+  urlPostfix = Math.floor(Date.now() / (1000 * 60)).toString();
+
   worker: Worker|null = null;
   workerRunning = false;
 
@@ -36,37 +38,33 @@ export class WorkerAgent {
     this.abortWorker();
 
     if (this.worker === null) {
-      console.log('Starting worker...');
-      // this.worker =
-      //     new Worker('../worker/index.mjs?123456789', {type: 'module'});
-      const nowMin = Math.floor(Date.now() / (1000 * 60));
-      if (window.location.hostname === 'localhost') {
-        this.worker =
-            new Worker(`/worker/index.mjs?${nowMin}`, {type: 'module'});
-      } else {
-        this.worker = new Worker(
-            `/rc-combinator/worker/index.mjs?${nowMin}`, {type: 'module'});
-      }
+      const baseUrl =
+          (window.location.hostname === 'localhost') ? '' : '/rc-combinator';
+      const workerUrl = `${baseUrl}/worker/index.mjs?${this.urlPostfix}`;
+      console.log(`Launching worker: '${workerUrl}'`);
+      this.worker = new Worker(workerUrl, {type: 'module'});
       console.log('Worker started.');
       this.worker.onmessage = (e) => this.onMessaged(e);
       this.worker.onerror = (e) => this.onError(e.message);
       this.worker.onmessageerror = (e) =>
           this.onError('Message error in worker');
-      console.log('Worker event handlers set.');
     }
 
     this.lastLaunchedParams =
         JSON.parse(JSON.stringify(this.startRequestParams));
-    console.log('Posting message to worker:', this.startRequestParams);
     this.worker.postMessage(this.startRequestParams);
-    console.log('Message posted.');
     this.workerRunning = true;
   }
 
   abortWorker(): void {
     if (!this.workerRunning) return;
+    console.log('Aborting worker...');
     if (this.worker !== null) {
-      this.worker!.terminate();
+      try {
+        this.worker!.terminate();
+      } catch (e) {
+        console.error('Failed to terminate worker:', e);
+      }
       this.worker = null;
     }
     this.workerRunning = false;

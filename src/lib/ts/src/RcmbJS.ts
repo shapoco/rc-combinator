@@ -175,9 +175,7 @@ function searchCombinations(
   let bestError: number = Number.POSITIVE_INFINITY;
   let bestCombinations: Combination[] = [];
   for (let numElem = 1; numElem <= maxElements; numElem++) {
-    // console.log(`Searching combinations with ${numElem} elements...`);
     const topos = searchTopologies(0, numElem);
-    // console.log(`Found ${topos.length} topologies.`);
     const indices = new Array<number>(numElem).fill(0);
     while (indices[numElem - 1] < values.length) {
       for (const topo of topos) {
@@ -191,7 +189,6 @@ function searchCombinations(
         if (isNaN(value)) {
           continue;
         }
-        // console.log(`Value: ${value}`);
         const error = Math.abs(value - targetValue);
 
         if (error - epsilon > bestError) {
@@ -202,7 +199,6 @@ function searchCombinations(
           bestCombinations = [];
         }
 
-        // console.log(`Error: ${error}`);
         bestError = error;
         const comb = new Combination();
         calcValue(capacitor, values, indices, topo, comb);
@@ -278,7 +274,6 @@ function searchDividers(
         }
 
         if (error + epsilon < bestError) {
-          // console.log(`New best error: ${error}`);
           bestCombinations = [];
         }
 
@@ -438,7 +433,6 @@ function searchTopologiesRecursive(
 
   const n = iRight - iLeft;
   const buff = new Array<number>(n);
-  // console.log(`A iLeft=${iLeft} iRight=${iRight} parallel=${parallel}`);
   divideElementsRecursive(
       buff, 0, n, (partSizes: number[], numParts: number) => {
         const parts = new Array<Topology[]>(numParts);
@@ -470,7 +464,6 @@ function searchTopologiesRecursive(
           }
         }
       }, 0);
-  // console.log('B');
 
   topologies.set(key, ret);
   return ret;
@@ -480,7 +473,6 @@ function divideElementsRecursive(
     buff: number[], buffSize: number, numElems: number,
     callback: (partSizes: number[], numParts: number) => void,
     depth: number): void {
-  // console.log(`Depth ${depth}: [${buff.slice(0, buffSize).join(', ')}]`);
   if (numElems === 0) {
     callback(buff, buffSize);
   } else {

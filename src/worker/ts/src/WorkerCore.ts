@@ -17,13 +17,10 @@ thisWorker.onmessage = async (e: MessageEvent<any>) => {
   const useWasm = args.useWasm as boolean;
   if (useWasm) {
     if (!wasmCore) {
-      console.log('Loading WASM module in worker...');
+      console.log('Loading WASM module...');
       wasmCore = (await createRcmbWasm()) as RcmbWasm.RcmbWasm;
-      console.log('WASM module loaded in worker.');
+      console.log('WASM module loaded.');
     }
-  }
-  else {
-    console.log('Using JS core in worker.');
   }
 
   const capacitor = args.capacitor as boolean;
@@ -33,20 +30,17 @@ thisWorker.onmessage = async (e: MessageEvent<any>) => {
   const topologyConstraint =
       args.topologyConstraint as RcmbJS.TopologyConstraint;
   const maxDepth = args.maxDepth as number;
-console.log('A');
+
   let ret = {
     error: '',
     result: [],
     timeSpent: 0,
   };
-console.log('B');
-
+  
   const start = performance.now();
-console.log('C');
 
   switch (method) {
     case RcmbJS.Method.FindCombination: {
-console.log('D');
       const targetValue = args.targetValue as number;
       if (useWasm) {
         const vec = new wasmCore!.VectorDouble();
@@ -63,8 +57,6 @@ console.log('D');
             capacitor, values, targetValue, maxElements, topologyConstraint,
             maxDepth);
       }
-console.log('E');
-
     } break;
 
     case RcmbJS.Method.FindDivider: {
@@ -77,12 +69,9 @@ console.log('E');
       ret.error = 'Invalid method';
       break;
   }
-console.log('F');
 
   const end = performance.now();
   ret.timeSpent = end - start;
 
-console.log('G');
   thisWorker.postMessage(ret);
-console.log('H');
 };

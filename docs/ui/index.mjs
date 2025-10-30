@@ -904,6 +904,7 @@ var TreeNode = class TreeNode {
 //#endregion
 //#region src/WorkerAgents.ts
 var WorkerAgent = class {
+	urlPostfix = Math.floor(Date.now() / (1e3 * 60)).toString();
 	worker = null;
 	workerRunning = false;
 	startRequestParams = {};
@@ -930,26 +931,27 @@ var WorkerAgent = class {
 	async startWorker() {
 		this.abortWorker();
 		if (this.worker === null) {
-			console.log("Starting worker...");
-			const nowMin = Math.floor(Date.now() / (1e3 * 60));
-			if (window.location.hostname === "localhost") this.worker = new Worker(`/worker/index.mjs?${nowMin}`, { type: "module" });
-			else this.worker = new Worker(`/rc-combinator/worker/index.mjs?${nowMin}`, { type: "module" });
+			const workerUrl = `${window.location.hostname === "localhost" ? "" : "/rc-combinator"}/worker/index.mjs?${this.urlPostfix}`;
+			console.log(`Launching worker: '${workerUrl}'`);
+			this.worker = new Worker(workerUrl, { type: "module" });
 			console.log("Worker started.");
 			this.worker.onmessage = (e) => this.onMessaged(e);
 			this.worker.onerror = (e) => this.onError(e.message);
 			this.worker.onmessageerror = (e) => this.onError("Message error in worker");
-			console.log("Worker event handlers set.");
 		}
 		this.lastLaunchedParams = JSON.parse(JSON.stringify(this.startRequestParams));
-		console.log("Posting message to worker:", this.startRequestParams);
 		this.worker.postMessage(this.startRequestParams);
-		console.log("Message posted.");
 		this.workerRunning = true;
 	}
 	abortWorker() {
 		if (!this.workerRunning) return;
+		console.log("Aborting worker...");
 		if (this.worker !== null) {
-			this.worker.terminate();
+			try {
+				this.worker.terminate();
+			} catch (e) {
+				console.error("Failed to terminate worker:", e);
+			}
 			this.worker = null;
 		}
 		this.workerRunning = false;
