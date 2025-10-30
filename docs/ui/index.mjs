@@ -2076,7 +2076,6 @@ var ResultUi = class {
 		}
 		{
 			let error = (resultRatio - targetRatio) / targetRatio;
-			console.log(`resultRatio=${resultRatio}, targetRatio=${targetRatio}, error=${error}`);
 			let errorStr = getStr("No Error");
 			ctx.save();
 			if (Math.abs(error) > 1e-9) {

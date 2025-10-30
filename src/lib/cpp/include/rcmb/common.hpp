@@ -154,8 +154,9 @@ value_t pow10(float exp) {
 }
 
 uint32_t valueKeyOf(value_t value) {
-  int exp = std::floor(std::log10(value) + 1e-9);
-  return static_cast<uint32_t>(std::round(value / pow10(exp - 6)));
+  // int exp = std::floor(std::log10(value) + 1e-9);
+  // return static_cast<uint32_t>(std::round(value / pow10(exp - 6)));
+  return static_cast<uint32_t>(std::round(value * 1000));
 }
 
 std::string value_to_json_string(value_t value) {
