@@ -1768,14 +1768,14 @@ var CurrentLimitterFinderUi = class {
 					}
 				}
 				if (isNaN(rApprox)) results.push({
-					label: `${getStr("<s> Approximation", { s: seriesName })}`,
+					label: seriesName,
 					r: `(${getStr("None")})`,
 					i: "",
 					e: "",
 					p: ""
 				});
 				else if (rApprox === rLast) results.push({
-					label: `${getStr("<s> Approximation", { s: seriesName })}`,
+					label: seriesName,
 					r: `(${getStr("Same as Above")})`,
 					i: "",
 					e: "",
@@ -1786,7 +1786,7 @@ var CurrentLimitterFinderUi = class {
 					const pApprox = vR * iApprox;
 					const eApprox = Math.round((iApprox - iF) / iF * 1e4) / 100;
 					results.push({
-						label: `${getStr("<s> Approximation", { s: seriesName })}`,
+						label: seriesName,
 						r: formatValue$1(rApprox, "", true),
 						i: formatValue$1(iApprox, "", true),
 						e: (eApprox > 0 ? "+" : "") + eApprox.toFixed(2),
@@ -2021,7 +2021,7 @@ var ResultUi = class {
 		tree.width += 40 * SCALE;
 		const PADDING = 20;
 		const TOP_PADDING = 20;
-		const CAPTION_HEIGHT = 50;
+		const CAPTION_HEIGHT = 80;
 		const LEAD_LENGTH = 40 * SCALE;
 		tree.offset(-tree.x, -tree.y);
 		const VIEW_W = 500;
@@ -2065,9 +2065,14 @@ var ResultUi = class {
 		ctx.textAlign = "center";
 		ctx.textBaseline = "top";
 		{
+			const text = `R1 = ${formatValue(upperTree.value, "Ω")}, R2 = ${formatValue(lowerTree.value, "Ω")}`;
+			ctx.font = `${16 * SCALE}px sans-serif`;
+			ctx.fillText(text, 0, 0);
+		}
+		{
 			const text = `R2 / (R1 + R2) = ${formatValue(resultRatio)}`;
 			ctx.font = `${24 * SCALE}px sans-serif`;
-			ctx.fillText(text, 0, 0);
+			ctx.fillText(text, 0, 30);
 		}
 		{
 			let error = (resultRatio - targetRatio) / targetRatio;
@@ -2079,7 +2084,7 @@ var ResultUi = class {
 				ctx.fillStyle = error > 0 ? "#c00" : "#00c";
 			}
 			ctx.font = `${16 * SCALE}px sans-serif`;
-			ctx.fillText(`(${errorStr})`, 0, 30);
+			ctx.fillText(`(${errorStr})`, 0, 60);
 			ctx.restore();
 		}
 		ctx.restore();

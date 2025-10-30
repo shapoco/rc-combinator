@@ -83,7 +83,7 @@ export class CurrentLimitterFinderUi {
 
         if (isNaN(rApprox)) {
           results.push({
-            label: `${getStr('<s> Approximation', {s: seriesName})}`,
+            label: seriesName,
             r: `(${getStr('None')})`,
             i: '',
             e: '',
@@ -91,7 +91,7 @@ export class CurrentLimitterFinderUi {
           });
         } else if (rApprox === rLast) {
           results.push({
-            label: `${getStr('<s> Approximation', {s: seriesName})}`,
+            label: seriesName,
             r: `(${getStr('Same as Above')})`,
             i: '',
             e: '',
@@ -102,7 +102,7 @@ export class CurrentLimitterFinderUi {
           const pApprox = vR * iApprox;
           const eApprox = Math.round((iApprox - iF) / iF * 10000) / 100;
           results.push({
-            label: `${getStr('<s> Approximation', {s: seriesName})}`,
+            label: seriesName,
             r: RcmbJS.formatValue(rApprox, '', true),
             i: RcmbJS.formatValue(iApprox, '', true),
             e: (eApprox > 0 ? '+' : '') + eApprox.toFixed(2),

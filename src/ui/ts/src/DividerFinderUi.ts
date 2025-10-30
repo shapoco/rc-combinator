@@ -200,7 +200,7 @@ class ResultUi {
 
     const PADDING = 20;
     const TOP_PADDING = 20;
-    const CAPTION_HEIGHT = 50;
+    const CAPTION_HEIGHT = 80;
     const LEAD_LENGTH = 40 * Schematics.SCALE;
 
     tree.offset(-tree.x, -tree.y);
@@ -254,9 +254,15 @@ class ResultUi {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     {
+      const text = `R1 = ${RcmbUi.formatValue(upperTree.value, 'Ω')}, R2 = ${
+          RcmbUi.formatValue(lowerTree.value, 'Ω')}`;
+      ctx.font = `${16 * Schematics.SCALE}px sans-serif`;
+      ctx.fillText(text, 0, 0);
+    }
+    {
       const text = `R2 / (R1 + R2) = ${RcmbUi.formatValue(resultRatio)}`;
       ctx.font = `${24 * Schematics.SCALE}px sans-serif`;
-      ctx.fillText(text, 0, 0);
+      ctx.fillText(text, 0, 30);
     }
     {
       let error = (resultRatio - targetRatio) / targetRatio;
@@ -270,7 +276,7 @@ class ResultUi {
         ctx.fillStyle = error > 0 ? '#c00' : '#00c';
       }
       ctx.font = `${16 * Schematics.SCALE}px sans-serif`;
-      ctx.fillText(`(${errorStr})`, 0, 30);
+      ctx.fillText(`(${errorStr})`, 0, 60);
       ctx.restore();
     }
     ctx.restore();
