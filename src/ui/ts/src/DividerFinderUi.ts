@@ -107,7 +107,11 @@ export class DividerFinderUi {
 
   onLaunched(p: any): void {
     this.statusBox.style.color = '';
-    this.statusBox.textContent = getStr('Searching...');
+    this.statusBox.innerHTML = '';
+    const msg = `${getStr('Searching...')} (${
+        RcmbUi.formatValue(p.targetRatio, '', false)}):`;
+    this.statusBox.appendChild(RcmbUi.makeIcon('⌛', true));
+    this.statusBox.appendChild(document.createTextNode(' ' + msg));
     this.resultBox.style.opacity = '0.5';
   }
 
@@ -118,7 +122,12 @@ export class DividerFinderUi {
 
   onAborted(msg: string): void {
     console.log(`Aborted with message: '${msg}'`);
-    this.statusBox.textContent = getStr(msg);
+    this.statusBox.innerHTML = '';
+    this.statusBox.style.color = msg ? '#c00' : '#000';
+    if (msg) {
+      this.statusBox.appendChild(RcmbUi.makeIcon('❌'));
+      this.statusBox.appendChild(document.createTextNode(getStr(msg)));
+    }
     this.resultBox.innerHTML = '';
   }
 
@@ -140,7 +149,8 @@ export class DividerFinderUi {
         msg = `${getStr('<n> combinations found', {n: ret.result.length})}`;
       }
       msg += ` (${timeSpentMs.toFixed(2)} ms):`;
-      this.statusBox.textContent = msg;
+      this.statusBox.appendChild(RcmbUi.makeIcon('✅'));
+      this.statusBox.appendChild(document.createTextNode(msg));
 
       for (const combJson of ret.result) {
         const resultUi =
@@ -155,7 +165,9 @@ export class DividerFinderUi {
       let msg = 'Unknown error';
       if (e.message) msg = e.message;
       this.statusBox.style.color = '#c00';
-      this.statusBox.textContent = `Error: ${getStr(msg)}`;
+      this.statusBox.appendChild(RcmbUi.makeIcon('❌'));
+      this.statusBox.appendChild(
+          document.createTextNode(`Error: ${getStr(msg)}`));
       this.resultBox.innerHTML = '';
     }
   }
@@ -272,7 +284,7 @@ class ResultUi {
       ctx.save();
       if (Math.abs(error) > 1e-9) {
         errorStr = `${getStr('Error')}: ${error > 0 ? '+' : ''}${
-            (error * 100).toFixed(4)}%`;
+            (error * 100).toFixed(6)}%`;
         ctx.fillStyle = error > 0 ? '#c00' : '#00c';
       }
       ctx.font = `${16 * Schematics.SCALE}px sans-serif`;

@@ -15,7 +15,7 @@ export class WorkerAgent {
 
   requestStart(p: any): boolean {
     if (JSON.stringify(p) === JSON.stringify(this.startRequestParams)) {
-      return false;
+      return this.workerRunning;
     }
 
     this.cancelRequest();

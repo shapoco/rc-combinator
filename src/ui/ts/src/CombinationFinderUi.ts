@@ -16,6 +16,7 @@ export class CombinationFinderUi {
   targetInput: RcmbUi.ValueBox|null = null;
   filterSelector = new RcmbUi.FilterBox();
   ui: HTMLDivElement|null = null;
+  unit: string = '';
 
   workerAgent = new WorkerAgent();
 
@@ -24,7 +25,7 @@ export class CombinationFinderUi {
   constructor(
       public commonSettingsUi: RcmbUi.CommonSettingsUi,
       public capacitor: boolean) {
-    const unit = capacitor ? 'F' : 'Ω';
+    this.unit = capacitor ? 'F' : 'Ω';
     this.rangeSelector = new RcmbUi.ValueRangeSelector(capacitor);
     this.targetInput = new RcmbUi.ValueBox(capacitor ? '3.14μ' : '5.1k');
 
@@ -35,14 +36,24 @@ export class CombinationFinderUi {
       RcmbUi.makeTable([
         [getStr('Item'), getStr('Value'), getStr('Unit')],
         [getStr('E Series'), this.rangeSelector.seriesSelect, ''],
-        [getStr('Custom Values'), this.rangeSelector.customValuesInput, unit],
-        [getStr('Minimum'), this.rangeSelector.minResisterInput.inputBox, unit],
-        [getStr('Maximum'), this.rangeSelector.maxResisterInput.inputBox, unit],
+        [
+          getStr('Custom Values'), this.rangeSelector.customValuesInput,
+          this.unit
+        ],
+        [
+          getStr('Minimum'), this.rangeSelector.minResisterInput.inputBox,
+          this.unit
+        ],
+        [
+          getStr('Maximum'), this.rangeSelector.maxResisterInput.inputBox,
+          this.unit
+        ],
         [getStr('Max Elements'), this.numElementsInput.inputBox, ''],
         [getStr('Top Topology'), this.topTopologySelector, ''],
-        [getStr('Max Nests'), this.maxDepthInput, ''],  
+        [getStr('Max Nests'), this.maxDepthInput, ''],
         [
-          RcmbUi.strong(getStr('Target Value')), this.targetInput.inputBox, unit
+          RcmbUi.strong(getStr('Target Value')), this.targetInput.inputBox,
+          this.unit
         ],
         [getStr('Filter'), this.filterSelector.ui, ''],
       ]),
@@ -104,7 +115,11 @@ export class CombinationFinderUi {
 
   onLaunched(p: any): void {
     this.statusBox.style.color = '';
-    this.statusBox.textContent = getStr('Searching...');
+    this.statusBox.innerHTML = '';
+    const msg = `${getStr('Searching...')} (${
+        RcmbUi.formatValue(p.targetValue, this.unit)}):`;
+    this.statusBox.appendChild(RcmbUi.makeIcon('⌛', true));
+    this.statusBox.appendChild(document.createTextNode(' ' + msg));
     this.resultBox.style.opacity = '0.5';
   }
 
@@ -115,7 +130,12 @@ export class CombinationFinderUi {
 
   onAborted(msg: string): void {
     console.log(`Aborted with message: '${msg}'`);
-    this.statusBox.textContent = getStr(msg);
+    this.statusBox.innerHTML = '';
+    this.statusBox.style.color = msg ? '#c00' : '#000';
+    if (msg) {
+      this.statusBox.appendChild(RcmbUi.makeIcon('❌'));
+      this.statusBox.appendChild(document.createTextNode(getStr(msg)));
+    }
     this.resultBox.innerHTML = '';
   }
 
@@ -138,7 +158,8 @@ export class CombinationFinderUi {
         msg = `${getStr('<n> combinations found', {n: ret.result.length})}`;
       }
       msg += ` (${timeSpentMs.toFixed(2)} ms):`;
-      this.statusBox.textContent = msg;
+      this.statusBox.appendChild(RcmbUi.makeIcon('✅'));
+      this.statusBox.appendChild(document.createTextNode(msg));
       for (const combJson of ret.result) {
         const PADDING = 20;
         const TOP_PADDING = 20;
@@ -196,8 +217,7 @@ export class CombinationFinderUi {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         {
-          const text =
-              RcmbUi.formatValue(tree.value, this.capacitor ? 'F' : 'Ω', true);
+          const text = RcmbUi.formatValue(tree.value, this.unit, true);
           ctx.font = `${24 * Schematics.SCALE}px sans-serif`;
           ctx.fillText(text, 0, 0);
         }
@@ -207,7 +227,7 @@ export class CombinationFinderUi {
           ctx.save();
           if (Math.abs(error) > 1e-9) {
             errorStr = `${getStr('Error')}: ${error > 0 ? '+' : ''}${
-                (error * 100).toFixed(4)}%`;
+                (error * 100).toFixed(6)}%`;
             ctx.fillStyle = error > 0 ? '#c00' : '#00c';
           }
           ctx.font = `${16 * Schematics.SCALE}px sans-serif`;
@@ -226,7 +246,9 @@ export class CombinationFinderUi {
       let msg = 'Unknown error';
       if (e.message) msg = e.message;
       this.statusBox.style.color = '#c00';
-      this.statusBox.textContent = `Error: ${getStr(msg)}`;
+      this.statusBox.appendChild(RcmbUi.makeIcon('❌'));
+      this.statusBox.appendChild(
+          document.createTextNode(`Error: ${getStr(msg)}`));
       this.resultBox.innerHTML = '';
     }
   }

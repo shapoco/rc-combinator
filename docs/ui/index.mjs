@@ -1057,6 +1057,12 @@ function makeTable(rows) {
 	}
 	return table;
 }
+function makeSpan(children = null, className = null) {
+	const elm = document.createElement("span");
+	toElementArray(children).forEach((child) => elm.appendChild(child));
+	if (className) elm.classList.add(className);
+	return elm;
+}
 function strong(children = null) {
 	const elm = document.createElement("strong");
 	toElementArray(children).forEach((child) => elm.appendChild(child));
@@ -1101,6 +1107,11 @@ function makeSelectBox(items, defaultValue) {
 	select.value = defaultValue.toString();
 	return select;
 }
+function makeIcon(emoji, spin = false) {
+	const icon = makeSpan(emoji, "icon");
+	if (spin) icon.classList.add("spin");
+	return icon;
+}
 function toElementArray(children) {
 	if (children == null) return [];
 	if (!Array.isArray(children)) children = [children];
@@ -1130,36 +1141,37 @@ function setVisible(elem, visible) {
 function formatValue(value, unit = "", usePrefix = null) {
 	if (!isFinite(value) || isNaN(value)) return "NaN";
 	if (usePrefix === null) usePrefix = unit !== "";
+	const exp = Math.floor(Math.log10(Math.abs(value)) + 1e-6);
 	let prefix = "";
 	if (usePrefix) {
-		if (value >= 999999e6) {
+		if (exp >= 12) {
 			value /= 0xe8d4a51000;
 			prefix = "T";
-		} else if (value >= 999999e3) {
+		} else if (exp >= 9) {
 			value /= 1e9;
 			prefix = "G";
-		} else if (value >= 999999) {
+		} else if (exp >= 6) {
 			value /= 1e6;
 			prefix = "M";
-		} else if (value >= 999.999) {
+		} else if (exp >= 3) {
 			value /= 1e3;
 			prefix = "k";
-		} else if (value >= .999999) prefix = "";
-		else if (value >= 999999e-9) {
+		} else if (exp >= 0) prefix = "";
+		else if (exp >= -3) {
 			value *= 1e3;
 			prefix = "m";
-		} else if (value >= 9.99999e-7) {
+		} else if (exp >= -6) {
 			value *= 1e6;
 			prefix = "μ";
-		} else if (value >= 999999e-15) {
+		} else if (exp >= -9) {
 			value *= 1e9;
 			prefix = "n";
-		} else if (value >= 999999e-18) {
+		} else if (exp >= -12) {
 			value *= 0xe8d4a51000;
 			prefix = "p";
 		}
 	}
-	const minDigits = usePrefix ? 3 : 6;
+	const minDigits = 6;
 	value = Math.round(value * pow10(minDigits));
 	let s = "";
 	while (s.length <= minDigits + 1 || value > 0) {
@@ -1405,7 +1417,7 @@ var WorkerAgent = class {
 	onFinished = null;
 	onAborted = null;
 	requestStart(p) {
-		if (JSON.stringify(p) === JSON.stringify(this.startRequestParams)) return false;
+		if (JSON.stringify(p) === JSON.stringify(this.startRequestParams)) return this.workerRunning;
 		this.cancelRequest();
 		this.startRequestParams = p;
 		this.startRequestTimerId = window.setTimeout(async () => {
@@ -1480,12 +1492,13 @@ var CombinationFinderUi = class {
 	targetInput = null;
 	filterSelector = new FilterBox();
 	ui = null;
+	unit = "";
 	workerAgent = new WorkerAgent();
 	lastResult = null;
 	constructor(commonSettingsUi, capacitor) {
 		this.commonSettingsUi = commonSettingsUi;
 		this.capacitor = capacitor;
-		const unit = capacitor ? "F" : "Ω";
+		this.unit = capacitor ? "F" : "Ω";
 		this.rangeSelector = new ValueRangeSelector(capacitor);
 		this.targetInput = new ValueBox(capacitor ? "3.14μ" : "5.1k");
 		this.ui = makeDiv([
@@ -1504,17 +1517,17 @@ var CombinationFinderUi = class {
 				[
 					getStr("Custom Values"),
 					this.rangeSelector.customValuesInput,
-					unit
+					this.unit
 				],
 				[
 					getStr("Minimum"),
 					this.rangeSelector.minResisterInput.inputBox,
-					unit
+					this.unit
 				],
 				[
 					getStr("Maximum"),
 					this.rangeSelector.maxResisterInput.inputBox,
-					unit
+					this.unit
 				],
 				[
 					getStr("Max Elements"),
@@ -1534,7 +1547,7 @@ var CombinationFinderUi = class {
 				[
 					strong(getStr("Target Value")),
 					this.targetInput.inputBox,
-					unit
+					this.unit
 				],
 				[
 					getStr("Filter"),
@@ -1584,7 +1597,10 @@ var CombinationFinderUi = class {
 	}
 	onLaunched(p) {
 		this.statusBox.style.color = "";
-		this.statusBox.textContent = getStr("Searching...");
+		this.statusBox.innerHTML = "";
+		const msg = `${getStr("Searching...")} (${formatValue(p.targetValue, this.unit)}):`;
+		this.statusBox.appendChild(makeIcon("⌛", true));
+		this.statusBox.appendChild(document.createTextNode(" " + msg));
 		this.resultBox.style.opacity = "0.5";
 	}
 	onFinished(e) {
@@ -1593,7 +1609,12 @@ var CombinationFinderUi = class {
 	}
 	onAborted(msg) {
 		console.log(`Aborted with message: '${msg}'`);
-		this.statusBox.textContent = getStr(msg);
+		this.statusBox.innerHTML = "";
+		this.statusBox.style.color = msg ? "#c00" : "#000";
+		if (msg) {
+			this.statusBox.appendChild(makeIcon("❌"));
+			this.statusBox.appendChild(document.createTextNode(getStr(msg)));
+		}
 		this.resultBox.innerHTML = "";
 	}
 	showResult() {
@@ -1608,7 +1629,8 @@ var CombinationFinderUi = class {
 			let msg = getStr("No combinations found");
 			if (ret.result.length > 0) msg = `${getStr("<n> combinations found", { n: ret.result.length })}`;
 			msg += ` (${timeSpentMs.toFixed(2)} ms):`;
-			this.statusBox.textContent = msg;
+			this.statusBox.appendChild(makeIcon("✅"));
+			this.statusBox.appendChild(document.createTextNode(msg));
 			for (const combJson of ret.result) {
 				const PADDING = 20;
 				const TOP_PADDING = 20;
@@ -1654,7 +1676,7 @@ var CombinationFinderUi = class {
 				ctx.textAlign = "center";
 				ctx.textBaseline = "top";
 				{
-					const text = formatValue(tree.value, this.capacitor ? "F" : "Ω", true);
+					const text = formatValue(tree.value, this.unit, true);
 					ctx.font = `${24 * SCALE}px sans-serif`;
 					ctx.fillText(text, 0, 0);
 				}
@@ -1663,7 +1685,7 @@ var CombinationFinderUi = class {
 					let errorStr = getStr("No Error");
 					ctx.save();
 					if (Math.abs(error) > 1e-9) {
-						errorStr = `${getStr("Error")}: ${error > 0 ? "+" : ""}${(error * 100).toFixed(4)}%`;
+						errorStr = `${getStr("Error")}: ${error > 0 ? "+" : ""}${(error * 100).toFixed(6)}%`;
 						ctx.fillStyle = error > 0 ? "#c00" : "#00c";
 					}
 					ctx.font = `${16 * SCALE}px sans-serif`;
@@ -1680,7 +1702,8 @@ var CombinationFinderUi = class {
 			let msg = "Unknown error";
 			if (e.message) msg = e.message;
 			this.statusBox.style.color = "#c00";
-			this.statusBox.textContent = `Error: ${getStr(msg)}`;
+			this.statusBox.appendChild(makeIcon("❌"));
+			this.statusBox.appendChild(document.createTextNode(`Error: ${getStr(msg)}`));
 			this.resultBox.innerHTML = "";
 		}
 	}
@@ -1950,7 +1973,10 @@ var DividerFinderUi = class {
 	}
 	onLaunched(p) {
 		this.statusBox.style.color = "";
-		this.statusBox.textContent = getStr("Searching...");
+		this.statusBox.innerHTML = "";
+		const msg = `${getStr("Searching...")} (${formatValue(p.targetRatio, "", false)}):`;
+		this.statusBox.appendChild(makeIcon("⌛", true));
+		this.statusBox.appendChild(document.createTextNode(" " + msg));
 		this.resultBox.style.opacity = "0.5";
 	}
 	onFinished(e) {
@@ -1959,7 +1985,12 @@ var DividerFinderUi = class {
 	}
 	onAborted(msg) {
 		console.log(`Aborted with message: '${msg}'`);
-		this.statusBox.textContent = getStr(msg);
+		this.statusBox.innerHTML = "";
+		this.statusBox.style.color = msg ? "#c00" : "#000";
+		if (msg) {
+			this.statusBox.appendChild(makeIcon("❌"));
+			this.statusBox.appendChild(document.createTextNode(getStr(msg)));
+		}
 		this.resultBox.innerHTML = "";
 	}
 	showResult() {
@@ -1973,7 +2004,8 @@ var DividerFinderUi = class {
 			let msg = getStr("No combinations found");
 			if (ret.result.length > 0) msg = `${getStr("<n> combinations found", { n: ret.result.length })}`;
 			msg += ` (${timeSpentMs.toFixed(2)} ms):`;
-			this.statusBox.textContent = msg;
+			this.statusBox.appendChild(makeIcon("✅"));
+			this.statusBox.appendChild(document.createTextNode(msg));
 			for (const combJson of ret.result) {
 				const resultUi = new ResultUi(this.commonSettingsUi, ret.params, combJson);
 				this.resultBox.appendChild(resultUi.ui);
@@ -1985,7 +2017,8 @@ var DividerFinderUi = class {
 			let msg = "Unknown error";
 			if (e.message) msg = e.message;
 			this.statusBox.style.color = "#c00";
-			this.statusBox.textContent = `Error: ${getStr(msg)}`;
+			this.statusBox.appendChild(makeIcon("❌"));
+			this.statusBox.appendChild(document.createTextNode(`Error: ${getStr(msg)}`));
 			this.resultBox.innerHTML = "";
 		}
 	}
@@ -2079,7 +2112,7 @@ var ResultUi = class {
 			let errorStr = getStr("No Error");
 			ctx.save();
 			if (Math.abs(error) > 1e-9) {
-				errorStr = `${getStr("Error")}: ${error > 0 ? "+" : ""}${(error * 100).toFixed(4)}%`;
+				errorStr = `${getStr("Error")}: ${error > 0 ? "+" : ""}${(error * 100).toFixed(6)}%`;
 				ctx.fillStyle = error > 0 ? "#c00" : "#00c";
 			}
 			ctx.font = `${16 * SCALE}px sans-serif`;

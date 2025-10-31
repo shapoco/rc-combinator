@@ -21,9 +21,9 @@ export class CommonSettingsUi {
     this.useWasmCheckbox.addEventListener('change', () => {
       this.onChanged.forEach(callback => callback());
     });
-    //this.showColorCodeCheckbox.addEventListener('change', () => {
-    //  this.onChanged.forEach(callback => callback());
-    //});
+    // this.showColorCodeCheckbox.addEventListener('change', () => {
+    //   this.onChanged.forEach(callback => callback());
+    // });
   }
 }
 
@@ -391,6 +391,13 @@ export function makeButton(label: string): HTMLButtonElement {
   return elm;
 }
 
+export function makeIcon(
+    emoji: string, spin: boolean = false): HTMLSpanElement {
+  const icon = makeSpan(emoji, 'icon');
+  if (spin) icon.classList.add('spin');
+  return icon;
+}
+
 export function toElementArray(children: string|Node|Array<string|Node>|
                                null): Array<Node> {
   if (children == null) {
@@ -447,38 +454,40 @@ export function formatValue(
     usePrefix = unit !== '';
   }
 
+  const exp = Math.floor(Math.log10(Math.abs(value)) + 1e-6);
+
   let prefix = '';
   if (usePrefix) {
-    if (value >= 0.999999e12) {
+    if (exp >= 12) {
       value /= 1e12;
       prefix = 'T';
-    } else if (value >= 0.999999e9) {
+    } else if (exp >= 9) {
       value /= 1e9;
       prefix = 'G';
-    } else if (value >= 0.999999e6) {
+    } else if (exp >= 6) {
       value /= 1e6;
       prefix = 'M';
-    } else if (value >= 0.999999e3) {
+    } else if (exp >= 3) {
       value /= 1e3;
       prefix = 'k';
-    } else if (value >= 0.999999) {
+    } else if (exp >= 0) {
       prefix = '';
-    } else if (value >= 0.999999e-3) {
+    } else if (exp >= -3) {
       value *= 1e3;
       prefix = 'm';
-    } else if (value >= 0.999999e-6) {
+    } else if (exp >= -6) {
       value *= 1e6;
       prefix = 'μ';
-    } else if (value >= 0.999999e-9) {
+    } else if (exp >= -9) {
       value *= 1e9;
       prefix = 'n';
-    } else if (value >= 0.999999e-12) {
+    } else if (exp >= -12) {
       value *= 1e12;
       prefix = 'p';
     }
   }
 
-  const minDigits = usePrefix ? 3 : 6;
+  const minDigits = 6;
 
   value = Math.round(value * Calc.pow10(minDigits));
   let s = '';
