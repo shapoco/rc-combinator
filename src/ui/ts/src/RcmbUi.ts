@@ -136,7 +136,8 @@ export class ValueBox {
   onChangeCallback: () => void = () => {};
 
   constructor(value: string|null = null) {
-    this.inputBox.type = 'tel';
+    // PC では IME をオフにするため 'tel' にする
+    this.inputBox.type = isMobile ? 'text' : 'tel';
     if (value) {
       this.inputBox.value = value;
       this.onChange();
@@ -220,6 +221,10 @@ export class FilterBox {
     return parseInt(this.selector.value) as RcmbJS.Filter;
   }
 }
+
+export const isMobile = (() => {
+  return !!navigator.userAgent.match(/iPhone|Android.+Mobile/);
+})();
 
 export function makeNumElementInput(
     max: number, defaultValue: number): IntegerBox {

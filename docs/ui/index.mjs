@@ -1325,7 +1325,7 @@ var ValueBox = class {
 	inputBox = document.createElement("input");
 	onChangeCallback = () => {};
 	constructor(value = null) {
-		this.inputBox.type = "tel";
+		this.inputBox.type = isMobile ? "text" : "tel";
 		if (value) {
 			this.inputBox.value = value;
 			this.onChange();
@@ -1383,6 +1383,9 @@ var FilterBox = class {
 		return parseInt(this.selector.value);
 	}
 };
+const isMobile = (() => {
+	return !!navigator.userAgent.match(/iPhone|Android.+Mobile/);
+})();
 function makeNumElementInput(max, defaultValue) {
 	return new IntegerBox(defaultValue, 1, max, max, `(${getStr("No Limit")})`);
 }
