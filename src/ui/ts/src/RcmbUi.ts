@@ -362,7 +362,10 @@ export function makeCheckbox(
 export function makeSeriesSelector() {
   let items: Array<{value: string, label: string, tip?: string}> = [];
   for (const key of Object.keys(Series.Serieses)) {
-    items.push({value: key, label: key});
+    items.push({
+      value: key,
+      label: key.replace('+', ' + '),
+    });
   }
   items.push({value: 'custom', label: getStr('Custom')});
   return makeSelectBox(items, 'E3');
