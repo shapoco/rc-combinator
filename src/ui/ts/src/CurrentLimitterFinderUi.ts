@@ -3,30 +3,34 @@ import * as RcmbJS from '../../../lib/ts/src/RcmbJS';
 import * as RcmbUi from './RcmbUi';
 import * as Series from './Series';
 import {getStr} from './Text';
+import * as UiPages from './UiPages';
 
-export class CurrentLimitterFinderUi {
+export class CurrentLimitterFinderUi extends UiPages.UiPage {
   powerVoltageInput = new RcmbUi.ValueBox('3.3');
   forwardVoltageInput = new RcmbUi.ValueBox('2');
   forwardCurrentInput = new RcmbUi.ValueBox('1m');
   filterSelector = new RcmbUi.FilterBox();
   resultBox = RcmbUi.makeDiv();
-  ui = RcmbUi.makeDiv([
-    RcmbUi.makeH2(getStr('Find LED Current Limiting Resistor')),
-    RcmbUi.makeTable([
-      [getStr('Item'), getStr('Value'), getStr('Unit')],
-      [getStr('Power Voltage'), this.powerVoltageInput.inputBox, 'V'],
-      [getStr('Forward Voltage'), this.forwardVoltageInput.inputBox, 'V'],
-      [
-        RcmbUi.strong(getStr('Target Current')),
-        this.forwardCurrentInput.inputBox, 'A'
-      ],
-      [getStr('Filter'), this.filterSelector.ui, ''],
-    ]),
-    RcmbUi.makeP('結果:'),
-    this.resultBox,
-  ]);
 
   constructor() {
+    super(getStr('Current Limitting'));
+
+    this.ui = RcmbUi.makeDiv([
+      RcmbUi.makeH2(getStr('Find LED Current Limiting Resistor')),
+      RcmbUi.makeTable([
+        [getStr('Item'), getStr('Value'), getStr('Unit')],
+        [getStr('Power Voltage'), this.powerVoltageInput.inputBox, 'V'],
+        [getStr('Forward Voltage'), this.forwardVoltageInput.inputBox, 'V'],
+        [
+          RcmbUi.strong(getStr('Target Current')),
+          this.forwardCurrentInput.inputBox, 'A'
+        ],
+        [getStr('Filter'), this.filterSelector.ui, ''],
+      ]),
+      RcmbUi.makeP('結果:'),
+      this.resultBox,
+    ]);
+
     this.powerVoltageInput.setOnChange(() => this.conditionChanged());
     this.forwardVoltageInput.setOnChange(() => this.conditionChanged());
     this.forwardCurrentInput.setOnChange(() => this.conditionChanged());

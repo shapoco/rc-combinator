@@ -46,6 +46,11 @@ const texts: {[key: string]: {[key: string]: string}} = {
     'Below': '目標以下',
     'Nearest': '近似値',
     'None': 'なし',
+    'Home': 'ホーム',
+    'Resistor Combination': '合成抵抗',
+    'Capacitor Combination': '合成容量',
+    'Current Limitting': '電流制限抵抗',
+    'Voltage Divider': '分圧抵抗',
   },
 };
 

@@ -132,10 +132,11 @@ export class IntegerBox {
 }
 
 export class ValueBox {
-  inputBox = makeTextBox();
+  inputBox = document.createElement('input');
   onChangeCallback: () => void = () => {};
 
   constructor(value: string|null = null) {
+    this.inputBox.type = 'tel';
     if (value) {
       this.inputBox.value = value;
       this.onChange();
@@ -256,6 +257,12 @@ export function makeDepthSelector(): HTMLSelectElement {
 
 export function makeBr(): HTMLBRElement {
   return document.createElement('br');
+}
+
+export function makeH1(label: string = ''): HTMLHeadingElement {
+  const elm = document.createElement('h1');
+  elm.textContent = label;
+  return elm;
 }
 
 export function makeH2(label: string = ''): HTMLHeadingElement {
@@ -388,7 +395,7 @@ export function makeSelectBox(
   return select;
 }
 
-export function makeButton(label: string): HTMLButtonElement {
+export function makeButton(label: string = ''): HTMLButtonElement {
   const elm = document.createElement('button');
   elm.textContent = label;
   return elm;

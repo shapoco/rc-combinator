@@ -1204,7 +1204,12 @@ const texts = { "ja": {
 	"Above": "目標以上",
 	"Below": "目標以下",
 	"Nearest": "近似値",
-	"None": "なし"
+	"None": "なし",
+	"Home": "ホーム",
+	"Resistor Combination": "合成抵抗",
+	"Capacitor Combination": "合成容量",
+	"Current Limitting": "電流制限抵抗",
+	"Voltage Divider": "分圧抵抗"
 } };
 function getStr(key, vars) {
 	let ret = key;
@@ -1317,9 +1322,10 @@ var IntegerBox = class {
 	}
 };
 var ValueBox = class {
-	inputBox = makeTextBox();
+	inputBox = document.createElement("input");
 	onChangeCallback = () => {};
 	constructor(value = null) {
+		this.inputBox.type = "tel";
 		if (value) {
 			this.inputBox.value = value;
 			this.onChange();
@@ -1462,12 +1468,6 @@ function strong(children = null) {
 	toElementArray(children).forEach((child) => elm.appendChild(child));
 	return elm;
 }
-function makeTextBox(value = null) {
-	const elm = document.createElement("input");
-	elm.type = "text";
-	if (value) elm.value = value;
-	return elm;
-}
 function makeCheckbox(labelStr, value = false) {
 	const label = document.createElement("label");
 	const elm = document.createElement("input");
@@ -1500,6 +1500,11 @@ function makeSelectBox(items, defaultValue) {
 	}
 	select.value = defaultValue.toString();
 	return select;
+}
+function makeButton(label = "") {
+	const elm = document.createElement("button");
+	elm.textContent = label;
+	return elm;
 }
 function makeIcon(emoji, spin = false) {
 	const icon = makeSpan(emoji, "icon");
@@ -1799,6 +1804,15 @@ var TreeNode = class TreeNode {
 };
 
 //#endregion
+//#region src/UiPages.ts
+var UiPage = class {
+	ui = null;
+	constructor(title) {
+		this.title = title;
+	}
+};
+
+//#endregion
 //#region src/WorkerAgents.ts
 var WorkerAgent = class {
 	urlPostfix = Math.floor(Date.now() / (60 * 1e3)).toString();
@@ -1876,7 +1890,7 @@ var WorkerAgent = class {
 
 //#endregion
 //#region src/CombinationFinderUi.ts
-var CombinationFinderUi = class {
+var CombinationFinderUi = class extends UiPage {
 	rangeSelector = null;
 	numElementsInput = makeNumElementInput(MAX_COMBINATION_ELEMENTS, 3);
 	topTopologySelector = makeTopologySelector();
@@ -1885,70 +1899,71 @@ var CombinationFinderUi = class {
 	resultBox = makeDiv();
 	targetInput = null;
 	filterSelector = new FilterBox();
-	ui = null;
 	unit = "";
 	workerAgent = new WorkerAgent();
 	lastResult = null;
-	constructor(commonSettingsUi, capacitor) {
-		this.commonSettingsUi = commonSettingsUi;
+	constructor(commonSettingsUi$1, capacitor) {
+		super(getStr((capacitor ? "Capacitor" : "Resistor") + " Combination"));
+		this.commonSettingsUi = commonSettingsUi$1;
 		this.capacitor = capacitor;
 		this.unit = capacitor ? "F" : "Ω";
 		this.rangeSelector = new ValueRangeSelector(capacitor);
 		this.targetInput = new ValueBox(capacitor ? "3.14μ" : "5.1k");
+		const paramTable = makeTable([
+			[
+				getStr("Item"),
+				getStr("Value"),
+				getStr("Unit")
+			],
+			[
+				getStr("E Series"),
+				this.rangeSelector.seriesSelect,
+				""
+			],
+			[
+				getStr("Custom Values"),
+				this.rangeSelector.customValuesInput,
+				this.unit
+			],
+			[
+				getStr("Minimum"),
+				this.rangeSelector.minResisterInput.inputBox,
+				this.unit
+			],
+			[
+				getStr("Maximum"),
+				this.rangeSelector.maxResisterInput.inputBox,
+				this.unit
+			],
+			[
+				getStr("Max Elements"),
+				this.numElementsInput.inputBox,
+				""
+			],
+			[
+				getStr("Top Topology"),
+				this.topTopologySelector,
+				""
+			],
+			[
+				getStr("Max Nests"),
+				this.maxDepthInput,
+				""
+			],
+			[
+				strong(getStr("Target Value")),
+				this.targetInput.inputBox,
+				this.unit
+			],
+			[
+				getStr("Filter"),
+				this.filterSelector.ui,
+				""
+			]
+		]);
 		this.ui = makeDiv([
 			makeH2(this.capacitor ? getStr("Find Capacitor Combinations") : getStr("Find Resistor Combinations")),
-			makeTable([
-				[
-					getStr("Item"),
-					getStr("Value"),
-					getStr("Unit")
-				],
-				[
-					getStr("E Series"),
-					this.rangeSelector.seriesSelect,
-					""
-				],
-				[
-					getStr("Custom Values"),
-					this.rangeSelector.customValuesInput,
-					this.unit
-				],
-				[
-					getStr("Minimum"),
-					this.rangeSelector.minResisterInput.inputBox,
-					this.unit
-				],
-				[
-					getStr("Maximum"),
-					this.rangeSelector.maxResisterInput.inputBox,
-					this.unit
-				],
-				[
-					getStr("Max Elements"),
-					this.numElementsInput.inputBox,
-					""
-				],
-				[
-					getStr("Top Topology"),
-					this.topTopologySelector,
-					""
-				],
-				[
-					getStr("Max Nests"),
-					this.maxDepthInput,
-					""
-				],
-				[
-					strong(getStr("Target Value")),
-					this.targetInput.inputBox,
-					this.unit
-				],
-				[
-					getStr("Filter"),
-					this.filterSelector.ui,
-					""
-				]
-			]),
+			paramTable,
 			this.statusBox,
 			this.resultBox
 		]);
@@ -2105,45 +2120,46 @@ var CombinationFinderUi = class {
 
 //#endregion
 //#region src/CurrentLimitterFinderUi.ts
-var CurrentLimitterFinderUi = class {
+var CurrentLimitterFinderUi = class extends UiPage {
 	powerVoltageInput = new ValueBox("3.3");
 	forwardVoltageInput = new ValueBox("2");
 	forwardCurrentInput = new ValueBox("1m");
 	filterSelector = new FilterBox();
 	resultBox = makeDiv();
-	ui = makeDiv([
-		makeH2(getStr("Find LED Current Limiting Resistor")),
-		makeTable([
-			[
-				getStr("Item"),
-				getStr("Value"),
-				getStr("Unit")
-			],
-			[
-				getStr("Power Voltage"),
-				this.powerVoltageInput.inputBox,
-				"V"
-			],
-			[
-				getStr("Forward Voltage"),
-				this.forwardVoltageInput.inputBox,
-				"V"
-			],
-			[
-				strong(getStr("Target Current")),
-				this.forwardCurrentInput.inputBox,
-				"A"
-			],
-			[
-				getStr("Filter"),
-				this.filterSelector.ui,
-				""
-			]
-		]),
-		makeP("結果:"),
-		this.resultBox
-	]);
 	constructor() {
+		super(getStr("Current Limitting"));
+		this.ui = makeDiv([
+			makeH2(getStr("Find LED Current Limiting Resistor")),
+			makeTable([
+				[
+					getStr("Item"),
+					getStr("Value"),
+					getStr("Unit")
+				],
+				[
+					getStr("Power Voltage"),
+					this.powerVoltageInput.inputBox,
+					"V"
+				],
+				[
+					getStr("Forward Voltage"),
+					this.forwardVoltageInput.inputBox,
+					"V"
+				],
+				[
+					strong(getStr("Target Current")),
+					this.forwardCurrentInput.inputBox,
+					"A"
+				],
+				[
+					getStr("Filter"),
+					this.filterSelector.ui,
+					""
+				]
+			]),
+			makeP("結果:"),
+			this.resultBox
+		]);
 		this.powerVoltageInput.setOnChange(() => this.conditionChanged());
 		this.forwardVoltageInput.setOnChange(() => this.conditionChanged());
 		this.forwardCurrentInput.setOnChange(() => this.conditionChanged());
@@ -2238,7 +2254,7 @@ var CurrentLimitterFinderUi = class {
 
 //#endregion
 //#region src/DividerFinderUi.ts
-var DividerFinderUi = class {
+var DividerFinderUi = class extends UiPage {
 	rangeSelector = null;
 	numElementsInput = makeNumElementInput(MAX_COMBINATION_ELEMENTS, 4);
 	topTopologySelector = makeTopologySelector();
@@ -2249,11 +2265,11 @@ var DividerFinderUi = class {
 	totalMaxBox = new ValueBox("100k");
 	targetInput = null;
 	filterSelector = new FilterBox();
-	ui = null;
 	workerAgent = new WorkerAgent();
 	lastResult = null;
-	constructor(commonSettingsUi) {
-		this.commonSettingsUi = commonSettingsUi;
+	constructor(commonSettingsUi$1) {
+		super(getStr("Voltage Divider"));
+		this.commonSettingsUi = commonSettingsUi$1;
 		this.rangeSelector = new ValueRangeSelector(false);
 		this.targetInput = new ValueBox("3.3 / 5.0");
 		this.ui = makeDiv([
@@ -2423,8 +2439,8 @@ var ResultUi = class {
 	buttons = makeP();
 	canvas = document.createElement("canvas");
 	ui = makeDiv([this.buttons, this.canvas]);
-	constructor(commonSettingsUi, params, combJson) {
-		this.commonSettingsUi = commonSettingsUi;
+	constructor(commonSettingsUi$1, params, combJson) {
+		this.commonSettingsUi = commonSettingsUi$1;
 		this.params = params;
 		this.ui.className = "figure";
 		for (const upperJson of combJson.uppers) {
@@ -2518,20 +2534,75 @@ var ResultUi = class {
 };
 
 //#endregion
+//#region src/HomeUi.ts
+var HomeUi = class extends UiPage {
+	constructor() {
+		super(getStr("Home"));
+		this.ui = makeDiv();
+	}
+};
+
+//#endregion
 //#region src/main.ts
-function main(container) {
-	const commonSettingsUi = new CommonSettingsUi();
-	const resCombFinderUi = new CombinationFinderUi(commonSettingsUi, false);
-	const capCombFinderUi = new CombinationFinderUi(commonSettingsUi, true);
-	const currLimitFinderUi = new CurrentLimitterFinderUi();
-	const dividerFinderUi = new DividerFinderUi(commonSettingsUi);
-	container.appendChild(makeDiv([
-		commonSettingsUi.ui,
-		resCombFinderUi.ui,
-		dividerFinderUi.ui,
-		currLimitFinderUi.ui,
-		capCombFinderUi.ui
-	]));
+const commonSettingsUi = new CommonSettingsUi();
+const homeUi = new HomeUi();
+const resCombFinderUi = new CombinationFinderUi(commonSettingsUi, false);
+const capCombFinderUi = new CombinationFinderUi(commonSettingsUi, true);
+const currLimitFinderUi = new CurrentLimitterFinderUi();
+const pages = {
+	home: homeUi,
+	rcmb: resCombFinderUi,
+	rdiv: new DividerFinderUi(commonSettingsUi),
+	rled: currLimitFinderUi,
+	ccmb: capCombFinderUi
+};
+const menuButtons = {};
+const menuBar = makeDiv([], "menuBar");
+const pageContainer = makeDiv([], "pageContainer");
+function main(container, titleElement, followingElement) {
+	titleElement.remove();
+	followingElement.remove();
+	homeUi.ui.appendChild(titleElement);
+	homeUi.ui.appendChild(followingElement);
+	let first = true;
+	for (const pageId in pages) {
+		const page = pages[pageId];
+		if (first) {
+			first = false;
+			pageContainer.appendChild(page.ui);
+		}
+		const buttonImage = document.createElement("img");
+		buttonImage.src = `./img/menu_icon_${pageId}.png`;
+		const menuButton = makeButton();
+		menuButton.appendChild(buttonImage);
+		menuButton.appendChild(makeSpan(page.title, "menuButtonLabel"));
+		menuButtons[pageId] = menuButton;
+		menuBar.appendChild(menuButton);
+		menuBar.appendChild(document.createTextNode(" "));
+		menuButton.addEventListener("click", () => {
+			showPage(pageId);
+		});
+	}
+	container.appendChild(makeDiv([menuBar, pageContainer]));
+	window.addEventListener("resize", () => {
+		onResize();
+	});
+	showPage("home");
+	onResize();
+}
+function showPage(pageId) {
+	pageContainer.innerHTML = "";
+	pageContainer.appendChild(pages[pageId].ui);
+	for (const id in menuButtons) {
+		const btn = menuButtons[id];
+		if (id === pageId) btn.classList.add("menuButtonSelected");
+		else btn.classList.remove("menuButtonSelected");
+	}
+}
+function onResize() {
+	const w = window.innerWidth;
+	const labels = Array.from(document.querySelectorAll(".menuButtonLabel"));
+	for (const label of labels) label.style.display = w < 1200 ? "none" : "inline";
 }
 
 //#endregion

@@ -3,9 +3,10 @@ import * as RcmbJS from '../../../lib/ts/src/RcmbJS';
 import * as RcmbUi from './RcmbUi';
 import * as Schematics from './Schematics';
 import {getStr} from './Text';
+import * as UiPages from './UiPages';
 import {WorkerAgent} from './WorkerAgents';
 
-export class CombinationFinderUi {
+export class CombinationFinderUi extends UiPages.UiPage {
   rangeSelector: RcmbUi.ValueRangeSelector|null = null;
   numElementsInput =
       RcmbUi.makeNumElementInput(RcmbJS.MAX_COMBINATION_ELEMENTS, 3);
@@ -15,7 +16,6 @@ export class CombinationFinderUi {
   resultBox = RcmbUi.makeDiv();
   targetInput: RcmbUi.ValueBox|null = null;
   filterSelector = new RcmbUi.FilterBox();
-  ui: HTMLDivElement|null = null;
   unit: string = '';
 
   workerAgent = new WorkerAgent();
@@ -25,38 +25,43 @@ export class CombinationFinderUi {
   constructor(
       public commonSettingsUi: RcmbUi.CommonSettingsUi,
       public capacitor: boolean) {
+    super(getStr((capacitor ? 'Capacitor' : 'Resistor') + ' Combination'));
+
     this.unit = capacitor ? 'F' : 'Ω';
     this.rangeSelector = new RcmbUi.ValueRangeSelector(capacitor);
     this.targetInput = new RcmbUi.ValueBox(capacitor ? '3.14μ' : '5.1k');
+
+    const paramTable = RcmbUi.makeTable([
+      [getStr('Item'), getStr('Value'), getStr('Unit')],
+      [getStr('E Series'), this.rangeSelector.seriesSelect, ''],
+      [
+        getStr('Custom Values'), this.rangeSelector.customValuesInput, this.unit
+      ],
+      [
+        getStr('Minimum'), this.rangeSelector.minResisterInput.inputBox,
+        this.unit
+      ],
+      [
+        getStr('Maximum'), this.rangeSelector.maxResisterInput.inputBox,
+        this.unit
+      ],
+      [getStr('Max Elements'), this.numElementsInput.inputBox, ''],
+      [getStr('Top Topology'), this.topTopologySelector, ''],
+      [getStr('Max Nests'), this.maxDepthInput, ''],
+      [
+        RcmbUi.strong(getStr('Target Value')), this.targetInput.inputBox,
+        this.unit
+      ],
+      [getStr('Filter'), this.filterSelector.ui, ''],
+    ]);
+    //paramTable.style.marginLeft = 'auto';
+    //paramTable.style.marginRight = 'auto';
 
     this.ui = RcmbUi.makeDiv([
       RcmbUi.makeH2(
           this.capacitor ? getStr('Find Capacitor Combinations') :
                            getStr('Find Resistor Combinations')),
-      RcmbUi.makeTable([
-        [getStr('Item'), getStr('Value'), getStr('Unit')],
-        [getStr('E Series'), this.rangeSelector.seriesSelect, ''],
-        [
-          getStr('Custom Values'), this.rangeSelector.customValuesInput,
-          this.unit
-        ],
-        [
-          getStr('Minimum'), this.rangeSelector.minResisterInput.inputBox,
-          this.unit
-        ],
-        [
-          getStr('Maximum'), this.rangeSelector.maxResisterInput.inputBox,
-          this.unit
-        ],
-        [getStr('Max Elements'), this.numElementsInput.inputBox, ''],
-        [getStr('Top Topology'), this.topTopologySelector, ''],
-        [getStr('Max Nests'), this.maxDepthInput, ''],
-        [
-          RcmbUi.strong(getStr('Target Value')), this.targetInput.inputBox,
-          this.unit
-        ],
-        [getStr('Filter'), this.filterSelector.ui, ''],
-      ]),
+      paramTable,
       this.statusBox,
       this.resultBox,
     ]);

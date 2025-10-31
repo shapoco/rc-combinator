@@ -3,9 +3,10 @@ import * as RcmbJS from '../../../lib/ts/src/RcmbJS';
 import * as RcmbUi from './RcmbUi';
 import * as Schematics from './Schematics';
 import {getStr} from './Text';
+import * as UiPages from './UiPages';
 import {WorkerAgent} from './WorkerAgents';
 
-export class DividerFinderUi {
+export class DividerFinderUi extends UiPages.UiPage {
   rangeSelector: RcmbUi.ValueRangeSelector|null = null;
   numElementsInput =
       RcmbUi.makeNumElementInput(RcmbJS.MAX_COMBINATION_ELEMENTS, 4);
@@ -17,13 +18,14 @@ export class DividerFinderUi {
   totalMaxBox = new RcmbUi.ValueBox('100k');
   targetInput: RcmbUi.ValueBox|null = null;
   filterSelector = new RcmbUi.FilterBox();
-  ui: HTMLDivElement|null = null;
 
   workerAgent = new WorkerAgent();
 
   lastResult: any = null;
 
   constructor(public commonSettingsUi: RcmbUi.CommonSettingsUi) {
+    super(getStr('Voltage Divider'));
+
     this.rangeSelector = new RcmbUi.ValueRangeSelector(false);
     this.targetInput = new RcmbUi.ValueBox('3.3 / 5.0');
 
