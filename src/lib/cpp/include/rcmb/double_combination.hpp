@@ -47,6 +47,8 @@ result_t DoubleCombinationClass::verify() const {
     } else {
       value_t error = std::abs(upper - comb->value);
       if (error > upper / 1e6) {
+        RCCOMB_DEBUG_PRINT("upper=%lf, comb->value=%lf, error=%lf\n", upper,
+                           comb->value, error);
         return result_t::INACCURATE_RESULT;
       }
     }
@@ -62,9 +64,10 @@ result_t DoubleCombinationClass::verify() const {
       lower = comb->value;
     } else {
       value_t error = std::abs(lower - comb->value);
-      if (error > lower / 1e3) {
-        // todo: re-enable checking
-        //return result_t::INACCURATE_RESULT;
+      if (error > lower / 1e6) {
+        RCCOMB_DEBUG_PRINT("lower=%lf, comb->value=%lf, error=%lf\n", lower,
+                           comb->value, error);
+        return result_t::INACCURATE_RESULT;
       }
     }
   }
@@ -72,6 +75,8 @@ result_t DoubleCombinationClass::verify() const {
   value_t computed_ratio = lower / (upper + lower);
   value_t error = std::abs(computed_ratio - ratio);
   if (error > 1e9) {
+    RCCOMB_DEBUG_PRINT("computed_ratio=%lf, ratio=%lf, error=%lf\n",
+                       computed_ratio, ratio, error);
     return result_t::INACCURATE_RESULT;
   }
 

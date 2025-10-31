@@ -112,7 +112,7 @@ static inline hash_t crc32_add_u32(hash_t h, uint32_t data) {
   return h;
 }
 
-value_t pow10(float exp);
+value_t pow10(int exp);
 uint32_t valueKeyOf(value_t value);
 std::string value_to_json_string(value_t value);
 
@@ -134,29 +134,23 @@ hash_t crc32_add_u8(hash_t h, uint8_t data) {
   return h;
 }
 
-value_t pow10(float exp) {
-  int exp_i = std::floor(exp);
-  int exp_u = std::abs(exp_i);
+value_t pow10(int exp) {
+  bool neg = exp < 0;
+  if (neg) exp = -exp;
   value_t ret = 1;
-  value_t mul = 10.0;
-  while (exp_u != 0) {
-    if (exp_u & 1) {
-      ret *= mul;
-    }
-    mul *= mul;
-    exp_u >>= 1;
-  }
-  if (exp_i < 0) {
-    ret = 1.0 / ret;
-  }
-  ret *= pow(10.0, exp - exp_i);
-  return ret;
+  if (exp & 0x01) ret *= 1e1;
+  if (exp & 0x02) ret *= 1e2;
+  if (exp & 0x04) ret *= 1e4;
+  if (exp & 0x08) ret *= 1e8;
+  if (exp & 0x10) ret *= 1e16;
+  if (exp & 0x20) ret *= 1e32;
+  return neg ? (1 / ret) : ret;
 }
 
 uint32_t valueKeyOf(value_t value) {
-  // int exp = std::floor(std::log10(value) + 1e-9);
-  // return static_cast<uint32_t>(std::round(value / pow10(exp - 6)));
-  return static_cast<uint32_t>(std::round(value * 1000));
+  int exp = std::floor(std::log10(value) + 1e-6) - 6;
+  uint32_t frac = static_cast<uint32_t>(std::round(value * pow10(-exp)));
+  return (exp + 128) << 24 | (frac & 0x00FFFFFF);
 }
 
 std::string value_to_json_string(value_t value) {
