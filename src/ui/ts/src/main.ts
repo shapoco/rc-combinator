@@ -77,7 +77,9 @@ export function main(
 
     const button = RcmbUi.makeButton();
     button.appendChild(buttonImage);
-    button.appendChild(RcmbUi.makeSpan(page.title, 'menuBarButtonLabel'));
+    button.appendChild(RcmbUi.makeSpan(
+        RcmbUi.makeSpan(page.title, 'menuBarButtonLabelText'),
+        'menuBarButtonLabel'));
     menuButtons[pageId] = button;
 
     menuBar.appendChild(button);

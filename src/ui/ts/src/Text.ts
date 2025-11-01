@@ -49,7 +49,7 @@ const texts: {[key: string]: {[key: string]: string}} = {
     'Home': 'ホーム',
     'Resistor Combination': '合成抵抗',
     'Capacitor Combination': '合成容量',
-    'Current Limitting': '電流制限抵抗',
+    'Current Limitting Resistor': '電流制限抵抗',
     'Voltage Divider': '分圧抵抗',
     'Menu': 'メニュー',
   },

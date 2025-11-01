@@ -1208,7 +1208,7 @@ const texts = { "ja": {
 	"Home": "ホーム",
 	"Resistor Combination": "合成抵抗",
 	"Capacitor Combination": "合成容量",
-	"Current Limitting": "電流制限抵抗",
+	"Current Limitting Resistor": "電流制限抵抗",
 	"Voltage Divider": "分圧抵抗",
 	"Menu": "メニュー"
 } };
@@ -2131,7 +2131,7 @@ var CurrentLimitterFinderUi = class extends UiPage {
 	filterSelector = new FilterBox();
 	resultBox = makeDiv();
 	constructor() {
-		super(getStr("Current Limitting"));
+		super(getStr("Current Limitting Resistor"));
 		this.ui = makeDiv([
 			makeH2(getStr("Find LED Current Limiting Resistor")),
 			makeTable([
@@ -2597,7 +2597,7 @@ function main(container, titleElement, followingElement) {
 		buttonImage.src = `./img/menu_icon_${pageId}.png`;
 		const button = makeButton();
 		button.appendChild(buttonImage);
-		button.appendChild(makeSpan(page.title, "menuBarButtonLabel"));
+		button.appendChild(makeSpan(makeSpan(page.title, "menuBarButtonLabelText"), "menuBarButtonLabel"));
 		menuButtons[pageId] = button;
 		menuBar.appendChild(button);
 		menuBar.appendChild(document.createTextNode(" "));

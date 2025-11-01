@@ -13,7 +13,7 @@ export class CurrentLimitterFinderUi extends UiPages.UiPage {
   resultBox = RcmbUi.makeDiv();
 
   constructor() {
-    super(getStr('Current Limitting'));
+    super(getStr('Current Limitting Resistor'));
 
     this.ui = RcmbUi.makeDiv([
       RcmbUi.makeH2(getStr('Find LED Current Limiting Resistor')),

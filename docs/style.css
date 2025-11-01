@@ -233,6 +233,7 @@ a.inactive {
   padding: 0px 10px;
   line-height: 50px;
   color: #fff;
+  white-space: nowrap;
 }
 
 .menuBar button:hover {
@@ -251,10 +252,22 @@ a.inactive {
 }
 
 .menuBarButtonLabel {
+  display: inline-block;
+  height: 50px;
   vertical-align: top;
-  font-size: 12px;
-  margin-top: calc((50px - 12px) / 2);
+  line-height: 50px;
   margin-left: 10px;
+}
+
+.menuBarButtonLabelText {
+  display: table-cell;
+  width: 100px;
+  height: 50px;
+  line-height: 14px;
+  font-size: 12px;
+  text-align: left;
+  vertical-align: middle;
+  white-space: normal;
 }
 
 .homeMenuButton {
