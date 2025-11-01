@@ -9,16 +9,23 @@
 
 using namespace rcmb;
 
+uint32_t test_object_id = 1;
+inline uint32_t get_next_object_id() { return test_object_id++; }
+
 class TestTopologyClass;
 using TestTopology = std::shared_ptr<TestTopologyClass>;
 class TestTopologyClass {
  public:
+  uint32_t id;
   bool parallel;
   const int num_leafs;
   std::vector<TestTopology> children;
   TestTopologyClass(bool parallel, int num_leafs,
                     const std::vector<TestTopology>& children)
-      : parallel(parallel), num_leafs(num_leafs), children(children) {}
+      : id(get_next_object_id()),
+        parallel(parallel),
+        num_leafs(num_leafs),
+        children(children) {}
   inline bool is_leaf() const { return children.empty(); }
 };
 static inline TestTopology create_test_topology(
@@ -71,9 +78,9 @@ bool test_search_combinations(ComponentType type, std::vector<value_t>& series,
                               int max_elements, value_t target);
 bool test_search_dividers(std::vector<value_t>& series, int max_elements,
                           value_t target);
-TestCombination calc_value(ComponentType type, TestTopology& topo,
-                           const std::vector<value_t>& leaf_values, int pos,
-                           value_t* out_value = nullptr, bool bake = false);
+TestCombination test_calc_value(bool bake, ComponentType type,
+                                TestTopology& topo, const value_t* leaf_values,
+                                int pos, value_t* out_value = nullptr);
 std::vector<TestTopology>& test_get_topology(bool parallel, int n);
 void test_collect_topologies(bool parallel, std::vector<TestTopology>& topos,
                              const std::vector<int>& poses);
@@ -89,10 +96,10 @@ int main(int argc, char** argv) {
 
   {
     std::vector<value_t> targets = {
-        100,  111,  123,  137,  150,  162,  178,   196,   215, 233,
-        249,  270,  294,  316,  340,  364,  390,   430,   470, 511,
-        540,  581,  620,  680,  721,  750,  820,   872,   930, 1575,
-        2947, 3954, 4000, 7246, 9000, 9999, 14000, 26000,
+        100,  111,  123,  137,  150,  162,  178,   196,   215,   233,
+        249,  270,  294,  316,  340,  364,  390,   430,   470,   511,
+        540,  581,  620,  680,  721,  750,  820,   872,   930,   1575,
+        2947, 3954, 4000, 7246, 9000, 9999, 14000, 26000, 31415,
     };
     for (const auto& type : types) {
       for (int max_elements = 1; max_elements <= 5; max_elements++) {
@@ -109,6 +116,19 @@ int main(int argc, char** argv) {
           }
         }
       }
+    }
+  }
+
+  {
+    const auto type = ComponentType::Resistor;
+    std::vector<value_t> series = {1};
+    const int max_elements = 12;
+    const value_t target = 3.14;
+    bool ok = test_search_combinations(type, series, max_elements, target);
+    if (!ok) {
+      RCCOMB_DEBUG_PRINT("Test failed: type=%d, max_elements=%d, target=%.9f\n",
+                         static_cast<int>(type), max_elements, target);
+      return -1;
     }
   }
 
@@ -169,42 +189,53 @@ bool test_search_combinations(ComponentType type, std::vector<value_t>& series,
 
   std::vector<bool> parallels = {false, true};
 
+  int indices[max_elements] = {0};
+  value_t slot[max_elements] = {0};
   for (int num_elements = 1; num_elements <= max_elements; num_elements++) {
     for (auto parallel : parallels) {
       if (num_elements == 1 && parallel) continue;
       auto& topos = test_get_topology(parallel, num_elements);
 
-      std::vector<value_t> slot(num_elements, 0);
-      std::vector<int> indices(num_elements, 0);
-      int series_size = series.size();
-      while (indices[num_elements - 1] < series_size) {
+      for (auto& topo : topos) {
         for (int i = 0; i < num_elements; i++) {
-          slot[i] = series[indices[i]];
+          indices[i] = 0;
+          slot[i] = series[0];
         }
 
-        for (auto& topo : topos) {
+        int series_size = series.size();
+        bool done = false;
+        while (!done) {
+          int incr_pos = num_elements - 1;
+
           value_t value;
-          calc_value(type, topo, slot, 0, &value);
-          value_t error = std::abs(value - target);
-          if (error < exp_error - epsilon) {
-            exp_value = value;
-            exp_error = error;
-            exp_elements = num_elements;
-            exp_comb = calc_value(type, topo, slot, 0, nullptr, true);
-            // RCCOMB_DEBUG_PRINT("Found better combination: %lf (error=%lf)\n",
-            //                    val, error);
+          test_calc_value(false, type, topo, slot, 0, &value);
+          if (value != VALUE_NONE) {
+            value_t error = std::abs(value - target);
+            if (error < exp_error - epsilon) {
+              exp_value = value;
+              exp_error = error;
+              exp_elements = num_elements;
+              exp_comb = test_calc_value(true, type, topo, slot, 0);
+              // RCCOMB_DEBUG_PRINT("Found better combination: %lf
+              // (error=%lf)\n",
+              //                    val, error);
+            }
           }
-        }
 
-        // Increment indices
-        for (int i = 0; i < num_elements; i++) {
-          indices[i]++;
-          if (indices[i] < series_size) {
-            break;
-          } else if (i + 1 >= num_elements) {
-            break;
-          } else {
+          // Increment indices
+          for (int i = num_elements - 1; i > incr_pos; i--) {
             indices[i] = 0;
+            slot[i] = series[0];
+          }
+          for (int i = incr_pos; i >= 0; i--) {
+            indices[i] = (indices[i] + 1) % series_size;
+            slot[i] = series[indices[i]];
+            if (indices[i] != 0) {
+              break;
+            } else if (i == 0) {
+              done = true;
+              break;
+            }
           }
         }
       }
@@ -273,9 +304,9 @@ bool test_search_dividers(std::vector<value_t>& series, int max_elements,
   return true;
 }
 
-TestCombination calc_value(ComponentType type, TestTopology& topo,
-                           const std::vector<value_t>& leaf_values, int pos,
-                           value_t* out_value, bool bake) {
+TestCombination test_calc_value(bool bake, ComponentType type,
+                                TestTopology& topo, const value_t* leaf_values,
+                                int pos, value_t* out_value) {
   if (topo->is_leaf()) {
     if (out_value) {
       *out_value = leaf_values[pos];
@@ -296,14 +327,28 @@ TestCombination calc_value(ComponentType type, TestTopology& topo,
 
   int child_pos = pos;
   value_t accum = 0;
+  uint32_t last_id = -1;
+  value_t last_value = std::numeric_limits<value_t>::infinity();
   std::vector<TestCombination>* child_combs = nullptr;
   if (bake) {
     child_combs = new std::vector<TestCombination>();
   }
   for (auto& child : topo->children) {
     value_t child_value;
-    auto child_comb =
-        calc_value(type, child, leaf_values, child_pos, &child_value, bake);
+    auto child_comb = test_calc_value(bake, type, child, leaf_values, child_pos,
+                                      &child_value);
+
+    // 枝刈り
+    if (child_value == VALUE_NONE) {
+      *out_value = VALUE_NONE;
+      return nullptr;
+    } else if (child->id == last_id && child_value > last_value) {
+      *out_value = VALUE_NONE;
+      return nullptr;
+    }
+    last_id = child->id;
+    last_value = child_value;
+
     if (bake) {
       child_combs->push_back(child_comb);
     }

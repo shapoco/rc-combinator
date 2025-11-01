@@ -28,7 +28,7 @@ $(BIN): $(CPP_FILES) $(HPP_FILES)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 run: $(BIN)
-	./$(BIN)
+	time ./$(BIN)
 
 clean:
 	rm -f $(BIN)

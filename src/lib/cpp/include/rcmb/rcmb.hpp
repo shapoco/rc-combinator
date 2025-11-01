@@ -237,6 +237,10 @@ result_t search_combinations(ValueSearchOptions& options,
 
   const value_t epsilon = options.target / 1e9;
 
+  value_t best_min =
+      (options.filter & filter_t::BELOW) ? options.min_value : options.target;
+  value_t best_max =
+      (options.filter & filter_t::ABOVE) ? options.max_value : options.target;
   value_t best_error = std::numeric_limits<value_t>::infinity();
   int best_elems = std::numeric_limits<int>::max();
 
@@ -260,13 +264,13 @@ result_t search_combinations(ValueSearchOptions& options,
         if (topo->depth > options.max_depth) continue;
 
         ValueSearchContext ctx(options.type, options.available_values, topo,
-                               options.min_value, options.max_value,
-                               options.target);
+                               best_min, best_max, options.target);
         const auto cb = [&](ValueSearchContext& ctx, value_t value) {
-          if (!(options.filter & filter_t::BELOW) && value < options.target - epsilon) {
+          if (!(options.filter & filter_t::BELOW) &&
+              value < options.target - epsilon) {
             return;
-          }
-          else if (!(options.filter & filter_t::ABOVE) && value > options.target + epsilon) {
+          } else if (!(options.filter & filter_t::ABOVE) &&
+                     value > options.target + epsilon) {
             return;
           }
 
@@ -283,6 +287,11 @@ result_t search_combinations(ValueSearchOptions& options,
           best_combs.push_back(ctx.root_state->bake(options.type));
           best_error = error;
           best_elems = num_elems;
+          if (value < options.target) {
+            if (best_min - epsilon < value) best_min = value;
+          } else {
+            if (best_max + epsilon > value) best_max = value;
+          }
         };
         search_combinations_recursive(ctx, 0, cb);
       }
@@ -404,10 +413,11 @@ result_t search_dividers(DividerSearchOptions& options,
 
           const value_t ratio =
               lower_value / (upper_combs[0]->value + lower_value);
-          if (!(options.filter & filter_t::BELOW) && ratio < options.target_ratio - epsilon) {
+          if (!(options.filter & filter_t::BELOW) &&
+              ratio < options.target_ratio - epsilon) {
             return;
-          }
-          else if (!(options.filter & filter_t::ABOVE) && ratio > options.target_ratio + epsilon) {
+          } else if (!(options.filter & filter_t::ABOVE) &&
+                     ratio > options.target_ratio + epsilon) {
             return;
           }
 

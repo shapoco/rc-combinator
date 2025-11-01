@@ -145,11 +145,12 @@ std::vector<Topology>& get_topologies(int num_leafs, bool parallel) {
       throw std::runtime_error("num_leafs must be >= 1");
     }
 
-#ifdef RCCOMB_DEBUG
-    for (const auto& topo : cache[key]) {
-      RCCOMB_DEBUG_PRINT("new topology: %s\n", topo->to_string().c_str());
-    }
-#endif
+    // #ifdef RCCOMB_DEBUG
+    //     for (const auto& topo : cache[key]) {
+    //       RCCOMB_DEBUG_PRINT("new topology: %s\n",
+    //       topo->to_string().c_str());
+    //     }
+    // #endif
   }
 
   return cache[key];
