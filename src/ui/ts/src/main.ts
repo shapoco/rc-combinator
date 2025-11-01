@@ -61,7 +61,9 @@ export function main(
       if (hash.startsWith('#')) {
         hash = hash.substring(1);
       }
-      if (hash in pages) {
+      if (hash === '') {
+        showPage('home');
+      } else if (hash in pages) {
         showPage(hash);
       }
     });
@@ -79,15 +81,14 @@ export function main(
 }
 
 function showPage(pageId: string): void {
-  if (pageId && ! (pageId in pages)) return;
+  if (pageId && !(pageId in pages)) return;
   if (currentPageId === pageId) return;
   currentPageId = pageId;
 
   if (pageId === 'home') {
     window.location.hash = '';
     document.title = defaultTitle;
-  }
-  else {
+  } else {
     window.location.hash = pageId;
     document.title = `${pages[pageId].title} | ${defaultTitle}`;
   }

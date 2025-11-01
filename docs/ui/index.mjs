@@ -2585,7 +2585,8 @@ function main(container, titleElement, followingElement) {
 		window.addEventListener("hashchange", () => {
 			let hash = window.location.hash;
 			if (hash.startsWith("#")) hash = hash.substring(1);
-			if (hash in pages) showPage(hash);
+			if (hash === "") showPage("home");
+			else if (hash in pages) showPage(hash);
 		});
 	}
 	container.appendChild(makeDiv([menuBar, pageContainer]));
