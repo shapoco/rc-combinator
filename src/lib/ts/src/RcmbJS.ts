@@ -17,7 +17,7 @@ export const enum TopologyConstraint {
   NoLimit = Series | Parallel,
 }
 
-export const MAX_COMBINATION_ELEMENTS = 10;
+export const MAX_COMBINATION_ELEMENTS = 12;
 
 export class Topology {
   public num_leafs = -1;

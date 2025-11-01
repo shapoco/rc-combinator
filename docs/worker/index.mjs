@@ -141,7 +141,7 @@ var require_rcmb_wasm = /* @__PURE__ */ __commonJS({ "../../lib/cpp_wasm/build/r
 			}
 			var wasmBinaryFile;
 			function findWasmBinary() {
-				return locateFile("rcmb_wasm.wasm?634ca5d4");
+				return locateFile("rcmb_wasm.wasm?7d281dca");
 			}
 			function getBinarySync(file) {
 				if (file == wasmBinaryFile && wasmBinary) return new Uint8Array(wasmBinary);
@@ -1499,7 +1499,7 @@ let TopologyConstraint = /* @__PURE__ */ function(TopologyConstraint$1) {
 	TopologyConstraint$1[TopologyConstraint$1["NoLimit"] = 3] = "NoLimit";
 	return TopologyConstraint$1;
 }({});
-const MAX_COMBINATION_ELEMENTS = 10;
+const MAX_COMBINATION_ELEMENTS = 12;
 var Topology = class {
 	num_leafs = -1;
 	depth = -1;

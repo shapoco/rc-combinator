@@ -17,7 +17,7 @@ let TopologyConstraint = /* @__PURE__ */ function(TopologyConstraint$1) {
 	TopologyConstraint$1[TopologyConstraint$1["NoLimit"] = 3] = "NoLimit";
 	return TopologyConstraint$1;
 }({});
-const MAX_COMBINATION_ELEMENTS = 10;
+const MAX_COMBINATION_ELEMENTS = 12;
 function formatValue$1(value, unit = "", usePrefix = null) {
 	if (!isFinite(value) || isNaN(value)) return "NaN";
 	if (usePrefix === null) usePrefix = unit !== "";
