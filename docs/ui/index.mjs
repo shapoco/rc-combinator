@@ -2646,7 +2646,7 @@ function onHashChange() {
 function onResize() {
 	const w = window.innerWidth;
 	const labels = Array.from(document.querySelectorAll(".menuBarButtonLabel"));
-	for (const label of labels) label.style.display = w < 1200 ? "none" : "inline";
+	for (const label of labels) label.style.display = w < 1e3 ? "none" : "inline";
 }
 
 //#endregion

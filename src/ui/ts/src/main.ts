@@ -158,6 +158,6 @@ function onResize(): void {
 
   const labels = Array.from(document.querySelectorAll('.menuBarButtonLabel'));
   for (const label of labels) {
-    (label as HTMLElement).style.display = (w < 1200) ? 'none' : 'inline';
+    (label as HTMLElement).style.display = (w < 1000) ? 'none' : 'inline';
   }
 }
