@@ -26,6 +26,9 @@ const menuButtons: Record<string, HTMLButtonElement> = {};
 const menuBar = RcmbUi.makeDiv([], 'menuBar');
 const pageContainer = RcmbUi.makeDiv([], 'pageContainer');
 
+const defaultTitle = document.title;
+let currentPageId = '';
+
 export function main(
     container: HTMLElement, titleElement: HTMLElement,
     followingElement: HTMLElement): void {
@@ -34,13 +37,8 @@ export function main(
   homeUi.ui!.appendChild(titleElement);
   homeUi.ui!.appendChild(followingElement);
 
-  let first = true;
   for (const pageId in pages) {
     const page = pages[pageId];
-    if (first) {
-      first = false;
-      pageContainer.appendChild(page.ui!);
-    }
 
     const buttonImage = document.createElement('img');
     buttonImage.src = `./img/menu_icon_${pageId}.png`;
@@ -56,6 +54,17 @@ export function main(
     menuButton.addEventListener('click', () => {
       showPage(pageId);
     });
+
+    // ページ遷移を検出
+    window.addEventListener('hashchange', () => {
+      let hash = window.location.hash;
+      if (hash.startsWith('#')) {
+        hash = hash.substring(1);
+      }
+      if (hash in pages) {
+        showPage(hash);
+      }
+    });
   }
 
   container.appendChild(RcmbUi.makeDiv([
@@ -65,11 +74,24 @@ export function main(
 
   window.addEventListener('resize', () => {onResize()});
 
-  showPage('home');
+  onHashChange();
   onResize();
 }
 
 function showPage(pageId: string): void {
+  if (pageId && ! (pageId in pages)) return;
+  if (currentPageId === pageId) return;
+  currentPageId = pageId;
+
+  if (pageId === 'home') {
+    window.location.hash = '';
+    document.title = defaultTitle;
+  }
+  else {
+    window.location.hash = pageId;
+    document.title = `${pages[pageId].title} | ${defaultTitle}`;
+  }
+
   pageContainer.innerHTML = '';
   pageContainer.appendChild(pages[pageId].ui!);
 
@@ -80,6 +102,19 @@ function showPage(pageId: string): void {
     } else {
       btn.classList.remove('menuButtonSelected');
     }
+  }
+}
+
+function onHashChange(): void {
+  let hash = window.location.hash;
+  if (hash.startsWith('#')) {
+    hash = hash.substring(1);
+  }
+  if (hash === '') {
+    hash = 'home';
+  }
+  if (hash in pages) {
+    showPage(hash);
   }
 }
 

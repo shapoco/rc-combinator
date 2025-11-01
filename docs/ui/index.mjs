@@ -2562,18 +2562,15 @@ const pages = {
 const menuButtons = {};
 const menuBar = makeDiv([], "menuBar");
 const pageContainer = makeDiv([], "pageContainer");
+const defaultTitle = document.title;
+let currentPageId = "";
 function main(container, titleElement, followingElement) {
 	titleElement.remove();
 	followingElement.remove();
 	homeUi.ui.appendChild(titleElement);
 	homeUi.ui.appendChild(followingElement);
-	let first = true;
 	for (const pageId in pages) {
 		const page = pages[pageId];
-		if (first) {
-			first = false;
-			pageContainer.appendChild(page.ui);
-		}
 		const buttonImage = document.createElement("img");
 		buttonImage.src = `./img/menu_icon_${pageId}.png`;
 		const menuButton = makeButton();
@@ -2585,15 +2582,30 @@ function main(container, titleElement, followingElement) {
 		menuButton.addEventListener("click", () => {
 			showPage(pageId);
 		});
+		window.addEventListener("hashchange", () => {
+			let hash = window.location.hash;
+			if (hash.startsWith("#")) hash = hash.substring(1);
+			if (hash in pages) showPage(hash);
+		});
 	}
 	container.appendChild(makeDiv([menuBar, pageContainer]));
 	window.addEventListener("resize", () => {
 		onResize();
 	});
-	showPage("home");
+	onHashChange();
 	onResize();
 }
 function showPage(pageId) {
+	if (pageId && !(pageId in pages)) return;
+	if (currentPageId === pageId) return;
+	currentPageId = pageId;
+	if (pageId === "home") {
+		window.location.hash = "";
+		document.title = defaultTitle;
+	} else {
+		window.location.hash = pageId;
+		document.title = `${pages[pageId].title} | ${defaultTitle}`;
+	}
 	pageContainer.innerHTML = "";
 	pageContainer.appendChild(pages[pageId].ui);
 	for (const id in menuButtons) {
@@ -2601,6 +2613,12 @@ function showPage(pageId) {
 		if (id === pageId) btn.classList.add("menuButtonSelected");
 		else btn.classList.remove("menuButtonSelected");
 	}
+}
+function onHashChange() {
+	let hash = window.location.hash;
+	if (hash.startsWith("#")) hash = hash.substring(1);
+	if (hash === "") hash = "home";
+	if (hash in pages) showPage(hash);
 }
 function onResize() {
 	const w = window.innerWidth;
