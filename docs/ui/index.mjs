@@ -1209,7 +1209,8 @@ const texts = { "ja": {
 	"Resistor Combination": "合成抵抗",
 	"Capacitor Combination": "合成容量",
 	"Current Limitting": "電流制限抵抗",
-	"Voltage Divider": "分圧抵抗"
+	"Voltage Divider": "分圧抵抗",
+	"Menu": "メニュー"
 } };
 function getStr(key, vars) {
 	let ret = key;
@@ -2568,27 +2569,48 @@ function main(container, titleElement, followingElement) {
 	titleElement.remove();
 	followingElement.remove();
 	homeUi.ui.appendChild(titleElement);
+	{
+		homeUi.ui.appendChild(makeH2(getStr("Menu")));
+		const menuContainer = makeDiv([], null, true);
+		let index = 0;
+		for (const pageId in pages) {
+			const page = pages[pageId];
+			if (pageId === "home") continue;
+			const buttonImage = document.createElement("img");
+			buttonImage.src = `./img/menu_icon_${pageId}.png`;
+			const button = makeButton();
+			button.className = "homeMenuButton";
+			button.appendChild(buttonImage);
+			button.appendChild(makeSpan(makeSpan(page.title, "homeMenuButtonLabelText"), "homeMenuButtonLabel"));
+			menuContainer.appendChild(button);
+			button.addEventListener("click", () => {
+				showPage(pageId);
+			});
+			index++;
+		}
+		homeUi.ui.appendChild(menuContainer);
+	}
 	homeUi.ui.appendChild(followingElement);
 	for (const pageId in pages) {
 		const page = pages[pageId];
 		const buttonImage = document.createElement("img");
 		buttonImage.src = `./img/menu_icon_${pageId}.png`;
-		const menuButton = makeButton();
-		menuButton.appendChild(buttonImage);
-		menuButton.appendChild(makeSpan(page.title, "menuButtonLabel"));
-		menuButtons[pageId] = menuButton;
-		menuBar.appendChild(menuButton);
+		const button = makeButton();
+		button.appendChild(buttonImage);
+		button.appendChild(makeSpan(page.title, "menuBarButtonLabel"));
+		menuButtons[pageId] = button;
+		menuBar.appendChild(button);
 		menuBar.appendChild(document.createTextNode(" "));
-		menuButton.addEventListener("click", () => {
+		button.addEventListener("click", () => {
 			showPage(pageId);
 		});
-		window.addEventListener("hashchange", () => {
-			let hash = window.location.hash;
-			if (hash.startsWith("#")) hash = hash.substring(1);
-			if (hash === "") showPage("home");
-			else if (hash in pages) showPage(hash);
-		});
 	}
+	window.addEventListener("hashchange", () => {
+		let hash = window.location.hash;
+		if (hash.startsWith("#")) hash = hash.substring(1);
+		if (hash === "") showPage("home");
+		else if (hash in pages) showPage(hash);
+	});
 	container.appendChild(makeDiv([menuBar, pageContainer]));
 	window.addEventListener("resize", () => {
 		onResize();
@@ -2611,8 +2633,8 @@ function showPage(pageId) {
 	pageContainer.appendChild(pages[pageId].ui);
 	for (const id in menuButtons) {
 		const btn = menuButtons[id];
-		if (id === pageId) btn.classList.add("menuButtonSelected");
-		else btn.classList.remove("menuButtonSelected");
+		if (id === pageId) btn.classList.add("menuBarButtonActive");
+		else btn.classList.remove("menuBarButtonActive");
 	}
 }
 function onHashChange() {
@@ -2623,7 +2645,7 @@ function onHashChange() {
 }
 function onResize() {
 	const w = window.innerWidth;
-	const labels = Array.from(document.querySelectorAll(".menuButtonLabel"));
+	const labels = Array.from(document.querySelectorAll(".menuBarButtonLabel"));
 	for (const label of labels) label.style.display = w < 1200 ? "none" : "inline";
 }
 

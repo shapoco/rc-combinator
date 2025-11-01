@@ -4,6 +4,7 @@ import {CurrentLimitterFinderUi} from './CurrentLimitterFinderUi';
 import {DividerFinderUi} from './DividerFinderUi';
 import {HomeUi} from './HomeUi';
 import * as RcmbUi from './RcmbUi';
+import {getStr} from './Text';
 import * as UiPages from './UiPages';
 
 const commonSettingsUi = new RcmbUi.CommonSettingsUi();
@@ -35,6 +36,37 @@ export function main(
   titleElement.remove();
   followingElement.remove();
   homeUi.ui!.appendChild(titleElement);
+  {
+    homeUi.ui!.appendChild(RcmbUi.makeH2(getStr('Menu')));
+    const menuContainer = RcmbUi.makeDiv([], null, true);
+    let index = 0;
+    for (const pageId in pages) {
+      const page = pages[pageId];
+      if (pageId === 'home') continue;
+
+      const buttonImage = document.createElement('img');
+      buttonImage.src = `./img/menu_icon_${pageId}.png`;
+
+      const button = RcmbUi.makeButton();
+      button.className = 'homeMenuButton';
+      button.appendChild(buttonImage);
+      button.appendChild(RcmbUi.makeSpan(
+          RcmbUi.makeSpan(page.title, 'homeMenuButtonLabelText'),
+          'homeMenuButtonLabel'));
+
+      menuContainer.appendChild(button);
+      // if ((index + 1) % 2 === 0) {
+      //   menuContainer.appendChild(RcmbUi.makeBr());
+      // }
+
+      button.addEventListener('click', () => {
+        showPage(pageId);
+      });
+
+      index++;
+    }
+    homeUi.ui!.appendChild(menuContainer);
+  }
   homeUi.ui!.appendChild(followingElement);
 
   for (const pageId in pages) {
@@ -43,31 +75,31 @@ export function main(
     const buttonImage = document.createElement('img');
     buttonImage.src = `./img/menu_icon_${pageId}.png`;
 
-    const menuButton = RcmbUi.makeButton();
-    menuButton.appendChild(buttonImage);
-    menuButton.appendChild(RcmbUi.makeSpan(page.title, 'menuButtonLabel'));
-    menuButtons[pageId] = menuButton;
+    const button = RcmbUi.makeButton();
+    button.appendChild(buttonImage);
+    button.appendChild(RcmbUi.makeSpan(page.title, 'menuBarButtonLabel'));
+    menuButtons[pageId] = button;
 
-    menuBar.appendChild(menuButton);
+    menuBar.appendChild(button);
     menuBar.appendChild(document.createTextNode(' '));
 
-    menuButton.addEventListener('click', () => {
+    button.addEventListener('click', () => {
       showPage(pageId);
     });
-
-    // ページ遷移を検出
-    window.addEventListener('hashchange', () => {
-      let hash = window.location.hash;
-      if (hash.startsWith('#')) {
-        hash = hash.substring(1);
-      }
-      if (hash === '') {
-        showPage('home');
-      } else if (hash in pages) {
-        showPage(hash);
-      }
-    });
   }
+
+  // ページ遷移を検出
+  window.addEventListener('hashchange', () => {
+    let hash = window.location.hash;
+    if (hash.startsWith('#')) {
+      hash = hash.substring(1);
+    }
+    if (hash === '') {
+      showPage('home');
+    } else if (hash in pages) {
+      showPage(hash);
+    }
+  });
 
   container.appendChild(RcmbUi.makeDiv([
     menuBar,
@@ -99,9 +131,9 @@ function showPage(pageId: string): void {
   for (const id in menuButtons) {
     const btn = menuButtons[id];
     if (id === pageId) {
-      btn.classList.add('menuButtonSelected');
+      btn.classList.add('menuBarButtonActive');
     } else {
-      btn.classList.remove('menuButtonSelected');
+      btn.classList.remove('menuBarButtonActive');
     }
   }
 }
@@ -122,7 +154,7 @@ function onHashChange(): void {
 function onResize(): void {
   const w = window.innerWidth;
 
-  const labels = Array.from(document.querySelectorAll('.menuButtonLabel'));
+  const labels = Array.from(document.querySelectorAll('.menuBarButtonLabel'));
   for (const label of labels) {
     (label as HTMLElement).style.display = (w < 1200) ? 'none' : 'inline';
   }

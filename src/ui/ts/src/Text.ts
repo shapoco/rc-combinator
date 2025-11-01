@@ -51,6 +51,7 @@ const texts: {[key: string]: {[key: string]: string}} = {
     'Capacitor Combination': '合成容量',
     'Current Limitting': '電流制限抵抗',
     'Voltage Divider': '分圧抵抗',
+    'Menu': 'メニュー',
   },
 };
 
