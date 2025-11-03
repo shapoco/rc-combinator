@@ -52,9 +52,8 @@ export class DividerFinderUi extends UiPages.UiPage {
       RcmbUi.makeP(
           '探索結果の誤差は、分圧比の目標値からの誤差として計算されます。'),
       RcmbUi.makeP(
-          '誤差の typ 値は、全ての素子の抵抗値の誤差がゼロのときの値です。誤差の min/max 値は、素子の誤差の min/max を元に計算されます。'),
-      RcmbUi.makeP(
-          '分圧比が 1/2 以外の場合、誤差の範囲はプラスとマイナスで非対称になることに注意してください。'),
+          '誤差の typ 値は、全ての素子の誤差がゼロのときの値です。' +
+          '誤差の min/max 値は、R1 と R2 の間の誤差の偏りが最悪のときの値です。'),
     ]);
 
     this.rangeSelector.setOnChange(() => this.conditionChanged());

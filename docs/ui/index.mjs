@@ -2082,7 +2082,7 @@ var CombinationFinderUi = class extends UiPage {
 			makeH2("誤差について (Tolerance)"),
 			makeP("探索結果の目標値からの誤差が e で、使用される素子の誤差が ±t の場合、最終的な誤差は (e × ±t) ＋ e±t となります。"),
 			makeP("例えば、探索結果の目標値からの誤差が 3% で、素子の誤差が ±5% の場合、最終的な誤差は (3±5.15)% となります。"),
-			makeP("直列・並列をどう組み合わせても誤差の範囲には影響しませんが、範囲内の誤差の分布は変化にします。")
+			makeP("トポロジーの複雑さは誤差の範囲の大小には影響しませんが、範囲内の誤差の分布は変化します。")
 		]);
 		this.rangeSelector.setOnChange(() => this.conditionChanged());
 		this.numElementsInput.setOnChange(() => this.conditionChanged());
@@ -2459,8 +2459,7 @@ var DividerFinderUi = class extends UiPage {
 			this.resultBox,
 			makeH2("誤差について (Tolerance)"),
 			makeP("探索結果の誤差は、分圧比の目標値からの誤差として計算されます。"),
-			makeP("誤差の typ 値は、全ての素子の抵抗値の誤差がゼロのときの値です。誤差の min/max 値は、素子の誤差の min/max を元に計算されます。"),
-			makeP("分圧比が 1/2 以外の場合、誤差の範囲はプラスとマイナスで非対称になることに注意してください。")
+			makeP("誤差の typ 値は、全ての素子の誤差がゼロのときの値です。誤差の min/max 値は、R1 と R2 の間の誤差の偏りが最悪のときの値です。")
 		]);
 		this.rangeSelector.setOnChange(() => this.conditionChanged());
 		this.numElementsInput.setOnChange(() => this.conditionChanged());

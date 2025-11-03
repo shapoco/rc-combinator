@@ -60,7 +60,7 @@ export class CombinationFinderUi extends UiPages.UiPage {
       RcmbUi.makeP(
           '例えば、探索結果の目標値からの誤差が 3% で、素子の誤差が ±5% の場合、最終的な誤差は (3±5.15)% となります。'),
       RcmbUi.makeP(
-          '直列・並列をどう組み合わせても誤差の範囲には影響しませんが、範囲内の誤差の分布は変化にします。'),
+          'トポロジーの複雑さは誤差の範囲の大小には影響しませんが、範囲内の誤差の分布は変化します。'),
     ]);
 
     this.rangeSelector.setOnChange(() => this.conditionChanged());
