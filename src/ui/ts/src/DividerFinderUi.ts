@@ -48,13 +48,13 @@ export class DividerFinderUi extends UiPages.UiPage {
       ]),
       this.statusBox,
       this.resultBox,
-      RcmbUi.makeH2('許容誤差について (Tolerance)'),
+      RcmbUi.makeH2('誤差について (Tolerance)'),
       RcmbUi.makeP(
-          '探索結果の目標値からの誤差が e で、使用される素子の誤差が ±t の場合、最終的な誤差は (e × ±t) ＋ e±t となります。'),
+          '探索結果の誤差は、分圧比の目標値からの誤差として計算されます。'),
       RcmbUi.makeP(
-          '例えば探索結果の目標値からの誤差が 3% で、素子の許容誤差が ±5% の場合、最終的な誤差は (3±5.15)% となります。'),
+          '誤差の typ 値は、全ての素子の抵抗値の誤差がゼロのときの値です。誤差の min/max 値は、素子の誤差の min/max を元に計算されます。'),
       RcmbUi.makeP(
-          '直列・並列をどう組み合わせても許容誤差の範囲には影響しません。分圧抵抗比の許容誤差も同様です。'),
+          '分圧比が 1/2 以外の場合、誤差の範囲はプラスとマイナスで非対称になることに注意してください。'),
     ]);
 
     this.rangeSelector.setOnChange(() => this.conditionChanged());
