@@ -7,12 +7,11 @@ import * as RcmbUi from './RcmbUi';
 import {getStr} from './Text';
 import * as UiPages from './UiPages';
 
-const commonSettingsUi = new RcmbUi.CommonSettingsUi();
 const homeUi = new HomeUi();
-const resCombFinderUi = new CombinationFinderUi(commonSettingsUi, false);
-const capCombFinderUi = new CombinationFinderUi(commonSettingsUi, true);
+const resCombFinderUi = new CombinationFinderUi(false);
+const capCombFinderUi = new CombinationFinderUi(true);
 const currLimitFinderUi = new CurrentLimitterFinderUi();
-const dividerFinderUi = new DividerFinderUi(commonSettingsUi);
+const dividerFinderUi = new DividerFinderUi();
 
 const pages: Record<string, UiPages.UiPage> = {
   home: homeUi,
@@ -116,6 +115,8 @@ export function main(
 
 function showPage(pageId: string): void {
   if (pageId && !(pageId in pages)) return;
+  const page = pages[pageId];
+
   if (currentPageId === pageId) return;
   currentPageId = pageId;
 
@@ -124,11 +125,11 @@ function showPage(pageId: string): void {
     document.title = defaultTitle;
   } else {
     window.location.hash = pageId;
-    document.title = `${pages[pageId].title} | ${defaultTitle}`;
+    document.title = `${page.title} | ${defaultTitle}`;
   }
 
   pageContainer.innerHTML = '';
-  pageContainer.appendChild(pages[pageId].ui!);
+  pageContainer.appendChild(page.ui!);
 
   for (const id in menuButtons) {
     const btn = menuButtons[id];
@@ -138,6 +139,8 @@ function showPage(pageId: string): void {
       btn.classList.remove('menuBarButtonActive');
     }
   }
+
+  page.onActivate();
 }
 
 function onHashChange(): void {

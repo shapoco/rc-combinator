@@ -10,19 +10,14 @@ declare interface RcmbWasm {
       (ident: string, returnType: string|null,
        argTypes: string[]|null) => (...args: any[]) => any;
   findCombinations:
-      (capacitor: boolean, values: VectorDouble, target_value: number,
-       max_elements: number, topology_constraint: number,
-       max_depth: number, filter: number) => string;
+      (capacitor: boolean, element_values: VectorDouble, max_elements: number,
+       topology_constraint: number, max_depth: number, target_value: number,
+       target_min: number, target_max: number) => string;
   findDividers:
-      (values: VectorDouble, target_ratio: number, total_min: number,
-       total_max: number, max_elements: number, topology_constraint: number,
-       max_depth: number, filter: number) => string;
+      (values: VectorDouble, max_elements: number, topology_constraint: number,
+       max_depth: number, total_min: number, total_max: number,
+       target_value: number, target_min: number, target_max: number) => string;
   VectorDouble: new() => VectorDouble;
-  //_malloc: (size: number) => number;
-  //_free: (ptr: number) => void;
-  // HEAPU8: Uint8Array;
-  // locateFile?: (path: string) => string;
-  // 必要に応じて他のプロパティを追加
 }
 declare function createRcmbWasm(moduleOverrides?: any): Promise<RcmbWasm>;
 

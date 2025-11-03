@@ -1,25 +1,27 @@
+import {WorkerCommand} from '../../../lib/ts/src/RcmbJS';
+
 export class WorkerAgent {
   urlPostfix = Math.floor(Date.now() / (60 * 1000)).toString();
 
   worker: Worker|null = null;
   workerRunning = false;
 
-  startRequestParams: any = {};
+  startRequestCommand: WorkerCommand|null = null;
   startRequestTimerId: number|null = null;
 
-  lastLaunchedParams: any = {};
+  lastLaunchedCommand: WorkerCommand|null = null;
 
-  onLaunched: ((p: any) => void)|null = null;
+  onLaunched: ((cmd: WorkerCommand) => void)|null = null;
   onFinished: ((e: any) => void)|null = null;
   onAborted: ((msg: string) => void)|null = null;
 
-  requestStart(p: any): boolean {
-    if (JSON.stringify(p) === JSON.stringify(this.startRequestParams)) {
+  requestStart(cmd: WorkerCommand): boolean {
+    if (JSON.stringify(cmd) === JSON.stringify(this.startRequestCommand)) {
       return this.workerRunning;
     }
 
     this.cancelRequest();
-    this.startRequestParams = p;
+    this.startRequestCommand = cmd;
     this.startRequestTimerId = window.setTimeout(async () => {
       this.startRequestTimerId = null;
       await this.startWorker();
@@ -51,13 +53,13 @@ export class WorkerAgent {
           this.onError('Message error in worker');
     }
 
-    this.lastLaunchedParams =
-        JSON.parse(JSON.stringify(this.startRequestParams));
-    this.worker.postMessage(this.startRequestParams);
+    const cmd = this.startRequestCommand!;
+    this.lastLaunchedCommand = JSON.parse(JSON.stringify(cmd));
+    this.worker.postMessage(cmd);
     this.workerRunning = true;
 
     if (this.onLaunched) {
-      this.onLaunched(this.lastLaunchedParams);
+      this.onLaunched(this.lastLaunchedCommand!);
     }
   }
 
@@ -79,7 +81,7 @@ export class WorkerAgent {
     this.workerRunning = false;
     if (this.onFinished) {
       let ret = e.data;
-      ret.params = this.lastLaunchedParams;
+      ret.command = this.lastLaunchedCommand;
       this.onFinished(ret);
     }
     if (this.startRequestTimerId !== null) {

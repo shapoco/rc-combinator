@@ -14,16 +14,15 @@ export class DividerFinderUi extends UiPages.UiPage {
   maxDepthInput = RcmbUi.makeDepthSelector();
   statusBox = RcmbUi.makeP();
   resultBox = RcmbUi.makeDiv();
-  totalMinBox = new RcmbUi.ValueBox('10k');
-  totalMaxBox = new RcmbUi.ValueBox('100k');
+  totalRangeBox = new RcmbUi.RangeBox(false, '10k', '100k');
   targetInput: RcmbUi.ValueBox|null = null;
-  filterSelector = new RcmbUi.FilterBox();
+  targetToleranceBox = new RcmbUi.RangeBox(true, -10, 10);
 
   workerAgent = new WorkerAgent();
 
   lastResult: any = null;
 
-  constructor(public commonSettingsUi: RcmbUi.CommonSettingsUi) {
+  constructor() {
     super(getStr('Voltage Divider'));
 
     this.rangeSelector = new RcmbUi.ValueRangeSelector(false);
@@ -31,37 +30,42 @@ export class DividerFinderUi extends UiPages.UiPage {
 
     this.ui = RcmbUi.makeDiv([
       RcmbUi.makeH2(getStr('Find Voltage Dividers')),
-      RcmbUi.makeP(`R1: ${getStr('Upper Resistor')}, R2: ${
-          getStr('Lower Resistor')}, Vout / Vin = R2 / (R1 + R2)`),
+      RcmbUi.makeP(
+          `R1: ${getStr('Upper Resistor')}, R2: ${getStr('Lower Resistor')}, ${
+              getStr('Voltage Ratio')}: Vout / Vin = R2 / (R1 + R2)`),
       RcmbUi.makeTable([
         [getStr('Item'), getStr('Value'), getStr('Unit')],
         [getStr('E Series'), this.rangeSelector.seriesSelect, ''],
-        [getStr('Custom Values'), this.rangeSelector.customValuesInput, 'Ω'],
-        [getStr('Minimum'), this.rangeSelector.minResisterInput.inputBox, 'Ω'],
-        [getStr('Maximum'), this.rangeSelector.maxResisterInput.inputBox, 'Ω'],
+        [getStr('Custom Values'), this.rangeSelector.customValuesBox, 'Ω'],
+        [getStr('Element Range'), this.rangeSelector.elementRangeBox.ui, 'Ω'],
+        [getStr('Element Tolerance'), this.rangeSelector.toleranceUi.ui, '%'],
         [getStr('Max Elements'), this.numElementsInput.inputBox, ''],
         [getStr('Top Topology'), this.topTopologySelector, ''],
         [getStr('Max Nests'), this.maxDepthInput, ''],
-        ['R1 + R2 (min)', this.totalMinBox.inputBox, 'Ω'],
-        ['R1 + R2 (max)', this.totalMaxBox.inputBox, 'Ω'],
-        [RcmbUi.strong('R2 / (R1 + R2)'), this.targetInput.inputBox, ''],
-        [getStr('Filter'), this.filterSelector.ui, ''],
+        ['R1 + R2', this.totalRangeBox.ui, 'Ω'],
+        [RcmbUi.strong(getStr('Target Ratio')), this.targetInput.inputBox, ''],
+        [getStr('Target Tolerance'), this.targetToleranceBox.ui, '%'],
       ]),
       this.statusBox,
       this.resultBox,
+      RcmbUi.makeH2('許容誤差について (Tolerance)'),
+      RcmbUi.makeP(
+          '探索結果の目標値からの誤差が e で、使用される素子の誤差が ±t の場合、最終的な誤差は (e × ±t) ＋ e±t となります。'),
+      RcmbUi.makeP(
+          '例えば探索結果の目標値からの誤差が 3% で、素子の許容誤差が ±5% の場合、最終的な誤差は (3±5.15)% となります。'),
+      RcmbUi.makeP(
+          '直列・並列をどう組み合わせても許容誤差の範囲には影響しません。分圧抵抗比の許容誤差も同様です。'),
     ]);
 
-    this.commonSettingsUi.onChanged.push(() => this.conditionChanged());
     this.rangeSelector.setOnChange(() => this.conditionChanged());
     this.numElementsInput.setOnChange(() => this.conditionChanged());
     this.topTopologySelector.addEventListener(
         'change', () => this.conditionChanged());
     this.maxDepthInput.addEventListener(
         'change', () => this.conditionChanged());
-    this.totalMinBox.setOnChange(() => this.conditionChanged());
-    this.totalMaxBox.setOnChange(() => this.conditionChanged());
+    this.totalRangeBox.addEventListener(() => this.conditionChanged());
     this.targetInput.setOnChange(() => this.conditionChanged());
-    this.filterSelector.setOnChange(() => this.conditionChanged());
+    this.targetToleranceBox.addEventListener(() => this.conditionChanged());
 
     this.workerAgent.onLaunched = (p) => this.onLaunched(p);
     this.workerAgent.onFinished = (e) => this.onFinished(e);
@@ -70,36 +74,43 @@ export class DividerFinderUi extends UiPages.UiPage {
     this.conditionChanged();
   }
 
+  override onActivate(): void {
+    this.targetInput?.focus();
+  }
+
   conditionChanged(): void {
     try {
       const rangeSelector = this.rangeSelector!;
       const custom = rangeSelector.seriesSelect.value === 'custom';
       RcmbUi.setVisible(
-          RcmbUi.parentTrOf(rangeSelector.customValuesInput)!, custom);
+          RcmbUi.parentTrOf(rangeSelector.customValuesBox)!, custom);
       RcmbUi.setVisible(
-          RcmbUi.parentTrOf(rangeSelector.minResisterInput.inputBox)!, !custom);
-      RcmbUi.setVisible(
-          RcmbUi.parentTrOf(rangeSelector.maxResisterInput.inputBox)!, !custom);
+          RcmbUi.parentTrOf(rangeSelector.elementRangeBox.ui)!, !custom);
 
-      const targetRatio = this.targetInput!.value;
+      const targetValue = this.targetInput!.value;
       const topoConstr =
           parseInt(this.topTopologySelector.value) as RcmbJS.TopologyConstraint
 
-      const p = {
-        useWasm: this.commonSettingsUi.useWasmCheckbox.checked,
-        method: RcmbJS.Method.FindDivider,
-        capacitor: false,
-        values: rangeSelector.getAvailableValues(targetRatio),
+      const args: RcmbJS.FindDividerArgs = {
+        elementValues: rangeSelector.getAvailableValues(targetValue),
         maxElements: this.numElementsInput.value,
+        elementTolMin: rangeSelector.toleranceUi.minValue / 100,
+        elementTolMax: rangeSelector.toleranceUi.maxValue / 100,
         topologyConstraint: topoConstr,
         maxDepth: parseInt(this.maxDepthInput.value),
-        totalMin: this.totalMinBox.value,
-        totalMax: this.totalMaxBox.value,
-        targetRatio: targetRatio,
-        filter: this.filterSelector.value,
+        totalMin: this.totalRangeBox.minValue,
+        totalMax: this.totalRangeBox.maxValue,
+        targetValue: targetValue,
+        targetMin: targetValue * (1 + this.targetToleranceBox.minValue / 100),
+        targetMax: targetValue * (1 + this.targetToleranceBox.maxValue / 100),
       };
 
-      if (!this.workerAgent.requestStart(p)) {
+      const cmd: RcmbJS.WorkerCommand = {
+        method: RcmbJS.Method.FindDivider,
+        args: args
+      };
+
+      if (!this.workerAgent.requestStart(cmd)) {
         this.showResult();
       }
     } catch (e) {
@@ -107,11 +118,12 @@ export class DividerFinderUi extends UiPages.UiPage {
     }
   }
 
-  onLaunched(p: any): void {
+  onLaunched(cmd: RcmbJS.WorkerCommand): void {
+    const args = cmd.args as RcmbJS.FindDividerArgs;
     this.statusBox.style.color = '';
     this.statusBox.innerHTML = '';
     const msg = `${getStr('Searching...')} (${
-        RcmbUi.formatValue(p.targetRatio, '', false)}):`;
+        RcmbUi.formatValue(args.targetValue, '', false)}):`;
     this.statusBox.appendChild(RcmbUi.makeIcon('⌛', true));
     this.statusBox.appendChild(document.createTextNode(' ' + msg));
     this.resultBox.style.opacity = '0.5';
@@ -155,8 +167,7 @@ export class DividerFinderUi extends UiPages.UiPage {
       this.statusBox.appendChild(document.createTextNode(msg));
 
       for (const combJson of ret.result) {
-        const resultUi =
-            new ResultUi(this.commonSettingsUi, ret.params, combJson);
+        const resultUi = new ResultUi(ret.command, combJson);
         this.resultBox.appendChild(resultUi.ui);
         this.resultBox.appendChild(document.createTextNode(' '));
       }
@@ -183,9 +194,7 @@ class ResultUi {
   canvas = document.createElement('canvas');
   ui = RcmbUi.makeDiv([this.buttons, this.canvas]);
 
-  constructor(
-      public commonSettingsUi: RcmbUi.CommonSettingsUi, public params: any,
-      combJson: any) {
+  constructor(public command: RcmbJS.WorkerCommand, combJson: any) {
     this.ui.className = 'figure';
 
     for (const upperJson of combJson.uppers) {
@@ -200,11 +209,11 @@ class ResultUi {
   }
 
   selectUpperLower(iUpper: number, iLower: number) {
+    const args = this.command.args as RcmbJS.FindDividerArgs;
     const upperTree = this.uppers[iUpper];
     const lowerTree = this.lowers[iLower];
     const totalValue = upperTree.value + lowerTree.value;
-    const resultRatio = lowerTree.value / totalValue;
-    const targetRatio = this.params.targetRatio as number;
+    const computedValue = lowerTree.value / totalValue;
     const tree = new Schematics.TreeNode(
         false, false, [upperTree, lowerTree], totalValue);
 
@@ -214,7 +223,7 @@ class ResultUi {
 
     const PADDING = 20;
     const TOP_PADDING = 20;
-    const CAPTION_HEIGHT = 80;
+    const CAPTION_HEIGHT = 100;
     const LEAD_LENGTH = 40 * Schematics.SCALE;
 
     tree.offset(-tree.x, -tree.y);
@@ -251,7 +260,7 @@ class ResultUi {
       const dx = PADDING + (FIGURE_PLACE_W - tree.width) / 2;
       const dy = PADDING + (FIGURE_PLACE_H - tree.height) / 2 + TOP_PADDING;
       ctx.translate(dx, dy);
-      tree.draw(ctx, this.commonSettingsUi.showColorCodeCheckbox.checked);
+      tree.draw(ctx, false);
       const y = tree.height / 2;
       const x0 = -LEAD_LENGTH;
       const x1 = 0;
@@ -262,36 +271,37 @@ class ResultUi {
       ctx.restore();
     }
 
+    let y = 0;
     ctx.save();
     ctx.translate(W / 2, H - PADDING - CAPTION_HEIGHT);
     ctx.fillStyle = '#000';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     {
-      const text = `R1 = ${RcmbUi.formatValue(upperTree.value, 'Ω')}, R2 = ${
-          RcmbUi.formatValue(lowerTree.value, 'Ω')}`;
+      const text =
+          `R1 = ${RcmbUi.formatValue(upperTree.value, 'Ω', true, 3)}, R2 = ${
+              RcmbUi.formatValue(lowerTree.value, 'Ω', true, 3)}`;
       ctx.font = `${16 * Schematics.SCALE}px sans-serif`;
-      ctx.fillText(text, 0, 0);
+      ctx.fillText(text, 0, y);
+      y += 16 + 10;
     }
     {
-      const text = `R2 / (R1 + R2) = ${RcmbUi.formatValue(resultRatio)}`;
+      const text = `R2 / (R1 + R2) = ${RcmbUi.formatValue(computedValue)}`;
       ctx.font = `${24 * Schematics.SCALE}px sans-serif`;
-      ctx.fillText(text, 0, 30);
+      ctx.fillText(text, 0, y);
+      y += 24 + 10;
     }
     {
-      let error = (resultRatio - targetRatio) / targetRatio;
-      // console.log(`resultRatio=${resultRatio}, targetRatio=${
-      // targetRatio}, error=${error}`);
-      let errorStr = getStr('No Error');
-      ctx.save();
-      if (Math.abs(error) > 1e-9) {
-        errorStr = `${getStr('Error')}: ${error > 0 ? '+' : ''}${
-            (error * 100).toFixed(6)}%`;
-        ctx.fillStyle = error > 0 ? '#c00' : '#00c';
-      }
-      ctx.font = `${16 * Schematics.SCALE}px sans-serif`;
-      ctx.fillText(`(${errorStr})`, 0, 60);
-      ctx.restore();
+      const lowerMin = lowerTree.value * (1 + args.elementTolMin);
+      const lowerMax = lowerTree.value * (1 + args.elementTolMax);
+      const upperMin = upperTree.value * (1 + args.elementTolMin);
+      const upperMax = upperTree.value * (1 + args.elementTolMax);
+      const typ = computedValue;
+      const min = lowerMin / (lowerMin + upperMax);
+      const max = lowerMax / (lowerMax + upperMin);
+      y = UiPages.drawErrorText(
+          ctx, y, typ, min, max, args.targetValue, args.targetMin,
+          args.targetMax);
     }
     ctx.restore();
   }

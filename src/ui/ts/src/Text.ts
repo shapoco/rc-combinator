@@ -52,6 +52,11 @@ const texts: {[key: string]: {[key: string]: string}} = {
     'Current Limitting Resistor': '電流制限抵抗',
     'Voltage Divider': '分圧抵抗',
     'Menu': 'メニュー',
+    'Element Range': '使用する範囲',
+    'Element Tolerance': '素子の許容誤差',
+    'Target Tolerance': '結果の許容誤差',
+    'Voltage Ratio': '電圧比',
+    'Target Ratio': '目標電圧比',
   },
 };
 

@@ -13,28 +13,26 @@
 
 using namespace rcmb;
 
-std::string findCombinations(bool capacitor, const std::vector<double>& values,
-                             double target_value, int max_elements,
-                             int topology_constraint, int max_depth,
-                             int filter) {
+std::string findCombinations(bool capacitor,
+                             const std::vector<double>& element_values,
+                             int max_elements, int topology_constraint,
+                             int max_depth, double target_value,
+                             double target_min, double target_max) {
   auto type = capacitor ? ComponentType::Capacitor : ComponentType::Resistor;
   std::vector<value_t> val_vec;
-  for (const auto& v : values) {
+  for (const auto& v : element_values) {
     val_vec.push_back(static_cast<value_t>(v));
   }
   ValueList value_list(val_vec);
 
-  value_t min = target_value / 2;
-  value_t max = target_value * 2;
-  ValueSearchOptions options(type, value_list, min, max, max_elements,
-                             target_value);
-  options.topology_constraint =
+  ValueSearchArgs args(type, value_list, max_elements, target_value, target_min,
+                       target_max);
+  args.topology_constraint =
       static_cast<topology_constraint_t>(topology_constraint);
-  options.max_depth = max_depth;
-  options.filter = static_cast<filter_t>(filter);
+  args.max_depth = max_depth;
 
   std::vector<Combination> combinations;
-  auto ret = rcmb::search_combinations(options, combinations);
+  auto ret = rcmb::search_combinations(args, combinations);
   if (ret != result_t::SUCCESS) {
     return std::string("{\"error\":\"") + result_to_string(ret) + "\"}";
   }
@@ -51,26 +49,25 @@ std::string findCombinations(bool capacitor, const std::vector<double>& values,
   return result;
 }
 
-std::string findDividers(const std::vector<double>& values, double target_ratio,
-                         double total_min, double total_max, int max_elements,
-                         int topology_constraint, int max_depth,
-                         int filter) {
+std::string findDividers(const std::vector<double>& element_values,
+                         int max_elements, int topology_constraint,
+                         int max_depth, double total_min, double total_max,
+                         double target_value, double target_min,
+                         double target_max) {
   std::vector<value_t> val_vec;
-  for (const auto& v : values) {
+  for (const auto& v : element_values) {
     val_vec.push_back(static_cast<value_t>(v));
   }
   ValueList value_list(val_vec);
 
-  DividerSearchOptions options(ComponentType::Resistor, value_list,
-                               target_ratio, total_min, total_max,
-                               max_elements);
-  options.topology_constraint =
+  DividerSearchArgs args(value_list, max_elements, total_min, total_max,
+                         target_value, target_min, target_max);
+  args.topology_constraint =
       static_cast<topology_constraint_t>(topology_constraint);
-  options.max_depth = max_depth;
-  options.filter = static_cast<filter_t>(filter);
+  args.max_depth = max_depth;
 
   std::vector<DoubleCombination> combinations;
-  auto ret = rcmb::search_dividers(options, combinations);
+  auto ret = rcmb::search_dividers(args, combinations);
   if (ret != result_t::SUCCESS) {
     return std::string("{\"error\":\"") + result_to_string(ret) + "\"}";
   }

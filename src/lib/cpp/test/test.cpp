@@ -86,6 +86,8 @@ void test_collect_topologies(bool parallel, std::vector<TestTopology>& topos,
                              const std::vector<int>& poses);
 
 int main(int argc, char** argv) {
+  auto t_start = std::chrono::high_resolution_clock::now();
+
   std::vector<value_t> K10 = {10000};
   std::vector<value_t> E3 = {100,    220,    470,    1000,  2200,
                              4700,   10000,  22000,  47000, 100000,
@@ -133,9 +135,10 @@ int main(int argc, char** argv) {
   }
 
   {
-    std::vector<value_t> targets = {0.01,      0.1, 0.2, 0.21, 0.3,  0.33,
-                                    1.0 / 3.0, 0.4, 0.5, 0.6,  0.66, 2.0 / 3.0,
-                                    0.7,       0.8, 0.9, 0.99};
+    std::vector<value_t> targets = {
+        0.01, 0.1, 0.2,  0.21,      0.3, 0.33, 1.0 / 3.0, 0.4,
+        0.5,  0.6, 0.66, 2.0 / 3.0, 0.7, 0.8,  0.9,       0.99,
+    };
 
     for (int max_elements = 2; max_elements <= 6; max_elements++) {
       RCCOMB_DEBUG_PRINT("Testing search_dividers: max_elements=%d\n",
@@ -152,17 +155,27 @@ int main(int argc, char** argv) {
     }
   }
 
+  auto t_elapsed = std::chrono::high_resolution_clock::now() - t_start;
+  auto ms =
+      std::chrono::duration_cast<std::chrono::milliseconds>(t_elapsed).count();
+  RCCOMB_DEBUG_PRINT("All tests passed. Elapsed time: %ld ms\n", ms);
+
   return 0;
 }
 
 bool test_search_combinations(ComponentType type, std::vector<value_t>& series,
                               int max_elements, value_t target) {
-  value_t min = target / 2;
-  value_t max = target * 2;
-  ValueSearchOptions options(type, series, min, max, max_elements, target);
+  const value_t elem_tol_min = -0.01;
+  const value_t elem_tol_max = 0.01;
+  value_t target_min = target * 0.5;
+  value_t target_max = target * 1.5;
+
+  ValueList value_list(series);
+  ValueSearchArgs vsa(type, value_list, elem_tol_min, elem_tol_max,
+                      max_elements, target, target_min, target_max);
 
   std::vector<Combination> dut_combs;
-  result_t ret = search_combinations(options, dut_combs);
+  result_t ret = search_combinations(vsa, dut_combs);
   if (ret != result_t::SUCCESS) {
     printf("Error: %s\n", result_to_string(ret));
     return false;
@@ -270,11 +283,18 @@ bool test_search_combinations(ComponentType type, std::vector<value_t>& series,
 
 bool test_search_dividers(std::vector<value_t>& series, int max_elements,
                           value_t target) {
-  DividerSearchOptions options(ComponentType::Resistor, series, target, 10000,
-                               100000, max_elements);
+  const value_t elem_tol_min = -0.01;
+  const value_t elem_tol_max = 0.01;
+  const value_t total_min = 10000;
+  const value_t total_max = 100000;
+  const value_t target_min = target * 0.5;
+  const value_t target_max = target * 1.5;
+  ValueList value_list(series);
+  DividerSearchArgs dsa(value_list, elem_tol_min, elem_tol_max, max_elements,
+                        total_min, total_max, target, target_min, target_max);
   auto start = std::chrono::high_resolution_clock::now();
   std::vector<DoubleCombination> dividers;
-  result_t ret = search_dividers(options, dividers);
+  result_t ret = search_dividers(dsa, dividers);
   if (ret != result_t::SUCCESS) {
     RCCOMB_DEBUG_PRINT("Error: %s\n", result_to_string(ret));
     return false;
@@ -282,13 +302,27 @@ bool test_search_dividers(std::vector<value_t>& series, int max_elements,
 
   bool success = true;
 
-  value_t result = dividers[0]->ratio;
-  value_t error = std::abs(result - target);
-  if (std::abs(result - target) > 0.5) {
+  if (dividers.empty()) {
     RCCOMB_DEBUG_PRINT(
-        "Divider test failed: target=%.9f, result=%.9f, error=%.9f\n", target,
-        result, error);
+        "Divider test failed: no result found for target=%.9lf\n", target);
     success = false;
+  } else {
+    value_t result = dividers[0]->ratio;
+    value_t error = std::abs(result - target);
+    if (target < total_min - 1e9 || total_max + 1e9 < result) {
+      RCCOMB_DEBUG_PRINT(
+          "Divider test failed: target=%.9lf, result=%.9lf, error=%.9lf\n",
+          target, result, error);
+      success = false;
+    }
+    value_t total =
+        dividers[0]->uppers[0]->value + dividers[0]->lowers[0]->value;
+    if (total < total_min - 1e9 || total_max + 1e9 < total) {
+      RCCOMB_DEBUG_PRINT(
+          "Divider test failed: target=%.9lf, total=%.9lf, error=%.9lf\n",
+          target, total, error);
+      success = false;
+    }
   }
 
   if (!success) {
@@ -301,7 +335,7 @@ bool test_search_dividers(std::vector<value_t>& series, int max_elements,
     RCCOMB_DEBUG_PRINT("Search took %.2f ms\n", duration.count());
   }
 
-  return true;
+  return success;
 }
 
 TestCombination test_calc_value(bool bake, ComponentType type,
@@ -428,8 +462,8 @@ std::vector<TestTopology>& test_get_topology(bool parallel, int n) {
     }
   }
 
-  RCCOMB_DEBUG_PRINT("Generated %d topologies for n=%d, parallel=%d\n",
-                     static_cast<int>(result.size()), n, parallel ? 1 : 0);
+  // RCCOMB_DEBUG_PRINT("Generated %d topologies for n=%d, parallel=%d\n",
+  //                    static_cast<int>(result.size()), n, parallel ? 1 : 0);
   topologies[key] = result;
   return topologies[key];
 }

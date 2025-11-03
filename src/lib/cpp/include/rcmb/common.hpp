@@ -84,8 +84,6 @@ inline bool value_is_valid(value_t v) {
   return 0 < v && v < VALUE_POSITIVE_INFINITY;
 }
 
-using hash_t = uint32_t;
-
 extern uint32_t next_object_id;
 inline uint32_t generate_object_id() { return next_object_id++; }
 
@@ -94,22 +92,6 @@ static inline std::vector<value_t> sort_values(
   std::vector<value_t> sorted_values = values;
   std::sort(sorted_values.begin(), sorted_values.end());
   return sorted_values;
-}
-
-hash_t crc32_add_u8(hash_t h, uint8_t data);
-
-static inline hash_t crc32_add_u16(hash_t h, uint16_t data) {
-  h = crc32_add_u8(h, static_cast<uint8_t>(data & 0xFF));
-  h = crc32_add_u8(h, static_cast<uint8_t>((data >> 8) & 0xFF));
-  return h;
-}
-
-static inline hash_t crc32_add_u32(hash_t h, uint32_t data) {
-  h = crc32_add_u8(h, static_cast<uint8_t>(data & 0xFF));
-  h = crc32_add_u8(h, static_cast<uint8_t>((data >> 8) & 0xFF));
-  h = crc32_add_u8(h, static_cast<uint8_t>((data >> 16) & 0xFF));
-  h = crc32_add_u8(h, static_cast<uint8_t>((data >> 24) & 0xFF));
-  return h;
 }
 
 value_t pow10(int exp);
@@ -121,18 +103,6 @@ std::string value_to_json_string(value_t value);
 uint32_t next_object_id = 1;
 
 static constexpr uint32_t POLY = 0xEDB88320;
-
-hash_t crc32_add_u8(hash_t h, uint8_t data) {
-  for (int i = 0; i < 8; ++i) {
-    bool bit = ((data >> i) & 1) != 0;
-    bool lsb = (h & 1) != 0;
-    h >>= 1;
-    if (lsb ^ bit) {
-      h ^= POLY;
-    }
-  }
-  return h;
-}
 
 value_t pow10(int exp) {
   bool neg = exp < 0;

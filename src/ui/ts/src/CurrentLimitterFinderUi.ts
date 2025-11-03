@@ -9,7 +9,7 @@ export class CurrentLimitterFinderUi extends UiPages.UiPage {
   powerVoltageInput = new RcmbUi.ValueBox('3.3');
   forwardVoltageInput = new RcmbUi.ValueBox('2');
   forwardCurrentInput = new RcmbUi.ValueBox('1m');
-  filterSelector = new RcmbUi.FilterBox();
+  targetToleranceBox = new RcmbUi.RangeBox(true, -50, 50);
   resultBox = RcmbUi.makeDiv();
 
   constructor() {
@@ -25,7 +25,7 @@ export class CurrentLimitterFinderUi extends UiPages.UiPage {
           RcmbUi.strong(getStr('Target Current')),
           this.forwardCurrentInput.inputBox, 'A'
         ],
-        [getStr('Filter'), this.filterSelector.ui, ''],
+        [getStr('Target Tolerance'), this.targetToleranceBox.ui, '%'],
       ]),
       RcmbUi.makeP('結果:'),
       this.resultBox,
@@ -34,8 +34,12 @@ export class CurrentLimitterFinderUi extends UiPages.UiPage {
     this.powerVoltageInput.setOnChange(() => this.conditionChanged());
     this.forwardVoltageInput.setOnChange(() => this.conditionChanged());
     this.forwardCurrentInput.setOnChange(() => this.conditionChanged());
-    this.filterSelector.setOnChange(() => this.conditionChanged());
+    this.targetToleranceBox.addEventListener(() => this.conditionChanged());
     this.conditionChanged();
+  }
+
+  override onActivate(): void {
+    this.forwardCurrentInput?.focus();
   }
 
   conditionChanged() {
@@ -58,22 +62,24 @@ export class CurrentLimitterFinderUi extends UiPages.UiPage {
         },
       ];
 
+      const epsilon = iF * 1e-6;
+
+      const tolP = this.targetToleranceBox.maxValue / 100;
+      const tolN = this.targetToleranceBox.minValue / 100;
+      const iFMin = iF * (1 + tolN) - epsilon;
+      const iFMax = iF * (1 + tolP) + epsilon;
+
       let rLast = 0;
       for (const seriesName in Series.Serieses) {
         const series = Series.makeAvaiableValues(seriesName);
-        const filter = this.filterSelector.value;
 
         let rApprox = NaN;
         {
-          const epsilon = iF * 1e-6;
           let bestDiff = Number.MAX_VALUE;
           for (const r of series) {
             const i = (vCC - vF) / r;
 
-            if ((filter & RcmbJS.Filter.Below) === 0 && (i < iF - epsilon)) {
-              continue;
-            }
-            if ((filter & RcmbJS.Filter.Above) === 0 && (i > iF + epsilon)) {
+            if (i < iFMin || iFMax < i) {
               continue;
             }
 

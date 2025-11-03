@@ -1,4 +1,4 @@
-import * as Calc from './Calc';
+import * as Expr from './Expr';
 
 export const Serieses: Record<string, number[]> = {
   'E1': [100],
@@ -84,7 +84,7 @@ export function makeAvaiableValues(
   }
   const values = [];
   for (let exp = -11; exp <= 15; exp++) {
-    const multiplier = Calc.pow10(exp - 3);
+    const multiplier = Expr.pow10(exp - 3);
     for (const base of baseValues) {
       const value = base * multiplier;
       const epsilon = value / 1e6;

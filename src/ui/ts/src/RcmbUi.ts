@@ -1,62 +1,50 @@
 import * as RcmbJS from '../../../lib/ts/src/RcmbJS';
 
-import * as Calc from './Calc';
+import * as Expr from './Expr';
 import * as Series from './Series';
 import {getStr} from './Text';
 
-export class CommonSettingsUi {
-  useWasmCheckbox = makeCheckbox(getStr('Use WebAssembly'), true);
-  showColorCodeCheckbox = makeCheckbox(getStr('Show Color Code'), false);
-  ui = makeDiv(
-      [
-        document.createElement('hr'),
-        this.useWasmCheckbox.parentNode as HTMLLabelElement,
-        //' | ',
-        // this.showColorCodeCheckbox.parentNode as HTMLLabelElement,
-      ],
-      null, true);
-  onChanged: (() => void)[] = [];
-
-  constructor() {
-    this.useWasmCheckbox.addEventListener('change', () => {
-      this.onChanged.forEach(callback => callback());
-    });
-    // this.showColorCodeCheckbox.addEventListener('change', () => {
-    //   this.onChanged.forEach(callback => callback());
-    // });
-  }
-}
+const PREFIXES = [
+  {exp: -12, prefix: 'p', max: false},
+  {exp: -9, prefix: 'n', max: false},
+  {exp: -6, prefix: 'μ', max: false},
+  {exp: -3, prefix: 'm', max: false},
+  {exp: 0, prefix: '', max: false},
+  {exp: 3, prefix: 'k', max: false},
+  {exp: 6, prefix: 'M', max: false},
+  {exp: 9, prefix: 'G', max: false},
+  {exp: 12, prefix: 'T', max: true},
+];
 
 export class ValueRangeSelector {
   seriesSelect = makeSeriesSelector();
-  customValuesInput = document.createElement('textarea') as HTMLTextAreaElement;
-  minResisterInput = new ValueBox();
-  maxResisterInput = new ValueBox();
+  customValuesBox = document.createElement('textarea') as HTMLTextAreaElement;
+  elementRangeBox = new RangeBox();
+  toleranceUi = new RangeBox(true);
 
   constructor(public capacitor: boolean) {
     if (capacitor) {
-      this.customValuesInput.value = '1n, 10n, 100n';
-      this.customValuesInput.placeholder = 'e.g.\n1n, 10n, 100n';
-      this.minResisterInput.inputBox.value = '100p';
-      this.maxResisterInput.inputBox.value = '100u';
+      this.customValuesBox.value = '1n, 10n, 100n';
+      this.customValuesBox.placeholder = 'e.g.\n1n, 10n, 100n';
+      this.elementRangeBox.setDefaultValue('100p', '100u', true);
+      this.toleranceUi.setDefaultValue(-10, 10);
     } else {
-      this.customValuesInput.value = '100, 1k, 10k';
-      this.customValuesInput.placeholder = 'e.g.\n100, 1k, 10k';
-      this.minResisterInput.inputBox.value = '100';
-      this.maxResisterInput.inputBox.value = '1M';
+      this.customValuesBox.value = '100, 1k, 10k';
+      this.customValuesBox.placeholder = 'e.g.\n100, 1k, 10k';
+      this.elementRangeBox.setDefaultValue('100', '1M', true);
+      this.toleranceUi.setDefaultValue(-1, 1);
     }
-    this.customValuesInput.disabled = true;
   }
 
   getAvailableValues(targetValue: number) {
     const series = this.seriesSelect.value;
     if (series === 'custom') {
-      const valueStrs = this.customValuesInput.value.split(',');
+      const valueStrs = this.customValuesBox.value.split(',');
       const values: number[] = [];
       for (let str of valueStrs) {
         str = str.trim();
         if (str === '') continue;
-        const val = Calc.evalExpr(str);
+        const val = Expr.evalExpr(str);
         if (!isNaN(val) && !values.includes(val)) {
           values.push(val);
         }
@@ -65,28 +53,99 @@ export class ValueRangeSelector {
     } else {
       const defaultMin = Math.max(1e-12, targetValue / 100);
       const defaultMax = Math.min(1e15, targetValue * 100);
-      this.minResisterInput.inputBox.placeholder =
-          `(${formatValue(defaultMin, '', true)})`;
-      this.maxResisterInput.inputBox.placeholder =
-          `(${formatValue(defaultMax, '', true)})`;
-      const minValue = this.minResisterInput.value;
-      const maxValue = this.maxResisterInput.value;
+      this.elementRangeBox.setDefaultValue(
+          `(${formatValue(defaultMin, '', true)})`,
+          `(${formatValue(defaultMax, '', true)})`);
+      const minValue = this.elementRangeBox.minValue;
+      const maxValue = this.elementRangeBox.maxValue;
       return Series.makeAvaiableValues(series, minValue, maxValue);
     }
   }
 
   setOnChange(callback: () => void) {
     this.seriesSelect.addEventListener('change', () => {
-      const custom = this.seriesSelect.value === 'custom';
-      this.customValuesInput.disabled = !custom;
-      this.minResisterInput.inputBox.disabled = custom;
-      this.maxResisterInput.inputBox.disabled = custom;
+      // const custom = this.seriesSelect.value === 'custom';
+      // this.customValuesInput.disabled = !custom;
+      // this.minResisterInput.inputBox.disabled = custom;
+      // this.maxResisterInput.inputBox.disabled = custom;
       callback();
     });
-    this.customValuesInput.addEventListener('input', () => callback());
-    this.customValuesInput.addEventListener('change', () => callback());
-    this.minResisterInput.setOnChange(callback);
-    this.maxResisterInput.setOnChange(callback);
+    this.customValuesBox.addEventListener('input', () => callback());
+    this.customValuesBox.addEventListener('change', () => callback());
+    this.elementRangeBox.addEventListener(() => callback());
+    this.toleranceUi.addEventListener(callback);
+  }
+}
+
+export class RangeBox {
+  minBox = new ValueBox();
+  hyphen = makeSpan('-');
+  maxBox = new ValueBox();
+  ui = makeSpan([
+    this.minBox.inputBox,
+    this.hyphen,
+    this.maxBox.inputBox,
+  ]);
+
+  callbacks: (() => void)[] = [];
+
+  constructor(
+      public symmetric: boolean = false, public defaultMin: number|string = 0,
+      public defaultMax: number|string = 100) {
+    this.updatePlaceholders();
+    this.minBox.inputBox.style.width = '55px';
+    this.maxBox.inputBox.style.width = '55px';
+    this.hyphen.style.display = 'inline-block';
+    this.hyphen.style.width = '15px';
+    this.hyphen.style.textAlign = 'center';
+    this.ui.style.whiteSpace = 'nowrap';
+  }
+
+  setDefaultValue(
+      min: number|string, max: number|string, setAsValue: boolean = false) {
+    this.defaultMin = min;
+    this.defaultMax = max;
+    if (setAsValue) {
+      this.minBox.inputBox.value = min.toString();
+      this.maxBox.inputBox.value = max.toString();
+    }
+    this.updatePlaceholders();
+  }
+
+  addEventListener(callback: () => void) {
+    this.callbacks.push(callback);
+    this.maxBox.setOnChange(() => this.onChange());
+    this.minBox.setOnChange(() => this.onChange());
+  }
+
+  onChange() {
+    this.updatePlaceholders();
+    this.callbacks.forEach(cb => cb());
+  }
+
+  updatePlaceholders() {
+    if (this.maxBox.empty && this.minBox.empty) {
+      this.maxBox.placeholder = this.defaultMax.toString();
+      this.minBox.placeholder = this.defaultMin.toString();
+    } else if (this.maxBox.empty) {
+      this.maxBox.placeholder = this.symmetric ?
+          (-this.minBox.value).toString() :
+          this.defaultMax.toString();
+    } else if (this.minBox.empty) {
+      this.minBox.placeholder = this.symmetric ?
+          (-this.maxBox.value).toString() :
+          this.defaultMin.toString();
+    }
+  }
+
+  get minValue(): number {
+    this.updatePlaceholders();
+    return this.minBox.value;
+  }
+
+  get maxValue(): number {
+    this.updatePlaceholders();
+    return this.maxBox.value;
   }
 }
 
@@ -104,12 +163,15 @@ export class IntegerBox {
     if (value !== null) {
       this.inputBox.value = value.toString();
     }
+    this.inputBox.addEventListener('focus', () => {
+      this.inputBox.select();
+    });
   }
 
   get value() {
     let text = this.inputBox.value.trim();
     if (text !== '') {
-      return Math.floor(Calc.evalExpr(text));
+      return Math.floor(Expr.evalExpr(text));
     } else {
       return this.defaultValue;
     }
@@ -135,13 +197,21 @@ export class ValueBox {
   inputBox = document.createElement('input');
   onChangeCallback: () => void = () => {};
 
-  constructor(value: string|null = null) {
+  constructor(value: string|null = null, placeholder: string = '') {
     // PC では IME をオフにするため 'tel' にする
     this.inputBox.type = isMobile ? 'text' : 'tel';
     if (value) {
       this.inputBox.value = value;
       this.onChange();
     }
+    this.inputBox.placeholder = placeholder;
+    this.inputBox.addEventListener('focus', () => {
+      this.inputBox.select();
+    });
+  }
+
+  get empty(): boolean {
+    return this.inputBox.value.trim() === '';
   }
 
   get value() {
@@ -149,7 +219,18 @@ export class ValueBox {
     if (text === '') {
       text = this.inputBox.placeholder.trim();
     }
-    return Calc.evalExpr(text);
+    return Expr.evalExpr(text);
+  }
+
+  get placeholder(): string {
+    return this.inputBox.placeholder;
+  }
+  set placeholder(v: string) {
+    const old = this.inputBox.placeholder;
+    this.inputBox.placeholder = v;
+    if (this.empty && old !== v) {
+      this.onChange();
+    }
   }
 
   setOnChange(callback: () => void) {
@@ -166,59 +247,9 @@ export class ValueBox {
     }
     this.onChangeCallback();
   }
-}
 
-export class FilterBox {
-  /*
-  aboveCheckbox = makeCheckbox('＞' + getStr('Target'), true);
-  belowCheckbox = makeCheckbox('＜' + getStr('Target'), true);
-  ui = makeSpan([
-    this.aboveCheckbox.parentNode as HTMLLabelElement,
-    makeBr(),
-    this.belowCheckbox.parentNode as HTMLLabelElement,
-  ]);*/
-  selector = makeSelectBox(
-      [
-        {value: RcmbJS.Filter.Exact.toString(), label: getStr('Exact')},
-        {value: RcmbJS.Filter.Below.toString(), label: getStr('Below')},
-        {value: RcmbJS.Filter.Above.toString(), label: getStr('Above')},
-        {value: RcmbJS.Filter.Nearest.toString(), label: getStr('Nearest')},
-      ],
-      RcmbJS.Filter.Nearest.toString())
-  ui = this.selector;
-
-  callbacks: (() => void)[] = [];
-
-  constructor() {
-    /*
-    this.aboveCheckbox.addEventListener('change', () => {
-      this.callbacks.forEach(cb => cb());
-    });
-    this.belowCheckbox.addEventListener('change', () => {
-      this.callbacks.forEach(cb => cb());
-    });*/
-    this.selector.addEventListener('change', () => {
-      this.callbacks.forEach(cb => cb());
-    });
-  }
-
-  setOnChange(callback: () => void) {
-    this.callbacks.push(callback);
-  }
-
-  get value(): RcmbJS.Filter {
-    /*const above = this.aboveCheckbox.checked;
-    const below = this.belowCheckbox.checked;
-    if (above && below) {
-      return RcmbJS.Filter.Nearest;
-    } else if (above) {
-      return RcmbJS.Filter.Above;
-    } else if (below) {
-      return RcmbJS.Filter.Below;
-    } else {
-      return RcmbJS.Filter.Exact;
-    }*/
-    return parseInt(this.selector.value) as RcmbJS.Filter;
+  focus() {
+    this.inputBox.focus();
   }
 }
 
@@ -458,60 +489,52 @@ export function setVisible(elem: HTMLElement, visible: boolean): HTMLElement {
   return visible ? show(elem) : hide(elem);
 }
 
+export function formatError(value: number) {
+  if (-1e-18 < value && value < 1e-18) {
+    return '0%';
+  } else {
+    const sign = (value >= 0) ? '+' : '';
+    return `${sign}${formatValue(value * 100, '', false, 2)}%`;
+  }
+}
 
 export function formatValue(
-    value: number, unit: string = '', usePrefix: boolean|null = null): string {
+    value: number, unit: string = '', usePrefix: boolean|null = null,
+    digits: number = 6): string {
   if (!isFinite(value) || isNaN(value)) {
     return 'NaN';
   }
+
+  const neg = value < 0;
+  value = Math.abs(value);
 
   if (usePrefix === null) {
     usePrefix = unit !== '';
   }
 
-  const exp = Math.floor(Math.log10(Math.abs(value)) + 1e-6);
+  let exp = Math.floor(Math.log10(Math.abs(value)) + 1e-6);
 
   let prefix = '';
   if (usePrefix) {
-    if (exp >= 12) {
-      value /= 1e12;
-      prefix = 'T';
-    } else if (exp >= 9) {
-      value /= 1e9;
-      prefix = 'G';
-    } else if (exp >= 6) {
-      value /= 1e6;
-      prefix = 'M';
-    } else if (exp >= 3) {
-      value /= 1e3;
-      prefix = 'k';
-    } else if (exp >= 0) {
-      prefix = '';
-    } else if (exp >= -3) {
-      value *= 1e3;
-      prefix = 'm';
-    } else if (exp >= -6) {
-      value *= 1e6;
-      prefix = 'μ';
-    } else if (exp >= -9) {
-      value *= 1e9;
-      prefix = 'n';
-    } else if (exp >= -12) {
-      value *= 1e12;
-      prefix = 'p';
+    for (const p of PREFIXES) {
+      if (exp < p.exp + 3 || p.max) {
+        value /= Expr.pow10(p.exp);
+        exp -= p.exp;
+        prefix = p.prefix;
+        break;
+      }
     }
   }
 
-  const minDigits = 6;
-
-  value = Math.round(value * Calc.pow10(minDigits));
-  let s = '';
-  while (s.length <= (minDigits + 1) || value > 0) {
-    const digit = value % 10;
-    value = Math.floor(value / 10);
-    s = digit.toString() + s;
-    if (s.length === minDigits) s = '.' + s;
+  if (exp < -digits) {
+    digits -= exp;
   }
-  s = s.replace(/\.?0+$/, '');
+  digits = Math.min(5, Math.max(0, digits));
+
+  let s = neg ? '-' : '';
+  s += value.toFixed(digits);
+  s = s.replace(/0+$/, '');
+  s = s.replace(/\.$/, '.0');
+
   return `${s} ${prefix}${unit}`.trim();
 }

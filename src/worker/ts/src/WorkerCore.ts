@@ -13,73 +13,49 @@ const thisWorker = self as DedicatedWorkerGlobalScope;
 
 // onmessage
 thisWorker.onmessage = async (e: MessageEvent<any>) => {
-  const args = e.data;
-  const useWasm = args.useWasm as boolean;
-  if (useWasm) {
-    if (!wasmCore) {
-      console.log('Loading WASM module...');
-      wasmCore = (await createRcmbWasm()) as RcmbWasm.RcmbWasm;
-      console.log('WASM module loaded.');
-    }
-  }
-
-  const capacitor = args.capacitor as boolean;
-  const method = args.method as RcmbJS.Method;
-  const values = args.values as number[];
-  const maxElements = args.maxElements as number;
-  const topologyConstraint =
-      args.topologyConstraint as RcmbJS.TopologyConstraint;
-  const maxDepth = args.maxDepth as number;
-  const filter = args.filter as RcmbJS.Filter;
-
   let ret = {
     error: '',
     result: [],
     timeSpent: 0,
   };
 
-  const start = performance.now();
+  const cmd = e.data;
+  const method = cmd.method as RcmbJS.Method;
 
+  if (!wasmCore) {
+    console.log('Loading WASM module...');
+    wasmCore = (await createRcmbWasm()) as RcmbWasm.RcmbWasm;
+    console.log('WASM module loaded.');
+  }
+
+  const start = performance.now();
   switch (method) {
     case RcmbJS.Method.FindCombination: {
-      const targetValue = args.targetValue as number;
-      if (useWasm) {
-        const vec = new wasmCore!.VectorDouble();
-        for (const v of values) {
-          vec.push_back(v);
-        }
-        const retStr = wasmCore!.findCombinations(
-            capacitor, vec, targetValue, maxElements, topologyConstraint,
-            maxDepth, filter);
-        vec.delete();
-        ret = JSON.parse(retStr);
-      } else {
-        ret = RcmbJS.findCombinations(
-            capacitor, values, targetValue, maxElements, topologyConstraint,
-            maxDepth, filter);
+      const args = cmd.args as RcmbJS.FindCombinationArgs;
+      const elementValues = new wasmCore!.VectorDouble();
+      for (const v of args.elementValues) {
+        elementValues.push_back(v);
       }
+      const retStr = wasmCore!.findCombinations(
+          args.capacitor, elementValues, args.maxElements,
+          args.topologyConstraint, args.maxDepth, args.targetValue,
+          args.targetMin, args.targetMax);
+      elementValues.delete();
+      ret = JSON.parse(retStr);
     } break;
 
     case RcmbJS.Method.FindDivider: {
-      const targetRatio = args.targetRatio as number;
-      const totalMin = args.totalMin as number;
-      const totalMax = args.totalMax as number;
-      if (useWasm) {
-        const vec = new wasmCore!.VectorDouble();
-        for (const v of values) {
-          vec.push_back(v);
-        }
-        const retStr = wasmCore!.findDividers(
-            vec, targetRatio, totalMin, totalMax, maxElements,
-            topologyConstraint, maxDepth, filter);
-        vec.delete();
-        ret = JSON.parse(retStr);
+      const args = cmd.args as RcmbJS.FindDividerArgs;
+      const elementValues = new wasmCore!.VectorDouble();
+      for (const v of args.elementValues) {
+        elementValues.push_back(v);
       }
-      else {
-        ret = RcmbJS.findDividers(
-            values, targetRatio, totalMin, totalMax, maxElements,
-            topologyConstraint, maxDepth, filter);
-      }
+      const retStr = wasmCore!.findDividers(
+          elementValues, args.maxElements, args.topologyConstraint,
+          args.maxDepth, args.totalMin, args.totalMax, args.targetValue,
+          args.targetMin, args.targetMax);
+      elementValues.delete();
+      ret = JSON.parse(retStr);
     } break;
 
     default:

@@ -95,7 +95,7 @@ bool CombinationClass::is_normalized() const {
   for (size_t i = 1; i < children.size(); i++) {
     const auto &prev = children[i - 1];
     const auto &curr = children[i];
-    if (prev->topology->hash == curr->topology->hash) {
+    if (prev->topology->id == curr->topology->id) {
       if (prev->value + epsilon < curr->value) {
         return false;
       }

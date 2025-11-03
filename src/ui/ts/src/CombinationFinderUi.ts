@@ -15,36 +15,28 @@ export class CombinationFinderUi extends UiPages.UiPage {
   statusBox = RcmbUi.makeP();
   resultBox = RcmbUi.makeDiv();
   targetInput: RcmbUi.ValueBox|null = null;
-  filterSelector = new RcmbUi.FilterBox();
+  targetToleranceBox = new RcmbUi.RangeBox(true);
+
   unit: string = '';
 
   workerAgent = new WorkerAgent();
 
   lastResult: any = null;
 
-  constructor(
-      public commonSettingsUi: RcmbUi.CommonSettingsUi,
-      public capacitor: boolean) {
+  constructor(public capacitor: boolean) {
     super(getStr((capacitor ? 'Capacitor' : 'Resistor') + ' Combination'));
 
     this.unit = capacitor ? 'F' : 'Ω';
     this.rangeSelector = new RcmbUi.ValueRangeSelector(capacitor);
     this.targetInput = new RcmbUi.ValueBox(capacitor ? '3.14μ' : '5.1k');
+    this.targetToleranceBox.setDefaultValue(-50, 50)
 
     const paramTable = RcmbUi.makeTable([
       [getStr('Item'), getStr('Value'), getStr('Unit')],
       [getStr('E Series'), this.rangeSelector.seriesSelect, ''],
-      [
-        getStr('Custom Values'), this.rangeSelector.customValuesInput, this.unit
-      ],
-      [
-        getStr('Minimum'), this.rangeSelector.minResisterInput.inputBox,
-        this.unit
-      ],
-      [
-        getStr('Maximum'), this.rangeSelector.maxResisterInput.inputBox,
-        this.unit
-      ],
+      [getStr('Custom Values'), this.rangeSelector.customValuesBox, this.unit],
+      [getStr('Element Range'), this.rangeSelector.elementRangeBox.ui, 'Ω'],
+      [getStr('Element Tolerance'), this.rangeSelector.toleranceUi.ui, '%'],
       [getStr('Max Elements'), this.numElementsInput.inputBox, ''],
       [getStr('Top Topology'), this.topTopologySelector, ''],
       [getStr('Max Nests'), this.maxDepthInput, ''],
@@ -52,10 +44,8 @@ export class CombinationFinderUi extends UiPages.UiPage {
         RcmbUi.strong(getStr('Target Value')), this.targetInput.inputBox,
         this.unit
       ],
-      [getStr('Filter'), this.filterSelector.ui, ''],
+      [getStr('Target Tolerance'), this.targetToleranceBox.ui, '%'],
     ]);
-    //paramTable.style.marginLeft = 'auto';
-    //paramTable.style.marginRight = 'auto';
 
     this.ui = RcmbUi.makeDiv([
       RcmbUi.makeH2(
@@ -64,9 +54,15 @@ export class CombinationFinderUi extends UiPages.UiPage {
       paramTable,
       this.statusBox,
       this.resultBox,
+      RcmbUi.makeH2('許容誤差について (Tolerance)'),
+      RcmbUi.makeP(
+          '探索結果の目標値からの誤差が e で、使用される素子の誤差が ±t の場合、最終的な誤差は (e × ±t) ＋ e±t となります。'),
+      RcmbUi.makeP(
+          '例えば探索結果の目標値からの誤差が 3% で、素子の許容誤差が ±5% の場合、最終的な誤差は (3±5.15)% となります。'),
+      RcmbUi.makeP(
+          '直列・並列をどう組み合わせても許容誤差の範囲には影響しません。'),
     ]);
 
-    this.commonSettingsUi.onChanged.push(() => this.conditionChanged());
     this.rangeSelector.setOnChange(() => this.conditionChanged());
     this.numElementsInput.setOnChange(() => this.conditionChanged());
     this.topTopologySelector.addEventListener(
@@ -74,7 +70,7 @@ export class CombinationFinderUi extends UiPages.UiPage {
     this.maxDepthInput.addEventListener(
         'change', () => this.conditionChanged());
     this.targetInput.setOnChange(() => this.conditionChanged());
-    this.filterSelector.setOnChange(() => this.conditionChanged());
+    this.targetToleranceBox.addEventListener(() => this.conditionChanged());
 
     this.workerAgent.onLaunched = (p) => this.onLaunched(p);
     this.workerAgent.onFinished = (e) => this.onFinished(e);
@@ -83,34 +79,42 @@ export class CombinationFinderUi extends UiPages.UiPage {
     this.conditionChanged();
   }
 
+  override onActivate(): void {
+    this.targetInput?.focus();
+  }
+
   conditionChanged(): void {
     try {
       const rangeSelector = this.rangeSelector!;
       const custom = rangeSelector.seriesSelect.value === 'custom';
       RcmbUi.setVisible(
-          RcmbUi.parentTrOf(rangeSelector.customValuesInput)!, custom);
+          RcmbUi.parentTrOf(rangeSelector.customValuesBox)!, custom);
       RcmbUi.setVisible(
-          RcmbUi.parentTrOf(rangeSelector.minResisterInput.inputBox)!, !custom);
-      RcmbUi.setVisible(
-          RcmbUi.parentTrOf(rangeSelector.maxResisterInput.inputBox)!, !custom);
+          RcmbUi.parentTrOf(rangeSelector.elementRangeBox.ui)!, !custom);
 
       const targetValue = this.targetInput!.value;
       const topoConstr =
           parseInt(this.topTopologySelector.value) as RcmbJS.TopologyConstraint
 
-      const p = {
-        useWasm: this.commonSettingsUi.useWasmCheckbox.checked,
-        method: RcmbJS.Method.FindCombination,
+      const args: RcmbJS.FindCombinationArgs = {
         capacitor: this.capacitor,
-        values: rangeSelector.getAvailableValues(targetValue),
+        elementValues: rangeSelector.getAvailableValues(targetValue),
+        elementTolMin: rangeSelector.toleranceUi.minValue / 100,
+        elementTolMax: rangeSelector.toleranceUi.maxValue / 100,
         maxElements: this.numElementsInput.value,
         topologyConstraint: topoConstr,
         maxDepth: parseInt(this.maxDepthInput.value),
         targetValue: targetValue,
-        filter: this.filterSelector.value,
+        targetMin: targetValue * (1 + this.targetToleranceBox.minValue / 100),
+        targetMax: targetValue * (1 + this.targetToleranceBox.maxValue / 100),
       };
 
-      if (!this.workerAgent.requestStart(p)) {
+      const cmd: RcmbJS.WorkerCommand = {
+        method: RcmbJS.Method.FindCombination,
+        args: args
+      };
+
+      if (!this.workerAgent.requestStart(cmd)) {
         this.showResult();
       }
     } catch (e) {
@@ -118,11 +122,12 @@ export class CombinationFinderUi extends UiPages.UiPage {
     }
   }
 
-  onLaunched(p: any): void {
+  onLaunched(cmd: RcmbJS.WorkerCommand): void {
+    const args = cmd.args as RcmbJS.FindCombinationArgs;
     this.statusBox.style.color = '';
     this.statusBox.innerHTML = '';
     const msg = `${getStr('Searching...')} (${
-        RcmbUi.formatValue(p.targetValue, this.unit)}):`;
+        RcmbUi.formatValue(args.targetValue, this.unit)}):`;
     this.statusBox.appendChild(RcmbUi.makeIcon('⌛', true));
     this.statusBox.appendChild(document.createTextNode(' ' + msg));
     this.resultBox.style.opacity = '0.5';
@@ -155,7 +160,8 @@ export class CombinationFinderUi extends UiPages.UiPage {
         throw new Error(ret.error);
       }
 
-      const targetValue = ret.params.targetValue as number;
+      const args = ret.command.args as RcmbJS.FindCombinationArgs;
+      const targetValue = args.targetValue as number;
       const timeSpentMs = ret.timeSpent as number;
 
       let msg = getStr('No combinations found');
@@ -168,7 +174,7 @@ export class CombinationFinderUi extends UiPages.UiPage {
       for (const combJson of ret.result) {
         const PADDING = 20;
         const TOP_PADDING = 20;
-        const CAPTION_HEIGHT = 50;
+        const CAPTION_HEIGHT = 70;
         const LEAD_LENGTH = 40 * Schematics.SCALE;
 
         const tree = Schematics.TreeNode.fromJSON(this.capacitor, combJson);
@@ -205,7 +211,7 @@ export class CombinationFinderUi extends UiPages.UiPage {
           const dx = PADDING + (FIGURE_PLACE_W - tree.width) / 2;
           const dy = PADDING + (FIGURE_PLACE_H - tree.height) / 2 + TOP_PADDING;
           ctx.translate(dx, dy);
-          tree.draw(ctx, this.commonSettingsUi.showColorCodeCheckbox.checked);
+          tree.draw(ctx, false);
           const y = tree.height / 2;
           const x0 = -LEAD_LENGTH;
           const x1 = 0;
@@ -216,6 +222,8 @@ export class CombinationFinderUi extends UiPages.UiPage {
           ctx.restore();
         }
 
+        let y = 0;
+
         ctx.save();
         ctx.translate(W / 2, H - PADDING - CAPTION_HEIGHT);
         ctx.fillStyle = '#000';
@@ -224,20 +232,16 @@ export class CombinationFinderUi extends UiPages.UiPage {
         {
           const text = RcmbUi.formatValue(tree.value, this.unit, true);
           ctx.font = `${24 * Schematics.SCALE}px sans-serif`;
-          ctx.fillText(text, 0, 0);
+          ctx.fillText(text, 0, y);
+          y += 24 + 10;
         }
         {
-          let error = (tree.value - targetValue) / targetValue;
-          let errorStr = getStr('No Error');
-          ctx.save();
-          if (Math.abs(error) > 1e-9) {
-            errorStr = `${getStr('Error')}: ${error > 0 ? '+' : ''}${
-                (error * 100).toFixed(6)}%`;
-            ctx.fillStyle = error > 0 ? '#c00' : '#00c';
-          }
-          ctx.font = `${16 * Schematics.SCALE}px sans-serif`;
-          ctx.fillText(`(${errorStr})`, 0, 30);
-          ctx.restore();
+          const typ = tree.value;
+          const min = tree.value * (1 + args.elementTolMin);
+          const max = tree.value * (1 + args.elementTolMax);
+          y = UiPages.drawErrorText(
+              ctx, y, typ, min, max, args.targetValue, args.targetMin,
+              args.targetMax);
         }
         ctx.restore();
 

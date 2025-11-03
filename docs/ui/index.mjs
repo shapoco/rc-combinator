@@ -4,13 +4,6 @@ let Method = /* @__PURE__ */ function(Method$1) {
 	Method$1[Method$1["FindDivider"] = 2] = "FindDivider";
 	return Method$1;
 }({});
-let Filter = /* @__PURE__ */ function(Filter$1) {
-	Filter$1[Filter$1["Exact"] = 0] = "Exact";
-	Filter$1[Filter$1["Below"] = 1] = "Below";
-	Filter$1[Filter$1["Above"] = 2] = "Above";
-	Filter$1[Filter$1["Nearest"] = 3] = "Nearest";
-	return Filter$1;
-}({});
 let TopologyConstraint = /* @__PURE__ */ function(TopologyConstraint$1) {
 	TopologyConstraint$1[TopologyConstraint$1["Series"] = 1] = "Series";
 	TopologyConstraint$1[TopologyConstraint$1["Parallel"] = 2] = "Parallel";
@@ -92,7 +85,7 @@ function pow10$1(exp) {
 }
 
 //#endregion
-//#region src/Calc.ts
+//#region src/Expr.ts
 function evalExpr(expStr) {
 	const sr = new StringReader(expStr);
 	const ret = expr(sr);
@@ -1210,7 +1203,12 @@ const texts = { "ja": {
 	"Capacitor Combination": "合成容量",
 	"Current Limitting Resistor": "電流制限抵抗",
 	"Voltage Divider": "分圧抵抗",
-	"Menu": "メニュー"
+	"Menu": "メニュー",
+	"Element Range": "使用する範囲",
+	"Element Tolerance": "素子の許容誤差",
+	"Target Tolerance": "結果の許容誤差",
+	"Voltage Ratio": "電圧比",
+	"Target Ratio": "目標電圧比"
 } };
 function getStr(key, vars) {
 	let ret = key;
@@ -1225,41 +1223,76 @@ function getStr(key, vars) {
 
 //#endregion
 //#region src/RcmbUi.ts
-var CommonSettingsUi = class {
-	useWasmCheckbox = makeCheckbox(getStr("Use WebAssembly"), true);
-	showColorCodeCheckbox = makeCheckbox(getStr("Show Color Code"), false);
-	ui = makeDiv([document.createElement("hr"), this.useWasmCheckbox.parentNode], null, true);
-	onChanged = [];
-	constructor() {
-		this.useWasmCheckbox.addEventListener("change", () => {
-			this.onChanged.forEach((callback) => callback());
-		});
+const PREFIXES = [
+	{
+		exp: -12,
+		prefix: "p",
+		max: false
+	},
+	{
+		exp: -9,
+		prefix: "n",
+		max: false
+	},
+	{
+		exp: -6,
+		prefix: "μ",
+		max: false
+	},
+	{
+		exp: -3,
+		prefix: "m",
+		max: false
+	},
+	{
+		exp: 0,
+		prefix: "",
+		max: false
+	},
+	{
+		exp: 3,
+		prefix: "k",
+		max: false
+	},
+	{
+		exp: 6,
+		prefix: "M",
+		max: false
+	},
+	{
+		exp: 9,
+		prefix: "G",
+		max: false
+	},
+	{
+		exp: 12,
+		prefix: "T",
+		max: true
 	}
-};
+];
 var ValueRangeSelector = class {
 	seriesSelect = makeSeriesSelector();
-	customValuesInput = document.createElement("textarea");
-	minResisterInput = new ValueBox();
-	maxResisterInput = new ValueBox();
+	customValuesBox = document.createElement("textarea");
+	elementRangeBox = new RangeBox();
+	toleranceUi = new RangeBox(true);
 	constructor(capacitor) {
 		this.capacitor = capacitor;
 		if (capacitor) {
-			this.customValuesInput.value = "1n, 10n, 100n";
-			this.customValuesInput.placeholder = "e.g.\n1n, 10n, 100n";
-			this.minResisterInput.inputBox.value = "100p";
-			this.maxResisterInput.inputBox.value = "100u";
+			this.customValuesBox.value = "1n, 10n, 100n";
+			this.customValuesBox.placeholder = "e.g.\n1n, 10n, 100n";
+			this.elementRangeBox.setDefaultValue("100p", "100u", true);
+			this.toleranceUi.setDefaultValue(-10, 10);
 		} else {
-			this.customValuesInput.value = "100, 1k, 10k";
-			this.customValuesInput.placeholder = "e.g.\n100, 1k, 10k";
-			this.minResisterInput.inputBox.value = "100";
-			this.maxResisterInput.inputBox.value = "1M";
+			this.customValuesBox.value = "100, 1k, 10k";
+			this.customValuesBox.placeholder = "e.g.\n100, 1k, 10k";
+			this.elementRangeBox.setDefaultValue("100", "1M", true);
+			this.toleranceUi.setDefaultValue(-1, 1);
 		}
-		this.customValuesInput.disabled = true;
 	}
 	getAvailableValues(targetValue) {
 		const series = this.seriesSelect.value;
 		if (series === "custom") {
-			const valueStrs = this.customValuesInput.value.split(",");
+			const valueStrs = this.customValuesBox.value.split(",");
 			const values = [];
 			for (let str of valueStrs) {
 				str = str.trim();
@@ -1271,25 +1304,76 @@ var ValueRangeSelector = class {
 		} else {
 			const defaultMin = Math.max(1e-12, targetValue / 100);
 			const defaultMax = Math.min(0x38d7ea4c68000, targetValue * 100);
-			this.minResisterInput.inputBox.placeholder = `(${formatValue(defaultMin, "", true)})`;
-			this.maxResisterInput.inputBox.placeholder = `(${formatValue(defaultMax, "", true)})`;
-			const minValue = this.minResisterInput.value;
-			const maxValue = this.maxResisterInput.value;
+			this.elementRangeBox.setDefaultValue(`(${formatValue(defaultMin, "", true)})`, `(${formatValue(defaultMax, "", true)})`);
+			const minValue = this.elementRangeBox.minValue;
+			const maxValue = this.elementRangeBox.maxValue;
 			return makeAvaiableValues(series, minValue, maxValue);
 		}
 	}
 	setOnChange(callback) {
 		this.seriesSelect.addEventListener("change", () => {
-			const custom = this.seriesSelect.value === "custom";
-			this.customValuesInput.disabled = !custom;
-			this.minResisterInput.inputBox.disabled = custom;
-			this.maxResisterInput.inputBox.disabled = custom;
 			callback();
 		});
-		this.customValuesInput.addEventListener("input", () => callback());
-		this.customValuesInput.addEventListener("change", () => callback());
-		this.minResisterInput.setOnChange(callback);
-		this.maxResisterInput.setOnChange(callback);
+		this.customValuesBox.addEventListener("input", () => callback());
+		this.customValuesBox.addEventListener("change", () => callback());
+		this.elementRangeBox.addEventListener(() => callback());
+		this.toleranceUi.addEventListener(callback);
+	}
+};
+var RangeBox = class {
+	minBox = new ValueBox();
+	hyphen = makeSpan("-");
+	maxBox = new ValueBox();
+	ui = makeSpan([
+		this.minBox.inputBox,
+		this.hyphen,
+		this.maxBox.inputBox
+	]);
+	callbacks = [];
+	constructor(symmetric = false, defaultMin = 0, defaultMax = 100) {
+		this.symmetric = symmetric;
+		this.defaultMin = defaultMin;
+		this.defaultMax = defaultMax;
+		this.updatePlaceholders();
+		this.minBox.inputBox.style.width = "55px";
+		this.maxBox.inputBox.style.width = "55px";
+		this.hyphen.style.display = "inline-block";
+		this.hyphen.style.width = "15px";
+		this.hyphen.style.textAlign = "center";
+		this.ui.style.whiteSpace = "nowrap";
+	}
+	setDefaultValue(min, max, setAsValue = false) {
+		this.defaultMin = min;
+		this.defaultMax = max;
+		if (setAsValue) {
+			this.minBox.inputBox.value = min.toString();
+			this.maxBox.inputBox.value = max.toString();
+		}
+		this.updatePlaceholders();
+	}
+	addEventListener(callback) {
+		this.callbacks.push(callback);
+		this.maxBox.setOnChange(() => this.onChange());
+		this.minBox.setOnChange(() => this.onChange());
+	}
+	onChange() {
+		this.updatePlaceholders();
+		this.callbacks.forEach((cb) => cb());
+	}
+	updatePlaceholders() {
+		if (this.maxBox.empty && this.minBox.empty) {
+			this.maxBox.placeholder = this.defaultMax.toString();
+			this.minBox.placeholder = this.defaultMin.toString();
+		} else if (this.maxBox.empty) this.maxBox.placeholder = this.symmetric ? (-this.minBox.value).toString() : this.defaultMax.toString();
+		else if (this.minBox.empty) this.minBox.placeholder = this.symmetric ? (-this.maxBox.value).toString() : this.defaultMin.toString();
+	}
+	get minValue() {
+		this.updatePlaceholders();
+		return this.minBox.value;
+	}
+	get maxValue() {
+		this.updatePlaceholders();
+		return this.maxBox.value;
 	}
 };
 var IntegerBox = class {
@@ -1302,6 +1386,9 @@ var IntegerBox = class {
 		this.inputBox.max = max.toString();
 		this.inputBox.placeholder = placeholder;
 		if (value !== null) this.inputBox.value = value.toString();
+		this.inputBox.addEventListener("focus", () => {
+			this.inputBox.select();
+		});
 	}
 	get value() {
 		let text = this.inputBox.value.trim();
@@ -1325,17 +1412,32 @@ var IntegerBox = class {
 var ValueBox = class {
 	inputBox = document.createElement("input");
 	onChangeCallback = () => {};
-	constructor(value = null) {
+	constructor(value = null, placeholder = "") {
 		this.inputBox.type = isMobile ? "text" : "tel";
 		if (value) {
 			this.inputBox.value = value;
 			this.onChange();
 		}
+		this.inputBox.placeholder = placeholder;
+		this.inputBox.addEventListener("focus", () => {
+			this.inputBox.select();
+		});
+	}
+	get empty() {
+		return this.inputBox.value.trim() === "";
 	}
 	get value() {
 		let text = this.inputBox.value.trim();
 		if (text === "") text = this.inputBox.placeholder.trim();
 		return evalExpr(text);
+	}
+	get placeholder() {
+		return this.inputBox.placeholder;
+	}
+	set placeholder(v) {
+		const old = this.inputBox.placeholder;
+		this.inputBox.placeholder = v;
+		if (this.empty && old !== v) this.onChange();
 	}
 	setOnChange(callback) {
 		this.onChangeCallback = callback;
@@ -1350,38 +1452,8 @@ var ValueBox = class {
 		}
 		this.onChangeCallback();
 	}
-};
-var FilterBox = class {
-	selector = makeSelectBox([
-		{
-			value: Filter.Exact.toString(),
-			label: getStr("Exact")
-		},
-		{
-			value: Filter.Below.toString(),
-			label: getStr("Below")
-		},
-		{
-			value: Filter.Above.toString(),
-			label: getStr("Above")
-		},
-		{
-			value: Filter.Nearest.toString(),
-			label: getStr("Nearest")
-		}
-	], Filter.Nearest.toString());
-	ui = this.selector;
-	callbacks = [];
-	constructor() {
-		this.selector.addEventListener("change", () => {
-			this.callbacks.forEach((cb) => cb());
-		});
-	}
-	setOnChange(callback) {
-		this.callbacks.push(callback);
-	}
-	get value() {
-		return parseInt(this.selector.value);
+	focus() {
+		this.inputBox.focus();
 	}
 };
 const isMobile = (() => {
@@ -1472,15 +1544,6 @@ function strong(children = null) {
 	toElementArray(children).forEach((child) => elm.appendChild(child));
 	return elm;
 }
-function makeCheckbox(labelStr, value = false) {
-	const label = document.createElement("label");
-	const elm = document.createElement("input");
-	elm.type = "checkbox";
-	elm.checked = value;
-	label.appendChild(elm);
-	label.appendChild(document.createTextNode(" " + labelStr));
-	return elm;
-}
 function makeSeriesSelector() {
 	let items = [];
 	for (const key of Object.keys(Serieses)) items.push({
@@ -1541,49 +1604,31 @@ function hide(elem) {
 function setVisible(elem, visible) {
 	return visible ? show(elem) : hide(elem);
 }
-function formatValue(value, unit = "", usePrefix = null) {
+function formatError(value) {
+	if (-1e-18 < value && value < 1e-18) return "0%";
+	else return `${value >= 0 ? "+" : ""}${formatValue(value * 100, "", false, 2)}%`;
+}
+function formatValue(value, unit = "", usePrefix = null, digits = 6) {
 	if (!isFinite(value) || isNaN(value)) return "NaN";
+	const neg = value < 0;
+	value = Math.abs(value);
 	if (usePrefix === null) usePrefix = unit !== "";
-	const exp = Math.floor(Math.log10(Math.abs(value)) + 1e-6);
+	let exp = Math.floor(Math.log10(Math.abs(value)) + 1e-6);
 	let prefix = "";
 	if (usePrefix) {
-		if (exp >= 12) {
-			value /= 0xe8d4a51000;
-			prefix = "T";
-		} else if (exp >= 9) {
-			value /= 1e9;
-			prefix = "G";
-		} else if (exp >= 6) {
-			value /= 1e6;
-			prefix = "M";
-		} else if (exp >= 3) {
-			value /= 1e3;
-			prefix = "k";
-		} else if (exp >= 0) prefix = "";
-		else if (exp >= -3) {
-			value *= 1e3;
-			prefix = "m";
-		} else if (exp >= -6) {
-			value *= 1e6;
-			prefix = "μ";
-		} else if (exp >= -9) {
-			value *= 1e9;
-			prefix = "n";
-		} else if (exp >= -12) {
-			value *= 0xe8d4a51000;
-			prefix = "p";
+		for (const p of PREFIXES) if (exp < p.exp + 3 || p.max) {
+			value /= pow10(p.exp);
+			exp -= p.exp;
+			prefix = p.prefix;
+			break;
 		}
 	}
-	const minDigits = 6;
-	value = Math.round(value * pow10(minDigits));
-	let s = "";
-	while (s.length <= minDigits + 1 || value > 0) {
-		const digit = value % 10;
-		value = Math.floor(value / 10);
-		s = digit.toString() + s;
-		if (s.length === minDigits) s = "." + s;
-	}
-	s = s.replace(/\.?0+$/, "");
+	if (exp < -digits) digits -= exp;
+	digits = Math.min(5, Math.max(0, digits));
+	let s = neg ? "-" : "";
+	s += value.toFixed(digits);
+	s = s.replace(/0+$/, "");
+	s = s.replace(/\.$/, ".0");
 	return `${s} ${prefix}${unit}`.trim();
 }
 
@@ -1814,7 +1859,70 @@ var UiPage = class {
 	constructor(title) {
 		this.title = title;
 	}
+	onActivate() {}
 };
+function drawErrorText(ctx, y, valTyp, valMin, valMax, targetTyp, targetMin, targetMax) {
+	const targetErrMin = (targetMin - targetTyp) / targetTyp;
+	const targetErrMax = (targetMax - targetTyp) / targetTyp;
+	(valTyp - targetTyp) / targetTyp;
+	const minErr = (valMin - targetTyp) / targetTyp;
+	const maxErr = (valMax - targetTyp) / targetTyp;
+	const nums = [
+		{
+			err: (valMin - targetTyp) / targetTyp,
+			str: "",
+			width: 0,
+			color: "#000"
+		},
+		{
+			err: (valTyp - targetTyp) / targetTyp,
+			str: "",
+			width: 0,
+			color: "#000"
+		},
+		{
+			err: (valMax - targetTyp) / targetTyp,
+			str: "",
+			width: 0,
+			color: "#000"
+		}
+	];
+	ctx.save();
+	ctx.font = `${16 * SCALE}px sans-serif`;
+	for (let num of nums) {
+		num.str = formatError(num.err);
+		num.width = ctx.measureText(num.str).width;
+		if (Math.abs(num.err) < 1e-6) num.color = "#04c";
+		else if (num.err < targetErrMin || targetErrMax < num.err) num.color = "#c00";
+	}
+	if (Math.abs(minErr) < 1e-18 && Math.abs(maxErr) < 1e-6) {
+		ctx.fillStyle = "#04c";
+		ctx.fillText(`${getStr("No Error")}`, 0, y);
+		y += 26;
+	} else {
+		const sepWidth = ctx.measureText(" / ").width;
+		let x = sepWidth;
+		for (const num of nums) x -= num.width + sepWidth;
+		x /= 2;
+		ctx.fillText(`${getStr("Error")} (min/typ/max):`, 0, y);
+		y += 21;
+		ctx.textAlign = "left";
+		for (let i = 0; i < nums.length; i++) {
+			const num = nums[i];
+			ctx.fillStyle = num.color;
+			ctx.fillText(num.str, x, y);
+			x += num.width;
+			if (i < nums.length - 1) {
+				ctx.fillStyle = "#000";
+				ctx.fillText(" / ", x, y);
+				x += sepWidth;
+			}
+		}
+		y += 26;
+		ctx.restore();
+	}
+	return y;
+}
 
 //#endregion
 //#region src/WorkerAgents.ts
@@ -1822,16 +1930,16 @@ var WorkerAgent = class {
 	urlPostfix = Math.floor(Date.now() / (60 * 1e3)).toString();
 	worker = null;
 	workerRunning = false;
-	startRequestParams = {};
+	startRequestCommand = null;
 	startRequestTimerId = null;
-	lastLaunchedParams = {};
+	lastLaunchedCommand = null;
 	onLaunched = null;
 	onFinished = null;
 	onAborted = null;
-	requestStart(p) {
-		if (JSON.stringify(p) === JSON.stringify(this.startRequestParams)) return this.workerRunning;
+	requestStart(cmd) {
+		if (JSON.stringify(cmd) === JSON.stringify(this.startRequestCommand)) return this.workerRunning;
 		this.cancelRequest();
-		this.startRequestParams = p;
+		this.startRequestCommand = cmd;
 		this.startRequestTimerId = window.setTimeout(async () => {
 			this.startRequestTimerId = null;
 			await this.startWorker();
@@ -1855,10 +1963,11 @@ var WorkerAgent = class {
 			this.worker.onerror = (e) => this.onError(e.message);
 			this.worker.onmessageerror = (e) => this.onError("Message error in worker");
 		}
-		this.lastLaunchedParams = JSON.parse(JSON.stringify(this.startRequestParams));
-		this.worker.postMessage(this.startRequestParams);
+		const cmd = this.startRequestCommand;
+		this.lastLaunchedCommand = JSON.parse(JSON.stringify(cmd));
+		this.worker.postMessage(cmd);
 		this.workerRunning = true;
-		if (this.onLaunched) this.onLaunched(this.lastLaunchedParams);
+		if (this.onLaunched) this.onLaunched(this.lastLaunchedCommand);
 	}
 	abortWorker() {
 		if (!this.workerRunning) return;
@@ -1877,7 +1986,7 @@ var WorkerAgent = class {
 		this.workerRunning = false;
 		if (this.onFinished) {
 			let ret = e.data;
-			ret.params = this.lastLaunchedParams;
+			ret.command = this.lastLaunchedCommand;
 			this.onFinished(ret);
 		}
 		if (this.startRequestTimerId !== null) {
@@ -1902,17 +2011,17 @@ var CombinationFinderUi = class extends UiPage {
 	statusBox = makeP();
 	resultBox = makeDiv();
 	targetInput = null;
-	filterSelector = new FilterBox();
+	targetToleranceBox = new RangeBox(true);
 	unit = "";
 	workerAgent = new WorkerAgent();
 	lastResult = null;
-	constructor(commonSettingsUi$1, capacitor) {
+	constructor(capacitor) {
 		super(getStr((capacitor ? "Capacitor" : "Resistor") + " Combination"));
-		this.commonSettingsUi = commonSettingsUi$1;
 		this.capacitor = capacitor;
 		this.unit = capacitor ? "F" : "Ω";
 		this.rangeSelector = new ValueRangeSelector(capacitor);
 		this.targetInput = new ValueBox(capacitor ? "3.14μ" : "5.1k");
+		this.targetToleranceBox.setDefaultValue(-50, 50);
 		const paramTable = makeTable([
 			[
 				getStr("Item"),
@@ -1926,18 +2035,18 @@ var CombinationFinderUi = class extends UiPage {
 			],
 			[
 				getStr("Custom Values"),
-				this.rangeSelector.customValuesInput,
+				this.rangeSelector.customValuesBox,
 				this.unit
 			],
 			[
-				getStr("Minimum"),
-				this.rangeSelector.minResisterInput.inputBox,
-				this.unit
+				getStr("Element Range"),
+				this.rangeSelector.elementRangeBox.ui,
+				"Ω"
 			],
 			[
-				getStr("Maximum"),
-				this.rangeSelector.maxResisterInput.inputBox,
-				this.unit
+				getStr("Element Tolerance"),
+				this.rangeSelector.toleranceUi.ui,
+				"%"
 			],
 			[
 				getStr("Max Elements"),
@@ -1960,58 +2069,69 @@ var CombinationFinderUi = class extends UiPage {
 				this.unit
 			],
 			[
-				getStr("Filter"),
-				this.filterSelector.ui,
-				""
+				getStr("Target Tolerance"),
+				this.targetToleranceBox.ui,
+				"%"
 			]
 		]);
 		this.ui = makeDiv([
 			makeH2(this.capacitor ? getStr("Find Capacitor Combinations") : getStr("Find Resistor Combinations")),
 			paramTable,
 			this.statusBox,
-			this.resultBox
+			this.resultBox,
+			makeH2("許容誤差について (Tolerance)"),
+			makeP("探索結果の目標値からの誤差が e で、使用される素子の誤差が ±t の場合、最終的な誤差は (e × ±t) ＋ e±t となります。"),
+			makeP("例えば探索結果の目標値からの誤差が 3% で、素子の許容誤差が ±5% の場合、最終的な誤差は (3±5.15)% となります。"),
+			makeP("直列・並列をどう組み合わせても許容誤差の範囲には影響しません。")
 		]);
-		this.commonSettingsUi.onChanged.push(() => this.conditionChanged());
 		this.rangeSelector.setOnChange(() => this.conditionChanged());
 		this.numElementsInput.setOnChange(() => this.conditionChanged());
 		this.topTopologySelector.addEventListener("change", () => this.conditionChanged());
 		this.maxDepthInput.addEventListener("change", () => this.conditionChanged());
 		this.targetInput.setOnChange(() => this.conditionChanged());
-		this.filterSelector.setOnChange(() => this.conditionChanged());
+		this.targetToleranceBox.addEventListener(() => this.conditionChanged());
 		this.workerAgent.onLaunched = (p) => this.onLaunched(p);
 		this.workerAgent.onFinished = (e) => this.onFinished(e);
 		this.workerAgent.onAborted = (msg) => this.onAborted(msg);
 		this.conditionChanged();
 	}
+	onActivate() {
+		this.targetInput?.focus();
+	}
 	conditionChanged() {
 		try {
 			const rangeSelector = this.rangeSelector;
 			const custom = rangeSelector.seriesSelect.value === "custom";
-			setVisible(parentTrOf(rangeSelector.customValuesInput), custom);
-			setVisible(parentTrOf(rangeSelector.minResisterInput.inputBox), !custom);
-			setVisible(parentTrOf(rangeSelector.maxResisterInput.inputBox), !custom);
+			setVisible(parentTrOf(rangeSelector.customValuesBox), custom);
+			setVisible(parentTrOf(rangeSelector.elementRangeBox.ui), !custom);
 			const targetValue = this.targetInput.value;
 			const topoConstr = parseInt(this.topTopologySelector.value);
-			const p = {
-				useWasm: this.commonSettingsUi.useWasmCheckbox.checked,
-				method: Method.FindCombination,
+			const args = {
 				capacitor: this.capacitor,
-				values: rangeSelector.getAvailableValues(targetValue),
+				elementValues: rangeSelector.getAvailableValues(targetValue),
+				elementTolMin: rangeSelector.toleranceUi.minValue / 100,
+				elementTolMax: rangeSelector.toleranceUi.maxValue / 100,
 				maxElements: this.numElementsInput.value,
 				topologyConstraint: topoConstr,
 				maxDepth: parseInt(this.maxDepthInput.value),
 				targetValue,
-				filter: this.filterSelector.value
+				targetMin: targetValue * (1 + this.targetToleranceBox.minValue / 100),
+				targetMax: targetValue * (1 + this.targetToleranceBox.maxValue / 100)
 			};
-			if (!this.workerAgent.requestStart(p)) this.showResult();
+			const cmd = {
+				method: Method.FindCombination,
+				args
+			};
+			if (!this.workerAgent.requestStart(cmd)) this.showResult();
 		} catch (e) {
 			this.workerAgent.cancelRequest();
 		}
 	}
-	onLaunched(p) {
+	onLaunched(cmd) {
+		const args = cmd.args;
 		this.statusBox.style.color = "";
 		this.statusBox.innerHTML = "";
-		const msg = `${getStr("Searching...")} (${formatValue(p.targetValue, this.unit)}):`;
+		const msg = `${getStr("Searching...")} (${formatValue(args.targetValue, this.unit)}):`;
 		this.statusBox.appendChild(makeIcon("⌛", true));
 		this.statusBox.appendChild(document.createTextNode(" " + msg));
 		this.resultBox.style.opacity = "0.5";
@@ -2037,7 +2157,8 @@ var CombinationFinderUi = class extends UiPage {
 		if (ret === null) return;
 		try {
 			if (ret.error && ret.error.length > 0) throw new Error(ret.error);
-			const targetValue = ret.params.targetValue;
+			const args = ret.command.args;
+			args.targetValue;
 			const timeSpentMs = ret.timeSpent;
 			let msg = getStr("No combinations found");
 			if (ret.result.length > 0) msg = `${getStr("<n> combinations found", { n: ret.result.length })}`;
@@ -2047,7 +2168,7 @@ var CombinationFinderUi = class extends UiPage {
 			for (const combJson of ret.result) {
 				const PADDING = 20;
 				const TOP_PADDING = 20;
-				const CAPTION_HEIGHT = 50;
+				const CAPTION_HEIGHT = 70;
 				const LEAD_LENGTH = 40 * SCALE;
 				const tree = TreeNode.fromJSON(this.capacitor, combJson);
 				tree.offset(-tree.x, -tree.y);
@@ -2073,16 +2194,17 @@ var CombinationFinderUi = class extends UiPage {
 					const dx = PADDING + (FIGURE_PLACE_W - tree.width) / 2;
 					const dy = PADDING + (FIGURE_PLACE_H - tree.height) / 2 + TOP_PADDING;
 					ctx.translate(dx, dy);
-					tree.draw(ctx, this.commonSettingsUi.showColorCodeCheckbox.checked);
-					const y = tree.height / 2;
+					tree.draw(ctx, false);
+					const y$1 = tree.height / 2;
 					const x0 = -LEAD_LENGTH;
 					const x1 = 0;
 					const x2 = tree.width;
 					const x3 = tree.width + LEAD_LENGTH;
-					drawWire(ctx, x0, y, x1, y);
-					drawWire(ctx, x2, y, x3, y);
+					drawWire(ctx, x0, y$1, x1, y$1);
+					drawWire(ctx, x2, y$1, x3, y$1);
 					ctx.restore();
 				}
+				let y = 0;
 				ctx.save();
 				ctx.translate(W / 2, H - PADDING - CAPTION_HEIGHT);
 				ctx.fillStyle = "#000";
@@ -2091,19 +2213,14 @@ var CombinationFinderUi = class extends UiPage {
 				{
 					const text = formatValue(tree.value, this.unit, true);
 					ctx.font = `${24 * SCALE}px sans-serif`;
-					ctx.fillText(text, 0, 0);
+					ctx.fillText(text, 0, y);
+					y += 34;
 				}
 				{
-					let error = (tree.value - targetValue) / targetValue;
-					let errorStr = getStr("No Error");
-					ctx.save();
-					if (Math.abs(error) > 1e-9) {
-						errorStr = `${getStr("Error")}: ${error > 0 ? "+" : ""}${(error * 100).toFixed(6)}%`;
-						ctx.fillStyle = error > 0 ? "#c00" : "#00c";
-					}
-					ctx.font = `${16 * SCALE}px sans-serif`;
-					ctx.fillText(`(${errorStr})`, 0, 30);
-					ctx.restore();
+					const typ = tree.value;
+					const min = tree.value * (1 + args.elementTolMin);
+					const max = tree.value * (1 + args.elementTolMax);
+					y = drawErrorText(ctx, y, typ, min, max, args.targetValue, args.targetMin, args.targetMax);
 				}
 				ctx.restore();
 				this.resultBox.appendChild(canvas);
@@ -2128,7 +2245,7 @@ var CurrentLimitterFinderUi = class extends UiPage {
 	powerVoltageInput = new ValueBox("3.3");
 	forwardVoltageInput = new ValueBox("2");
 	forwardCurrentInput = new ValueBox("1m");
-	filterSelector = new FilterBox();
+	targetToleranceBox = new RangeBox(true, -50, 50);
 	resultBox = makeDiv();
 	constructor() {
 		super(getStr("Current Limitting Resistor"));
@@ -2156,9 +2273,9 @@ var CurrentLimitterFinderUi = class extends UiPage {
 					"A"
 				],
 				[
-					getStr("Filter"),
-					this.filterSelector.ui,
-					""
+					getStr("Target Tolerance"),
+					this.targetToleranceBox.ui,
+					"%"
 				]
 			]),
 			makeP("結果:"),
@@ -2167,8 +2284,11 @@ var CurrentLimitterFinderUi = class extends UiPage {
 		this.powerVoltageInput.setOnChange(() => this.conditionChanged());
 		this.forwardVoltageInput.setOnChange(() => this.conditionChanged());
 		this.forwardCurrentInput.setOnChange(() => this.conditionChanged());
-		this.filterSelector.setOnChange(() => this.conditionChanged());
+		this.targetToleranceBox.addEventListener(() => this.conditionChanged());
 		this.conditionChanged();
+	}
+	onActivate() {
+		this.forwardCurrentInput?.focus();
 	}
 	conditionChanged() {
 		this.resultBox.innerHTML = "";
@@ -2185,18 +2305,19 @@ var CurrentLimitterFinderUi = class extends UiPage {
 				e: "",
 				p: formatValue$1(vR * iF, "", true)
 			}];
+			const epsilon = iF * 1e-6;
+			const tolP = this.targetToleranceBox.maxValue / 100;
+			const iFMin = iF * (1 + this.targetToleranceBox.minValue / 100) - epsilon;
+			const iFMax = iF * (1 + tolP) + epsilon;
 			let rLast = 0;
 			for (const seriesName in Serieses) {
 				const series = makeAvaiableValues(seriesName);
-				const filter = this.filterSelector.value;
 				let rApprox = NaN;
 				{
-					const epsilon = iF * 1e-6;
 					let bestDiff = Number.MAX_VALUE;
 					for (const r of series) {
 						const i = (vCC - vF) / r;
-						if ((filter & Filter.Below) === 0 && i < iF - epsilon) continue;
-						if ((filter & Filter.Above) === 0 && i > iF + epsilon) continue;
+						if (i < iFMin || iFMax < i) continue;
 						const diff = Math.abs(iF - i);
 						if (diff - epsilon < bestDiff) {
 							bestDiff = diff;
@@ -2265,20 +2386,18 @@ var DividerFinderUi = class extends UiPage {
 	maxDepthInput = makeDepthSelector();
 	statusBox = makeP();
 	resultBox = makeDiv();
-	totalMinBox = new ValueBox("10k");
-	totalMaxBox = new ValueBox("100k");
+	totalRangeBox = new RangeBox(false, "10k", "100k");
 	targetInput = null;
-	filterSelector = new FilterBox();
+	targetToleranceBox = new RangeBox(true, -10, 10);
 	workerAgent = new WorkerAgent();
 	lastResult = null;
-	constructor(commonSettingsUi$1) {
+	constructor() {
 		super(getStr("Voltage Divider"));
-		this.commonSettingsUi = commonSettingsUi$1;
 		this.rangeSelector = new ValueRangeSelector(false);
 		this.targetInput = new ValueBox("3.3 / 5.0");
 		this.ui = makeDiv([
 			makeH2(getStr("Find Voltage Dividers")),
-			makeP(`R1: ${getStr("Upper Resistor")}, R2: ${getStr("Lower Resistor")}, Vout / Vin = R2 / (R1 + R2)`),
+			makeP(`R1: ${getStr("Upper Resistor")}, R2: ${getStr("Lower Resistor")}, ${getStr("Voltage Ratio")}: Vout / Vin = R2 / (R1 + R2)`),
 			makeTable([
 				[
 					getStr("Item"),
@@ -2292,18 +2411,18 @@ var DividerFinderUi = class extends UiPage {
 				],
 				[
 					getStr("Custom Values"),
-					this.rangeSelector.customValuesInput,
+					this.rangeSelector.customValuesBox,
 					"Ω"
 				],
 				[
-					getStr("Minimum"),
-					this.rangeSelector.minResisterInput.inputBox,
+					getStr("Element Range"),
+					this.rangeSelector.elementRangeBox.ui,
 					"Ω"
 				],
 				[
-					getStr("Maximum"),
-					this.rangeSelector.maxResisterInput.inputBox,
-					"Ω"
+					getStr("Element Tolerance"),
+					this.rangeSelector.toleranceUi.ui,
+					"%"
 				],
 				[
 					getStr("Max Elements"),
@@ -2321,74 +2440,78 @@ var DividerFinderUi = class extends UiPage {
 					""
 				],
 				[
-					"R1 + R2 (min)",
-					this.totalMinBox.inputBox,
+					"R1 + R2",
+					this.totalRangeBox.ui,
 					"Ω"
 				],
 				[
-					"R1 + R2 (max)",
-					this.totalMaxBox.inputBox,
-					"Ω"
-				],
-				[
-					strong("R2 / (R1 + R2)"),
+					strong(getStr("Target Ratio")),
 					this.targetInput.inputBox,
 					""
 				],
 				[
-					getStr("Filter"),
-					this.filterSelector.ui,
-					""
+					getStr("Target Tolerance"),
+					this.targetToleranceBox.ui,
+					"%"
 				]
 			]),
 			this.statusBox,
-			this.resultBox
+			this.resultBox,
+			makeH2("許容誤差について (Tolerance)"),
+			makeP("探索結果の目標値からの誤差が e で、使用される素子の誤差が ±t の場合、最終的な誤差は (e × ±t) ＋ e±t となります。"),
+			makeP("例えば探索結果の目標値からの誤差が 3% で、素子の許容誤差が ±5% の場合、最終的な誤差は (3±5.15)% となります。"),
+			makeP("直列・並列をどう組み合わせても許容誤差の範囲には影響しません。分圧抵抗比の許容誤差も同様です。")
 		]);
-		this.commonSettingsUi.onChanged.push(() => this.conditionChanged());
 		this.rangeSelector.setOnChange(() => this.conditionChanged());
 		this.numElementsInput.setOnChange(() => this.conditionChanged());
 		this.topTopologySelector.addEventListener("change", () => this.conditionChanged());
 		this.maxDepthInput.addEventListener("change", () => this.conditionChanged());
-		this.totalMinBox.setOnChange(() => this.conditionChanged());
-		this.totalMaxBox.setOnChange(() => this.conditionChanged());
+		this.totalRangeBox.addEventListener(() => this.conditionChanged());
 		this.targetInput.setOnChange(() => this.conditionChanged());
-		this.filterSelector.setOnChange(() => this.conditionChanged());
+		this.targetToleranceBox.addEventListener(() => this.conditionChanged());
 		this.workerAgent.onLaunched = (p) => this.onLaunched(p);
 		this.workerAgent.onFinished = (e) => this.onFinished(e);
 		this.workerAgent.onAborted = (msg) => this.onAborted(msg);
 		this.conditionChanged();
 	}
+	onActivate() {
+		this.targetInput?.focus();
+	}
 	conditionChanged() {
 		try {
 			const rangeSelector = this.rangeSelector;
 			const custom = rangeSelector.seriesSelect.value === "custom";
-			setVisible(parentTrOf(rangeSelector.customValuesInput), custom);
-			setVisible(parentTrOf(rangeSelector.minResisterInput.inputBox), !custom);
-			setVisible(parentTrOf(rangeSelector.maxResisterInput.inputBox), !custom);
-			const targetRatio = this.targetInput.value;
+			setVisible(parentTrOf(rangeSelector.customValuesBox), custom);
+			setVisible(parentTrOf(rangeSelector.elementRangeBox.ui), !custom);
+			const targetValue = this.targetInput.value;
 			const topoConstr = parseInt(this.topTopologySelector.value);
-			const p = {
-				useWasm: this.commonSettingsUi.useWasmCheckbox.checked,
-				method: Method.FindDivider,
-				capacitor: false,
-				values: rangeSelector.getAvailableValues(targetRatio),
+			const args = {
+				elementValues: rangeSelector.getAvailableValues(targetValue),
 				maxElements: this.numElementsInput.value,
+				elementTolMin: rangeSelector.toleranceUi.minValue / 100,
+				elementTolMax: rangeSelector.toleranceUi.maxValue / 100,
 				topologyConstraint: topoConstr,
 				maxDepth: parseInt(this.maxDepthInput.value),
-				totalMin: this.totalMinBox.value,
-				totalMax: this.totalMaxBox.value,
-				targetRatio,
-				filter: this.filterSelector.value
+				totalMin: this.totalRangeBox.minValue,
+				totalMax: this.totalRangeBox.maxValue,
+				targetValue,
+				targetMin: targetValue * (1 + this.targetToleranceBox.minValue / 100),
+				targetMax: targetValue * (1 + this.targetToleranceBox.maxValue / 100)
 			};
-			if (!this.workerAgent.requestStart(p)) this.showResult();
+			const cmd = {
+				method: Method.FindDivider,
+				args
+			};
+			if (!this.workerAgent.requestStart(cmd)) this.showResult();
 		} catch (e) {
 			this.workerAgent.cancelRequest();
 		}
 	}
-	onLaunched(p) {
+	onLaunched(cmd) {
+		const args = cmd.args;
 		this.statusBox.style.color = "";
 		this.statusBox.innerHTML = "";
-		const msg = `${getStr("Searching...")} (${formatValue(p.targetRatio, "", false)}):`;
+		const msg = `${getStr("Searching...")} (${formatValue(args.targetValue, "", false)}):`;
 		this.statusBox.appendChild(makeIcon("⌛", true));
 		this.statusBox.appendChild(document.createTextNode(" " + msg));
 		this.resultBox.style.opacity = "0.5";
@@ -2421,7 +2544,7 @@ var DividerFinderUi = class extends UiPage {
 			this.statusBox.appendChild(makeIcon("✅"));
 			this.statusBox.appendChild(document.createTextNode(msg));
 			for (const combJson of ret.result) {
-				const resultUi = new ResultUi(this.commonSettingsUi, ret.params, combJson);
+				const resultUi = new ResultUi(ret.command, combJson);
 				this.resultBox.appendChild(resultUi.ui);
 				this.resultBox.appendChild(document.createTextNode(" "));
 			}
@@ -2443,9 +2566,8 @@ var ResultUi = class {
 	buttons = makeP();
 	canvas = document.createElement("canvas");
 	ui = makeDiv([this.buttons, this.canvas]);
-	constructor(commonSettingsUi$1, params, combJson) {
-		this.commonSettingsUi = commonSettingsUi$1;
-		this.params = params;
+	constructor(command, combJson) {
+		this.command = command;
 		this.ui.className = "figure";
 		for (const upperJson of combJson.uppers) {
 			const tree = TreeNode.fromJSON(false, upperJson);
@@ -2458,17 +2580,17 @@ var ResultUi = class {
 		this.selectUpperLower(0, 0);
 	}
 	selectUpperLower(iUpper, iLower) {
+		const args = this.command.args;
 		const upperTree = this.uppers[iUpper];
 		const lowerTree = this.lowers[iLower];
 		const totalValue = upperTree.value + lowerTree.value;
-		const resultRatio = lowerTree.value / totalValue;
-		const targetRatio = this.params.targetRatio;
+		const computedValue = lowerTree.value / totalValue;
 		const tree = new TreeNode(false, false, [upperTree, lowerTree], totalValue);
 		lowerTree.x += 40 * SCALE;
 		tree.width += 40 * SCALE;
 		const PADDING = 20;
 		const TOP_PADDING = 20;
-		const CAPTION_HEIGHT = 80;
+		const CAPTION_HEIGHT = 100;
 		const LEAD_LENGTH = 40 * SCALE;
 		tree.offset(-tree.x, -tree.y);
 		const VIEW_W = 500;
@@ -2496,42 +2618,43 @@ var ResultUi = class {
 			const dx = PADDING + (FIGURE_PLACE_W - tree.width) / 2;
 			const dy = PADDING + (FIGURE_PLACE_H - tree.height) / 2 + TOP_PADDING;
 			ctx.translate(dx, dy);
-			tree.draw(ctx, this.commonSettingsUi.showColorCodeCheckbox.checked);
-			const y = tree.height / 2;
+			tree.draw(ctx, false);
+			const y$1 = tree.height / 2;
 			const x0 = -LEAD_LENGTH;
 			const x1 = 0;
 			const x2 = tree.width;
 			const x3 = tree.width + LEAD_LENGTH;
-			drawWire(ctx, x0, y, x1, y);
-			drawWire(ctx, x2, y, x3, y);
+			drawWire(ctx, x0, y$1, x1, y$1);
+			drawWire(ctx, x2, y$1, x3, y$1);
 			ctx.restore();
 		}
+		let y = 0;
 		ctx.save();
 		ctx.translate(W / 2, H - PADDING - CAPTION_HEIGHT);
 		ctx.fillStyle = "#000";
 		ctx.textAlign = "center";
 		ctx.textBaseline = "top";
 		{
-			const text = `R1 = ${formatValue(upperTree.value, "Ω")}, R2 = ${formatValue(lowerTree.value, "Ω")}`;
+			const text = `R1 = ${formatValue(upperTree.value, "Ω", true, 3)}, R2 = ${formatValue(lowerTree.value, "Ω", true, 3)}`;
 			ctx.font = `${16 * SCALE}px sans-serif`;
-			ctx.fillText(text, 0, 0);
+			ctx.fillText(text, 0, y);
+			y += 26;
 		}
 		{
-			const text = `R2 / (R1 + R2) = ${formatValue(resultRatio)}`;
+			const text = `R2 / (R1 + R2) = ${formatValue(computedValue)}`;
 			ctx.font = `${24 * SCALE}px sans-serif`;
-			ctx.fillText(text, 0, 30);
+			ctx.fillText(text, 0, y);
+			y += 34;
 		}
 		{
-			let error = (resultRatio - targetRatio) / targetRatio;
-			let errorStr = getStr("No Error");
-			ctx.save();
-			if (Math.abs(error) > 1e-9) {
-				errorStr = `${getStr("Error")}: ${error > 0 ? "+" : ""}${(error * 100).toFixed(6)}%`;
-				ctx.fillStyle = error > 0 ? "#c00" : "#00c";
-			}
-			ctx.font = `${16 * SCALE}px sans-serif`;
-			ctx.fillText(`(${errorStr})`, 0, 60);
-			ctx.restore();
+			const lowerMin = lowerTree.value * (1 + args.elementTolMin);
+			const lowerMax = lowerTree.value * (1 + args.elementTolMax);
+			const upperMin = upperTree.value * (1 + args.elementTolMin);
+			const upperMax = upperTree.value * (1 + args.elementTolMax);
+			const typ = computedValue;
+			const min = lowerMin / (lowerMin + upperMax);
+			const max = lowerMax / (lowerMax + upperMin);
+			y = drawErrorText(ctx, y, typ, min, max, args.targetValue, args.targetMin, args.targetMax);
 		}
 		ctx.restore();
 	}
@@ -2548,15 +2671,14 @@ var HomeUi = class extends UiPage {
 
 //#endregion
 //#region src/main.ts
-const commonSettingsUi = new CommonSettingsUi();
 const homeUi = new HomeUi();
-const resCombFinderUi = new CombinationFinderUi(commonSettingsUi, false);
-const capCombFinderUi = new CombinationFinderUi(commonSettingsUi, true);
+const resCombFinderUi = new CombinationFinderUi(false);
+const capCombFinderUi = new CombinationFinderUi(true);
 const currLimitFinderUi = new CurrentLimitterFinderUi();
 const pages = {
 	home: homeUi,
 	rcmb: resCombFinderUi,
-	rdiv: new DividerFinderUi(commonSettingsUi),
+	rdiv: new DividerFinderUi(),
 	rled: currLimitFinderUi,
 	ccmb: capCombFinderUi
 };
@@ -2620,6 +2742,7 @@ function main(container, titleElement, followingElement) {
 }
 function showPage(pageId) {
 	if (pageId && !(pageId in pages)) return;
+	const page = pages[pageId];
 	if (currentPageId === pageId) return;
 	currentPageId = pageId;
 	if (pageId === "home") {
@@ -2627,15 +2750,16 @@ function showPage(pageId) {
 		document.title = defaultTitle;
 	} else {
 		window.location.hash = pageId;
-		document.title = `${pages[pageId].title} | ${defaultTitle}`;
+		document.title = `${page.title} | ${defaultTitle}`;
 	}
 	pageContainer.innerHTML = "";
-	pageContainer.appendChild(pages[pageId].ui);
+	pageContainer.appendChild(page.ui);
 	for (const id in menuButtons) {
 		const btn = menuButtons[id];
 		if (id === pageId) btn.classList.add("menuBarButtonActive");
 		else btn.classList.remove("menuBarButtonActive");
 	}
+	page.onActivate();
 }
 function onHashChange() {
 	let hash = window.location.hash;

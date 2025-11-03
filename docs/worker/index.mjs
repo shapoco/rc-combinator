@@ -141,7 +141,7 @@ var require_rcmb_wasm = /* @__PURE__ */ __commonJS({ "../../lib/cpp_wasm/build/r
 			}
 			var wasmBinaryFile;
 			function findWasmBinary() {
-				return locateFile("rcmb_wasm.wasm?616e620f");
+				return locateFile("rcmb_wasm.wasm?73ba8082");
 			}
 			function getBinarySync(file) {
 				if (file == wasmBinaryFile && wasmBinary) return new Uint8Array(wasmBinary);
@@ -1486,424 +1486,6 @@ let Method = /* @__PURE__ */ function(Method$1) {
 	Method$1[Method$1["FindDivider"] = 2] = "FindDivider";
 	return Method$1;
 }({});
-let Filter = /* @__PURE__ */ function(Filter$1) {
-	Filter$1[Filter$1["Exact"] = 0] = "Exact";
-	Filter$1[Filter$1["Below"] = 1] = "Below";
-	Filter$1[Filter$1["Above"] = 2] = "Above";
-	Filter$1[Filter$1["Nearest"] = 3] = "Nearest";
-	return Filter$1;
-}({});
-let TopologyConstraint = /* @__PURE__ */ function(TopologyConstraint$1) {
-	TopologyConstraint$1[TopologyConstraint$1["Series"] = 1] = "Series";
-	TopologyConstraint$1[TopologyConstraint$1["Parallel"] = 2] = "Parallel";
-	TopologyConstraint$1[TopologyConstraint$1["NoLimit"] = 3] = "NoLimit";
-	return TopologyConstraint$1;
-}({});
-const MAX_COMBINATION_ELEMENTS = 12;
-var Topology = class {
-	num_leafs = -1;
-	depth = -1;
-	hash = -1;
-	constructor(iLeft, iRight, parallel, children) {
-		this.iLeft = iLeft;
-		this.iRight = iRight;
-		this.parallel = parallel;
-		this.children = children;
-		if (children.length === 0) {
-			this.hash = 1;
-			this.depth = 0;
-			this.num_leafs = 1;
-		} else {
-			const POLY = 2149580803;
-			let lfsr = parallel ? 2863311530 : 1431655765;
-			this.num_leafs = 0;
-			for (const child of children) {
-				lfsr ^= child.hash;
-				const msb = (lfsr & 2147483648) !== 0;
-				lfsr = (lfsr & 2147483647) << 1;
-				if (msb) lfsr ^= POLY;
-				this.num_leafs += child.num_leafs;
-				this.depth = Math.max(this.depth, child.depth + 1);
-			}
-			this.hash = lfsr;
-		}
-	}
-	get isLeaf() {
-		return this.iLeft + 1 >= this.iRight;
-	}
-};
-var Combination = class {
-	capacitor = false;
-	parallel = false;
-	children = [];
-	value = 0;
-	numLeafs = -1;
-	constructor() {}
-	get isLeaf() {
-		return this.children.length === 0;
-	}
-	get unit() {
-		return this.capacitor ? "F" : "Ω";
-	}
-	toString(indent = "") {
-		if (this.isLeaf) return `${indent}${formatValue(this.value, this.unit)}\n`;
-		else {
-			let ret = "";
-			for (const child of this.children) ret += child.toString(indent + "    ");
-			ret = `${indent}${this.parallel ? "Parallel" : "Series"} (${formatValue(this.value, this.unit)}):\n${ret}`;
-			return ret;
-		}
-	}
-	toJson() {
-		if (this.isLeaf) return this.value;
-		else return {
-			parallel: this.parallel,
-			value: this.value,
-			children: this.children.map((child) => child.toJson())
-		};
-	}
-};
-var DoubleCombination = class {
-	constructor(uppers, lowers, ratio) {
-		this.uppers = uppers;
-		this.lowers = lowers;
-		this.ratio = ratio;
-	}
-	toString() {
-		const up = this.uppers[0];
-		const lo = this.lowers[0];
-		let ret = `R2 / (R1 + R2) = ${this.ratio.toFixed(6)}\nR1 + R2 = ${formatValue(up.value + lo.value, "Ω")}\n`;
-		ret += "R1:\n";
-		ret += up.toString("    ");
-		ret += "R2:\n";
-		ret += lo.toString("    ");
-		return ret;
-	}
-	toJson() {
-		return {
-			ratio: this.ratio,
-			uppers: this.uppers.map((upper) => upper.toJson()),
-			lowers: this.lowers.map((lower) => lower.toJson())
-		};
-	}
-};
-const topologies = /* @__PURE__ */ new Map();
-function findCombinations(capacitor, values, targetValue, maxElements, topoConstr, maxDepth, filter) {
-	try {
-		return {
-			error: "",
-			result: searchCombinations(capacitor, values, targetValue, maxElements, topoConstr, maxDepth, filter).map((comb) => comb.toJson())
-		};
-	} catch (e) {
-		return {
-			error: e.message,
-			result: []
-		};
-	}
-}
-function findDividers(values, targetRatio, totalMin, totalMax, maxElements, topoConstr, maxDepth, filter) {
-	try {
-		return {
-			error: "",
-			result: searchDividers(values, targetRatio, totalMin, totalMax, maxElements, topoConstr, maxDepth, filter).map((comb) => comb.toJson())
-		};
-	} catch (e) {
-		return {
-			error: e.message,
-			result: []
-		};
-	}
-}
-function searchCombinations(capacitor, values, targetValue, maxElements, topoConstr, maxDepth, filter) {
-	const epsilon = targetValue * 1e-9;
-	const retMin = targetValue / 2;
-	const retMax = targetValue * 2;
-	if (maxElements > MAX_COMBINATION_ELEMENTS) throw new Error("The search space is too large.");
-	let bestError = Number.POSITIVE_INFINITY;
-	let bestElems = Number.POSITIVE_INFINITY;
-	let bestCombinations = [];
-	for (let numElem = 1; numElem <= maxElements; numElem++) {
-		const topos = searchTopologies(0, numElem);
-		const indices = new Array(numElem).fill(0);
-		while (indices[numElem - 1] < values.length) {
-			for (const topo of topos) {
-				const t = topo.parallel ? TopologyConstraint.Parallel : TopologyConstraint.Series;
-				if (numElem >= 2 && !(t & topoConstr)) continue;
-				if (topo.depth > maxDepth) continue;
-				const value = calcValue(capacitor, values, indices, topo, null, retMin, retMax);
-				if (isNaN(value)) continue;
-				if ((filter & Filter.Below) === 0 && value < targetValue - epsilon) continue;
-				else if ((filter & Filter.Above) === 0 && value > targetValue + epsilon) continue;
-				const error = Math.abs(value - targetValue);
-				if (error - epsilon > bestError) continue;
-				if (error + epsilon >= bestError && numElem > bestElems) continue;
-				if (error + epsilon < bestError || numElem < bestElems) bestCombinations = [];
-				bestError = error;
-				bestElems = numElem;
-				const comb = new Combination();
-				calcValue(capacitor, values, indices, topo, comb);
-				bestCombinations.push(comb);
-			}
-			incrementIndices(indices, values);
-		}
-		if (bestError <= epsilon) break;
-	}
-	return filterUnnormalizedCombinations(bestCombinations);
-}
-function searchDividers(values, targetRatio, totalMin, totalMax, maxElements, topoConstr, maxDepth, filter) {
-	const epsilon = 1e-9;
-	if (maxElements > MAX_COMBINATION_ELEMENTS) throw new Error("The search space is too large.");
-	let bestError = Number.POSITIVE_INFINITY;
-	let bestElems = Number.POSITIVE_INFINITY;
-	let bestCombs = [];
-	const combMemo = /* @__PURE__ */ new Map();
-	for (let lowerElems = 1; lowerElems <= maxElements - 1; lowerElems++) {
-		const topos = searchTopologies(0, lowerElems);
-		const indices = new Array(lowerElems).fill(0);
-		while (indices[lowerElems - 1] < values.length) {
-			for (const topo of topos) {
-				let upperMaxElements = maxElements - lowerElems;
-				if (bestError < epsilon) {
-					upperMaxElements = bestElems - lowerElems;
-					if (upperMaxElements <= 0) break;
-				}
-				const t = topo.parallel ? TopologyConstraint.Parallel : TopologyConstraint.Series;
-				if (lowerElems >= 2 && !(t & topoConstr)) continue;
-				if (topo.depth > maxDepth) continue;
-				const lowerValue = calcValue(false, values, indices, topo, null, 0, totalMax);
-				if (isNaN(lowerValue)) continue;
-				const totalTargetValue = lowerValue / targetRatio;
-				const upperTargetValue = totalTargetValue - lowerValue;
-				if (totalTargetValue < totalMin || totalMax < totalTargetValue) continue;
-				const lowerKey = valueKey(lowerValue);
-				if (combMemo.has(lowerKey)) {
-					const memo = combMemo.get(lowerKey);
-					const memoLowers = memo.lowers[0].numLeafs;
-					const memoElems = memoLowers + memo.uppers[0].numLeafs;
-					if (lowerElems <= memoLowers && memoElems <= bestElems) {
-						const lowerComb$1 = new Combination();
-						calcValue(false, values, indices, topo, lowerComb$1);
-						memo.lowers.push(lowerComb$1);
-					}
-					continue;
-				}
-				const upperCombs = searchCombinations(false, values, upperTargetValue, upperMaxElements, topoConstr, maxDepth, filter);
-				if (upperCombs.length === 0) continue;
-				const ratio = lowerValue / (upperCombs[0].value + lowerValue);
-				if ((filter & Filter.Below) === 0 && ratio < targetRatio - epsilon) continue;
-				else if ((filter & Filter.Above) === 0 && ratio > targetRatio + epsilon) continue;
-				const numElems = lowerElems + upperCombs[0].numLeafs;
-				const error = Math.abs(ratio - targetRatio);
-				if (error - epsilon > bestError) continue;
-				if (error + epsilon >= bestError && numElems > bestElems) continue;
-				if (error + epsilon < bestError || numElems < bestElems) bestCombs.length = 0;
-				bestError = error;
-				bestElems = numElems;
-				const lowerComb = new Combination();
-				calcValue(false, values, indices, topo, lowerComb);
-				const dividerComb = new DoubleCombination(upperCombs, [lowerComb], ratio);
-				bestCombs.push(dividerComb);
-				combMemo.set(lowerKey, dividerComb);
-			}
-			incrementIndices(indices, values);
-		}
-	}
-	for (const comb of bestCombs) {
-		comb.uppers = filterUnnormalizedCombinations(comb.uppers);
-		comb.lowers = filterUnnormalizedCombinations(comb.lowers);
-	}
-	return bestCombs;
-}
-function incrementIndices(indices, values) {
-	const n = indices.length;
-	for (let i = 0; i < n; i++) {
-		indices[i]++;
-		if (indices[i] < values.length) break;
-		else if (i + 1 >= n) break;
-		else indices[i] = 0;
-	}
-}
-function filterUnnormalizedCombinations(combs) {
-	let bestComplexity = Number.POSITIVE_INFINITY;
-	for (const comb of combs) if (comb.numLeafs < bestComplexity) bestComplexity = comb.numLeafs;
-	return combs.filter((comb) => comb.numLeafs === bestComplexity);
-}
-function calcValue(capacitor, values, indices, topo, comb = null, min = 0, max = Number.POSITIVE_INFINITY) {
-	if (comb) {
-		comb.capacitor = capacitor;
-		comb.parallel = topo.parallel;
-		comb.numLeafs = topo.num_leafs;
-	}
-	if (topo.isLeaf) {
-		const val$1 = values[indices[topo.iLeft]];
-		if (val$1 < min || max < val$1) return NaN;
-		if (comb) comb.value = val$1;
-		return val$1;
-	}
-	let invSum = false;
-	if (capacitor) invSum = !topo.parallel;
-	else invSum = topo.parallel;
-	let accum = 0;
-	let lastVal = Number.POSITIVE_INFINITY;
-	let lastTopo = -1;
-	for (let iChild = 0; iChild < topo.children.length; iChild++) {
-		const childTopo = topo.children[iChild];
-		const childComb = comb ? new Combination() : null;
-		const last = iChild + 1 >= topo.children.length;
-		let childMin = 0;
-		let childMax = Number.POSITIVE_INFINITY;
-		if (invSum) if (last) {
-			const tmp = 1 / accum;
-			childMin = tmp * min / (tmp - min);
-			childMax = tmp * max / (tmp - max);
-			if (childMax < childMin) childMax = Number.POSITIVE_INFINITY;
-		} else childMin = min;
-		else {
-			if (last) childMin = min - accum;
-			childMax = max - accum;
-		}
-		const childVal = calcValue(capacitor, values, indices, childTopo, childComb, childMin, childMax);
-		if (isNaN(childVal)) return NaN;
-		if (lastTopo === childTopo.hash) {
-			if (childVal > lastVal) return NaN;
-		}
-		lastTopo = childTopo.hash;
-		lastVal = childVal;
-		if (comb) comb.children.push(childComb);
-		if (invSum) accum += 1 / childVal;
-		else accum += childVal;
-	}
-	const val = invSum ? 1 / accum : accum;
-	if (comb) comb.value = val;
-	return val;
-}
-function searchTopologies(iLeft, iRight) {
-	let topos = searchTopologiesRecursive(iLeft, iRight, false);
-	if (iLeft + 1 < iRight) topos = topos.concat(searchTopologiesRecursive(iLeft, iRight, true));
-	return topos;
-}
-function searchTopologiesRecursive(iLeft, iRight, parallel) {
-	const key = iLeft + iRight * 1e3 + (parallel ? 1e6 : 0);
-	if (topologies.has(key)) return topologies.get(key);
-	const ret = new Array();
-	if (iLeft + 1 >= iRight) {
-		ret.push(new Topology(iLeft, iRight, parallel, []));
-		topologies.set(key, ret);
-		return ret;
-	}
-	const n = iRight - iLeft;
-	divideElementsRecursive(new Array(n), 0, n, (partSizes, numParts) => {
-		const parts = new Array(numParts);
-		let il = iLeft;
-		for (let iPart = 0; iPart < numParts; iPart++) {
-			const ir = il + partSizes[iPart];
-			parts[iPart] = searchTopologiesRecursive(il, ir, !parallel);
-			il = ir;
-		}
-		const indices = new Array(numParts).fill(0);
-		while (indices[numParts - 1] < parts[numParts - 1].length) {
-			const childNodes = new Array(numParts);
-			for (let iPart = 0; iPart < numParts; iPart++) childNodes[iPart] = parts[iPart][indices[iPart]];
-			ret.push(new Topology(iLeft, iRight, parallel, childNodes));
-			for (let i = 0; i < numParts; i++) {
-				indices[i]++;
-				if (indices[i] < parts[i].length) break;
-				else if (i + 1 >= numParts) break;
-				else indices[i] = 0;
-			}
-		}
-	}, 0);
-	topologies.set(key, ret);
-	return ret;
-}
-function divideElementsRecursive(buff, buffSize, numElems, callback, depth) {
-	if (numElems === 0) callback(buff, buffSize);
-	else {
-		let wMax = numElems;
-		if (buffSize == 0) wMax = numElems - 1;
-		else if (buffSize > 0 && buff[buffSize - 1] < wMax) wMax = buff[buffSize - 1];
-		for (let w = 1; w <= wMax; w++) {
-			buff[buffSize] = w;
-			divideElementsRecursive(buff, buffSize + 1, numElems - w, callback, depth + 1);
-		}
-	}
-}
-function formatValue(value, unit = "", usePrefix = null) {
-	if (!isFinite(value) || isNaN(value)) return "NaN";
-	if (usePrefix === null) usePrefix = unit !== "";
-	let prefix = "";
-	if (usePrefix) {
-		if (value >= 999999e6) {
-			value /= 0xe8d4a51000;
-			prefix = "T";
-		} else if (value >= 999999e3) {
-			value /= 1e9;
-			prefix = "G";
-		} else if (value >= 999999) {
-			value /= 1e6;
-			prefix = "M";
-		} else if (value >= 999.999) {
-			value /= 1e3;
-			prefix = "k";
-		} else if (value >= .999999) prefix = "";
-		else if (value >= 999999e-9) {
-			value *= 1e3;
-			prefix = "m";
-		} else if (value >= 9.99999e-7) {
-			value *= 1e6;
-			prefix = "μ";
-		} else if (value >= 999999e-15) {
-			value *= 1e9;
-			prefix = "n";
-		} else if (value >= 999999e-18) {
-			value *= 0xe8d4a51000;
-			prefix = "p";
-		}
-	}
-	const minDigits = usePrefix ? 3 : 6;
-	value = Math.round(value * pow10(minDigits));
-	let s = "";
-	while (s.length <= minDigits + 1 || value > 0) {
-		const digit = value % 10;
-		value = Math.floor(value / 10);
-		s = digit.toString() + s;
-		if (s.length === minDigits) s = "." + s;
-	}
-	s = s.replace(/\.?0+$/, "");
-	return `${s} ${prefix}${unit}`.trim();
-}
-function valueKey(value) {
-	const clog10 = Math.floor(Math.log10(Math.abs(value)) + 1e-9);
-	return Math.round(value / pow10(clog10 - 6));
-}
-function pow10(exp) {
-	let ret = 1;
-	const neg = exp < 0;
-	if (neg) exp = -exp;
-	if (exp >= 16) {
-		ret *= 0x2386f26fc10000;
-		exp -= 16;
-	}
-	if (exp >= 8) {
-		ret *= 1e8;
-		exp -= 8;
-	}
-	if (exp >= 4) {
-		ret *= 1e4;
-		exp -= 4;
-	}
-	if (exp >= 2) {
-		ret *= 100;
-		exp -= 2;
-	}
-	if (exp >= 1) {
-		ret *= 10;
-		exp -= 1;
-	}
-	ret *= Math.pow(10, exp);
-	if (neg) ret = 1 / ret;
-	return ret;
-}
 
 //#endregion
 //#region src/WorkerCore.ts
@@ -1911,53 +1493,38 @@ var WorkerCore_exports = {};
 let wasmCore = null;
 const thisWorker = self;
 thisWorker.onmessage = async (e) => {
-	const args = e.data;
-	const useWasm = args.useWasm;
-	if (useWasm) {
-		if (!wasmCore) {
-			console.log("Loading WASM module...");
-			wasmCore = await (0, import_rcmb_wasm.default)();
-			console.log("WASM module loaded.");
-		}
-	}
-	const capacitor = args.capacitor;
-	const method = args.method;
-	const values = args.values;
-	const maxElements = args.maxElements;
-	const topologyConstraint = args.topologyConstraint;
-	const maxDepth = args.maxDepth;
-	const filter = args.filter;
 	let ret = {
 		error: "",
 		result: [],
 		timeSpent: 0
 	};
+	const cmd = e.data;
+	const method = cmd.method;
+	if (!wasmCore) {
+		console.log("Loading WASM module...");
+		wasmCore = await (0, import_rcmb_wasm.default)();
+		console.log("WASM module loaded.");
+	}
 	const start = performance.now();
 	switch (method) {
 		case Method.FindCombination:
 			{
-				const targetValue = args.targetValue;
-				if (useWasm) {
-					const vec = new wasmCore.VectorDouble();
-					for (const v of values) vec.push_back(v);
-					const retStr = wasmCore.findCombinations(capacitor, vec, targetValue, maxElements, topologyConstraint, maxDepth, filter);
-					vec.delete();
-					ret = JSON.parse(retStr);
-				} else ret = findCombinations(capacitor, values, targetValue, maxElements, topologyConstraint, maxDepth, filter);
+				const args = cmd.args;
+				const elementValues = new wasmCore.VectorDouble();
+				for (const v of args.elementValues) elementValues.push_back(v);
+				const retStr = wasmCore.findCombinations(args.capacitor, elementValues, args.maxElements, args.topologyConstraint, args.maxDepth, args.targetValue, args.targetMin, args.targetMax);
+				elementValues.delete();
+				ret = JSON.parse(retStr);
 			}
 			break;
 		case Method.FindDivider:
 			{
-				const targetRatio = args.targetRatio;
-				const totalMin = args.totalMin;
-				const totalMax = args.totalMax;
-				if (useWasm) {
-					const vec = new wasmCore.VectorDouble();
-					for (const v of values) vec.push_back(v);
-					const retStr = wasmCore.findDividers(vec, targetRatio, totalMin, totalMax, maxElements, topologyConstraint, maxDepth, filter);
-					vec.delete();
-					ret = JSON.parse(retStr);
-				} else ret = findDividers(values, targetRatio, totalMin, totalMax, maxElements, topologyConstraint, maxDepth, filter);
+				const args = cmd.args;
+				const elementValues = new wasmCore.VectorDouble();
+				for (const v of args.elementValues) elementValues.push_back(v);
+				const retStr = wasmCore.findDividers(elementValues, args.maxElements, args.topologyConstraint, args.maxDepth, args.totalMin, args.totalMax, args.targetValue, args.targetMin, args.targetMax);
+				elementValues.delete();
+				ret = JSON.parse(retStr);
 			}
 			break;
 		default:

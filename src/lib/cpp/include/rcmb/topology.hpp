@@ -21,7 +21,7 @@ class TopologyClass {
   const std::vector<Topology> children;
   const int num_leafs;
   const int depth;
-  const hash_t hash;
+  const uint32_t id;
 
  private:
   inline static int count_leafs(const std::vector<Topology>& children) {
@@ -50,21 +50,21 @@ class TopologyClass {
     }
   }
 
-  inline static hash_t compute_hash(bool parallel,
-                                    const std::vector<Topology>& children) {
-    hash_t h = 0x12345678;
-    if (!children.empty()) {
-      if (parallel) {
-        h = crc32_add_u32(h, 0xF0F0F0F0);
-      } else {
-        h = crc32_add_u32(h, 0x0F0F0F0F);
-      }
-      for (const auto& child : children) {
-        h = crc32_add_u32(h, child->hash);
-      }
-    }
-    return h;
-  }
+  // inline static hash_t compute_hash(bool parallel,
+  //                                   const std::vector<Topology>& children) {
+  //   hash_t h = 0x12345678;
+  //   if (!children.empty()) {
+  //     if (parallel) {
+  //       h = crc32_add_u32(h, 0xF0F0F0F0);
+  //     } else {
+  //       h = crc32_add_u32(h, 0x0F0F0F0F);
+  //     }
+  //     for (const auto& child : children) {
+  //       h = crc32_add_u32(h, child->hash);
+  //     }
+  //   }
+  //   return h;
+  // }
 
  public:
   TopologyClass(bool parallel, const std::vector<Topology>& children)
@@ -72,7 +72,7 @@ class TopologyClass {
         children(children),
         num_leafs(count_leafs(children)),
         depth(count_depth(children)),
-        hash(compute_hash(parallel, children)) {}
+        id(generate_object_id()) {}
 
   inline bool is_leaf() const { return num_leafs == 1; }
 
@@ -145,12 +145,14 @@ std::vector<Topology>& get_topologies(int num_leafs, bool parallel) {
       throw std::runtime_error("num_leafs must be >= 1");
     }
 
-    // #ifdef RCCOMB_DEBUG
-    //     for (const auto& topo : cache[key]) {
-    //       RCCOMB_DEBUG_PRINT("new topology: %s\n",
-    //       topo->to_string().c_str());
-    //     }
-    // #endif
+#ifdef RCCOMB_DEBUG
+    // for (const auto& topo : cache[key]) {
+    //   RCCOMB_DEBUG_PRINT("new topology: %s\n", topo->to_string().c_str());
+    // }
+    RCCOMB_DEBUG_PRINT("Generated %d topologies for n=%d, parallel=%d\n",
+                       static_cast<int>(cache[key].size()), num_leafs,
+                       parallel ? 1 : 0);
+#endif
   }
 
   return cache[key];
@@ -190,21 +192,33 @@ static void collect_children(NodeDivideContext& ctx, int num_parts) {
   }
 
   // 孫ノードを総当たりで組み合わせて子ノードを生成
-  std::vector<int> indices(num_parts, 0);
-  while (indices[num_parts - 1] <
-         static_cast<int>(parts[num_parts - 1].size())) {
+  std::vector<size_t> indices(num_parts, 0);
+  while (indices[num_parts - 1] < parts[num_parts - 1].size()) {
     // 子ノードを生成
+    int last_num_leafs = -1;
+    uint32_t last_id = 0;
+    bool skip = false;
     std::vector<Topology> children(num_parts);
     for (int i = 0; i < num_parts; i++) {
-      children[i] = parts[i][indices[i]];
+      auto child = parts[i][indices[i]];
+      if (child->num_leafs == last_num_leafs && child->id > last_id) {
+        // 重複回避: 葉の数が同じ子ノードは ID が同じか降順の場合のみ許可
+        skip = true;
+        break;
+      }
+      last_num_leafs = child->num_leafs;
+      last_id = child->id;
+      children[i] = child;
     }
-    const auto node = create_topology_node(ctx.parallel, children);
-    ctx.nodes.push_back(node);
+    if (!skip) {
+      const auto node = create_topology_node(ctx.parallel, children);
+      ctx.nodes.push_back(node);
+    }
 
     // インデックスをインクリメント
     for (int i = 0; i < num_parts; i++) {
       indices[i]++;
-      if (indices[i] < static_cast<int>(parts[i].size())) {
+      if (indices[i] < parts[i].size()) {
         break;
       } else if (i + 1 >= num_parts) {
         break;

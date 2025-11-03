@@ -4,21 +4,47 @@ export const enum Method {
   FindDivider = 2,
 }
 
-export const enum Filter {
-  Exact = 0,
-  Below = 1,
-  Above = 2,
-  Nearest = 3,
-}
-
 export const enum TopologyConstraint {
   Series = 1,
   Parallel = 2,
   NoLimit = Series | Parallel,
 }
 
+export type FindCombinationArgs = {
+  capacitor: boolean,
+  elementValues: number[],
+  elementTolMin: number,
+  elementTolMax: number,
+  maxElements: number,
+  topologyConstraint: TopologyConstraint,
+  maxDepth: number,
+  targetValue: number,
+  targetMin: number,
+  targetMax: number,
+};
+
+export type FindDividerArgs = {
+  elementValues: number[],
+  elementTolMin: number,
+  elementTolMax: number,
+  maxElements: number,
+  topologyConstraint: TopologyConstraint,
+  maxDepth: number,
+  totalMin: number,
+  totalMax: number,
+  targetValue: number,
+  targetMin: number,
+  targetMax: number,
+};
+
+export type WorkerCommand = {
+  method: Method,
+  args: FindCombinationArgs | FindDividerArgs,
+}
+
 export const MAX_COMBINATION_ELEMENTS = 12;
 
+/*
 export class Topology {
   public num_leafs = -1;
   public depth = -1;
@@ -532,6 +558,7 @@ function divideElementsRecursive(
     }
   }
 }
+*/
 
 export function formatValue(
     value: number, unit: string = '', usePrefix: boolean|null = null): string {
