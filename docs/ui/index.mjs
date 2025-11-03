@@ -2634,7 +2634,7 @@ var ResultUi = class {
 		ctx.textAlign = "center";
 		ctx.textBaseline = "top";
 		{
-			const text = `R1 = ${formatValue(upperTree.value, "Ω", true, 3)}, R2 = ${formatValue(lowerTree.value, "Ω", true, 3)}`;
+			const text = `R1 + R2 = ${formatValue(upperTree.value, "Ω", true, 3)} + ${formatValue(lowerTree.value, "Ω", true, 3)} = ${formatValue(totalValue, "Ω", true, 3)}`;
 			ctx.font = `${16 * SCALE}px sans-serif`;
 			ctx.fillText(text, 0, y);
 			y += 26;

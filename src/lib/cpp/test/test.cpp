@@ -77,7 +77,7 @@ std::map<int, std::vector<TestTopology>> topologies;
 bool test_search_combinations(ComponentType type, std::vector<value_t>& series,
                               int max_elements, value_t target);
 bool test_search_dividers(std::vector<value_t>& series, int max_elements,
-                          value_t target);
+                          value_t target, bool verbose = false);
 TestCombination test_calc_value(bool bake, ComponentType type,
                                 TestTopology& topo, const value_t* leaf_values,
                                 int pos, value_t* out_value = nullptr);
@@ -155,6 +155,17 @@ int main(int argc, char** argv) {
     }
   }
 
+  {
+    int max_elements = 10;
+    value_t target = 19.0 / 20.0;
+    bool ok = test_search_dividers(K10, 10, target);
+    if (!ok) {
+      RCCOMB_DEBUG_PRINT("Divider test failed: max_elements=%d, target=%.9f\n",
+                         max_elements, target);
+      return -1;
+    }
+  }
+
   auto t_elapsed = std::chrono::high_resolution_clock::now() - t_start;
   auto ms =
       std::chrono::duration_cast<std::chrono::milliseconds>(t_elapsed).count();
@@ -165,14 +176,12 @@ int main(int argc, char** argv) {
 
 bool test_search_combinations(ComponentType type, std::vector<value_t>& series,
                               int max_elements, value_t target) {
-  const value_t elem_tol_min = -0.01;
-  const value_t elem_tol_max = 0.01;
   value_t target_min = target * 0.5;
   value_t target_max = target * 1.5;
 
   ValueList value_list(series);
-  ValueSearchArgs vsa(type, value_list, elem_tol_min, elem_tol_max,
-                      max_elements, target, target_min, target_max);
+  ValueSearchArgs vsa(type, value_list, max_elements, target, target_min,
+                      target_max);
 
   std::vector<Combination> dut_combs;
   result_t ret = search_combinations(vsa, dut_combs);
@@ -282,16 +291,14 @@ bool test_search_combinations(ComponentType type, std::vector<value_t>& series,
 }
 
 bool test_search_dividers(std::vector<value_t>& series, int max_elements,
-                          value_t target) {
-  const value_t elem_tol_min = -0.01;
-  const value_t elem_tol_max = 0.01;
+                          value_t target, bool verbose) {
   const value_t total_min = 10000;
   const value_t total_max = 100000;
   const value_t target_min = target * 0.5;
   const value_t target_max = target * 1.5;
   ValueList value_list(series);
-  DividerSearchArgs dsa(value_list, elem_tol_min, elem_tol_max, max_elements,
-                        total_min, total_max, target, target_min, target_max);
+  DividerSearchArgs dsa(value_list, max_elements, total_min, total_max, target,
+                        target_min, target_max);
   auto start = std::chrono::high_resolution_clock::now();
   std::vector<DoubleCombination> dividers;
   result_t ret = search_dividers(dsa, dividers);
@@ -325,7 +332,7 @@ bool test_search_dividers(std::vector<value_t>& series, int max_elements,
     }
   }
 
-  if (!success) {
+  if (!success || verbose) {
     auto end = std::chrono::high_resolution_clock::now();
     for (const auto& div : dividers) {
       RCCOMB_DEBUG_PRINT("%s\n", div->to_string().c_str());

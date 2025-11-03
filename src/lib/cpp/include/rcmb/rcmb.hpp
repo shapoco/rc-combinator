@@ -273,11 +273,13 @@ result_t search_combinations(ValueSearchArgs& args,
           const auto error = std::abs(value - args.target);
           if (error - eps > best_error) {
             return;
-          }
-          if (error + eps >= best_error && num_elems > best_elems) {
-            return;
-          }
-          if (error + eps < best_error || num_elems < best_elems) {
+          } else if (error + eps >= best_error) {
+            if (num_elems > best_elems) {
+              return;
+            } else if (num_elems < best_elems) {
+              best_combs.clear();
+            }
+          } else {
             best_combs.clear();
           }
           best_combs.push_back(ctx.root_state->bake(args.type));
@@ -428,11 +430,13 @@ result_t search_dividers(DividerSearchArgs& args,
           const value_t error = std::abs(ratio - args.target_value);
           if (error - eps > best_error) {
             return;
-          }
-          if (error + eps >= best_error && num_elems > best_elems) {
-            return;
-          }
-          if (error + eps < best_error || num_elems < best_elems) {
+          } else if (error + eps >= best_error) {
+            if (num_elems > best_elems) {
+              return;
+            } else if (num_elems < best_elems) {
+              best_combs.clear();
+            }
+          } else {
             best_combs.clear();
           }
 
