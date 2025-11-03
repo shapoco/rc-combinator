@@ -43,7 +43,10 @@ export class DividerFinderUi extends UiPages.UiPage {
         [getStr('Top Topology'), this.topTopologySelector, ''],
         [getStr('Max Nests'), this.maxDepthInput, ''],
         ['R1 + R2', this.totalRangeBox.ui, 'Ω'],
-        [RcmbUi.strong(getStr('Target Ratio')), this.targetInput.inputBox, ''],
+        [
+          RcmbUi.makeSpan([RcmbUi.strong(getStr('Target')), ' (Vout / Vin)']),
+          this.targetInput.inputBox, ''
+        ],
         [getStr('Target Tolerance'), this.targetToleranceBox.ui, '%'],
       ]),
       this.statusBox,

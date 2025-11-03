@@ -2445,7 +2445,7 @@ var DividerFinderUi = class extends UiPage {
 					"Ω"
 				],
 				[
-					strong(getStr("Target Ratio")),
+					makeSpan([strong(getStr("Target")), " (Vout / Vin)"]),
 					this.targetInput.inputBox,
 					""
 				],
