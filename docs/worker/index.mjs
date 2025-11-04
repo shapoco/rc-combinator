@@ -141,7 +141,7 @@ var require_rcmb_wasm = /* @__PURE__ */ __commonJS({ "../../lib/cpp_wasm/build/r
 			}
 			var wasmBinaryFile;
 			function findWasmBinary() {
-				return locateFile("rcmb_wasm.wasm?8055ebf3");
+				return locateFile("rcmb_wasm.wasm?17a8c1db");
 			}
 			function getBinarySync(file) {
 				if (file == wasmBinaryFile && wasmBinary) return new Uint8Array(wasmBinary);
@@ -1513,7 +1513,7 @@ thisWorker.onmessage = async (e) => {
 					const args = cmd.args;
 					const elementValues = new wasmCore.VectorDouble();
 					for (const v of args.elementValues) elementValues.push_back(v);
-					const retStr = wasmCore.findCombinations(args.capacitor, elementValues, args.maxElements, args.topologyConstraint, args.maxDepth, args.targetValue, args.targetMin, args.targetMax);
+					const retStr = wasmCore.findCombinations(args.capacitor, elementValues, args.numElemsMin, args.numElemsMax, args.topologyConstraint, args.maxDepth, args.targetValue, args.targetMin, args.targetMax);
 					elementValues.delete();
 					ret = JSON.parse(retStr);
 				}
@@ -1523,7 +1523,7 @@ thisWorker.onmessage = async (e) => {
 					const args = cmd.args;
 					const elementValues = new wasmCore.VectorDouble();
 					for (const v of args.elementValues) elementValues.push_back(v);
-					const retStr = wasmCore.findDividers(elementValues, args.maxElements, args.topologyConstraint, args.maxDepth, args.totalMin, args.totalMax, args.targetValue, args.targetMin, args.targetMax);
+					const retStr = wasmCore.findDividers(elementValues, args.numElemsMin, args.numElemsMax, args.topologyConstraint, args.maxDepth, args.totalMin, args.totalMax, args.targetValue, args.targetMin, args.targetMax);
 					elementValues.delete();
 					ret = JSON.parse(retStr);
 				}

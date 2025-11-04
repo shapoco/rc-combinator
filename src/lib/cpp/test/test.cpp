@@ -180,7 +180,7 @@ bool test_search_combinations(ComponentType type, std::vector<value_t>& series,
   value_t target_max = target * 1.5;
 
   ValueList value_list(series);
-  ValueSearchArgs vsa(type, value_list, max_elements, target, target_min,
+  ValueSearchArgs vsa(type, value_list, 1, max_elements, target, target_min,
                       target_max);
 
   std::vector<Combination> dut_combs;
@@ -297,8 +297,8 @@ bool test_search_dividers(std::vector<value_t>& series, int max_elements,
   const value_t target_min = target * 0.5;
   const value_t target_max = target * 1.5;
   ValueList value_list(series);
-  DividerSearchArgs dsa(value_list, max_elements, total_min, total_max, target,
-                        target_min, target_max);
+  DividerSearchArgs dsa(value_list, 2, max_elements, total_min, total_max,
+                        target, target_min, target_max);
   auto start = std::chrono::high_resolution_clock::now();
   std::vector<DoubleCombination> dividers;
   result_t ret = search_dividers(dsa, dividers);

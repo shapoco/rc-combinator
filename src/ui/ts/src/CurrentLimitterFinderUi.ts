@@ -6,10 +6,10 @@ import {getStr} from './Text';
 import * as UiPages from './UiPages';
 
 export class CurrentLimitterFinderUi extends UiPages.UiPage {
-  powerVoltageInput = new RcmbUi.ValueBox('3.3');
-  forwardVoltageInput = new RcmbUi.ValueBox('2');
-  forwardCurrentInput = new RcmbUi.ValueBox('1m');
-  targetToleranceBox = new RcmbUi.RangeBox(true, -50, 50);
+  powerVoltageInput = new RcmbUi.ValueBox(false, '3.3');
+  forwardVoltageInput = new RcmbUi.ValueBox(false, '2');
+  forwardCurrentInput = new RcmbUi.ValueBox(false, '1m');
+  targetToleranceBox = new RcmbUi.RangeBox(false, true, -50, 50);
   resultBox = RcmbUi.makeDiv();
 
   constructor() {

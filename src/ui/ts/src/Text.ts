@@ -58,6 +58,7 @@ const texts: {[key: string]: {[key: string]: string}} = {
     'Voltage Ratio': '電圧比',
     'Target Ratio': '目標電圧比',
     'Search error': '探索エラー',
+    'Number of Elements': '素子の数',
   },
 };
 

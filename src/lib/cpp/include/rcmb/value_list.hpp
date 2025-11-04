@@ -15,6 +15,22 @@ class ValueList {
 
   inline size_t size() const { return values.size(); }
 
+  result_t validate() const {
+    value_t prev_value = -1;
+    for (const auto& v : values) {
+      if (!value_is_valid(v)) {
+        RCCOMB_DEBUG_PRINT("Invalid element in value list: %.9f\n", v);
+        return result_t::INVALID_ELEMENT_VALUE_LIST;
+      }
+      if (v == prev_value) {
+        RCCOMB_DEBUG_PRINT("Duplicate element in value list: %.9f\n", v);
+        return result_t::INVALID_ELEMENT_VALUE_LIST;
+      }
+      prev_value = v;
+    }
+    return result_t::SUCCESS;
+  }
+
   // todo: optimize
   const value_t* get_values(value_t min, value_t max, int* count) const {
     int i_start = -1;

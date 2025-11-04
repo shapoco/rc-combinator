@@ -5,13 +5,14 @@ export declare interface VectorDouble {
 
 export declare interface RcmbWasm {
   findCombinations:
-      (capacitor: boolean, element_values: VectorDouble, max_elements: number,
-       topology_constraint: number, max_depth: number, target_value: number,
-       target_min: number, target_max: number) => string;
-  findDividers:
-      (values: VectorDouble, max_elements: number, topology_constraint: number,
-       max_depth: number, total_min: number, total_max: number,
+      (capacitor: boolean, element_values: VectorDouble, num_elems_min: number,
+       num_elems_max: number, topology_constraint: number, max_depth: number,
        target_value: number, target_min: number, target_max: number) => string;
+  findDividers:
+      (values: VectorDouble, num_elems_min: number, num_elems_max: number,
+       topology_constraint: number, max_depth: number, total_min: number,
+       total_max: number, target_value: number, target_min: number,
+       target_max: number) => string;
   VectorDouble: new() => VectorDouble;
 }
 

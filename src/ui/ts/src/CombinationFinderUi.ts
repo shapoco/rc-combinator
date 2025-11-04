@@ -8,14 +8,14 @@ import {WorkerAgent} from './WorkerAgents';
 
 export class CombinationFinderUi extends UiPages.UiPage {
   rangeSelector: RcmbUi.ValueRangeSelector|null = null;
-  numElementsInput =
-      RcmbUi.makeNumElementInput(RcmbJS.MAX_COMBINATION_ELEMENTS, 3);
+  numElemRangeBox =
+      new RcmbUi.RangeBox(true, false, 1, RcmbJS.MAX_COMBINATION_ELEMENTS);
   topTopologySelector = RcmbUi.makeTopologySelector();
   maxDepthInput = RcmbUi.makeDepthSelector();
   statusBox = RcmbUi.makeP();
   resultBox = RcmbUi.makeDiv();
   targetInput: RcmbUi.ValueBox|null = null;
-  targetToleranceBox = new RcmbUi.RangeBox(true);
+  targetToleranceBox = new RcmbUi.RangeBox(false, true);
 
   unit: string = '';
 
@@ -28,8 +28,10 @@ export class CombinationFinderUi extends UiPages.UiPage {
 
     this.unit = capacitor ? 'F' : 'Ω';
     this.rangeSelector = new RcmbUi.ValueRangeSelector(capacitor);
-    this.targetInput = new RcmbUi.ValueBox(capacitor ? '3.14μ' : '5.1k');
+    this.targetInput = new RcmbUi.ValueBox(false, capacitor ? '3.14μ' : '5.1k');
     this.targetToleranceBox.setDefaultValue(-50, 50)
+    this.numElemRangeBox.minValue = 1;
+    this.numElemRangeBox.maxValue = 3;
 
     const paramTable = RcmbUi.makeTable([
       [getStr('Item'), getStr('Value'), getStr('Unit')],
@@ -37,7 +39,7 @@ export class CombinationFinderUi extends UiPages.UiPage {
       [getStr('Custom Values'), this.rangeSelector.customValuesBox, this.unit],
       [getStr('Element Range'), this.rangeSelector.elementRangeBox.ui, 'Ω'],
       [getStr('Element Tolerance'), this.rangeSelector.toleranceUi.ui, '%'],
-      [getStr('Max Elements'), this.numElementsInput.inputBox, ''],
+      [getStr('Number of Elements'), this.numElemRangeBox.ui, ''],
       [getStr('Top Topology'), this.topTopologySelector, ''],
       [getStr('Max Nests'), this.maxDepthInput, ''],
       [
@@ -64,7 +66,7 @@ export class CombinationFinderUi extends UiPages.UiPage {
     ]);
 
     this.rangeSelector.setOnChange(() => this.conditionChanged());
-    this.numElementsInput.setOnChange(() => this.conditionChanged());
+    this.numElemRangeBox.addEventListener(() => this.conditionChanged());
     this.topTopologySelector.addEventListener(
         'change', () => this.conditionChanged());
     this.maxDepthInput.addEventListener(
@@ -101,7 +103,8 @@ export class CombinationFinderUi extends UiPages.UiPage {
         elementValues: rangeSelector.getAvailableValues(targetValue),
         elementTolMin: rangeSelector.toleranceUi.minValue / 100,
         elementTolMax: rangeSelector.toleranceUi.maxValue / 100,
-        maxElements: this.numElementsInput.value,
+        numElemsMin: this.numElemRangeBox.minValue,
+        numElemsMax: this.numElemRangeBox.maxValue,
         topologyConstraint: topoConstr,
         maxDepth: parseInt(this.maxDepthInput.value),
         targetValue: targetValue,

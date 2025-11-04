@@ -32,7 +32,10 @@ enum class result_t {
   SEARCH_SPACE_TOO_LARGE,
   BROKEN_TOPOLOGY,
   INACCURATE_RESULT,
-  NEGATIVE_VALUE,
+  PARAMETER_OUT_OF_RANGE,
+  PARAMETER_RANGE_REVERSAL,
+  INVALID_ELEMENT_VALUE_LIST,
+  INTERNAL_CORRUPTION,
 };
 
 enum class topology_constraint_t {
@@ -41,15 +44,7 @@ enum class topology_constraint_t {
   NO_LIMIT = 3,
 };
 
-enum class filter_t {
-  EXACT = 0,
-  BELOW = 1,
-  ABOVE = 2,
-  NEAREST = 3,
-};
-inline bool operator&(filter_t a, filter_t b) {
-  return (static_cast<int>(a) & static_cast<int>(b)) != 0;
-}
+static const int MAX_COMBINATION_ELEMENTS = 15;
 
 static inline const char* result_to_string(result_t res) {
   switch (res) {
@@ -61,8 +56,14 @@ static inline const char* result_to_string(result_t res) {
       return "The topology is broken.";
     case result_t::INACCURATE_RESULT:
       return "Inaccurate result.";
-    case result_t::NEGATIVE_VALUE:
-      return "A negative value was encountered.";
+    case result_t::PARAMETER_OUT_OF_RANGE:
+      return "Parameter out of range.";
+    case result_t::PARAMETER_RANGE_REVERSAL:
+      return "Parameter range reversal.";
+    case result_t::INVALID_ELEMENT_VALUE_LIST:
+      return "Invalid element value list.";
+    case result_t::INTERNAL_CORRUPTION:
+      return "Internal corruption.";
     default:
       return "Unknown result.";
   }

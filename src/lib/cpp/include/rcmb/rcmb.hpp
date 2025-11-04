@@ -19,26 +19,63 @@ namespace rcmb {
 struct ValueSearchArgs {
   const ComponentType type;
   const ValueList& element_values;
-  const int max_elements;
+  const int num_elems_min;
+  const int num_elems_max;
   const value_t target;
   const value_t target_min;
   const value_t target_max;
   topology_constraint_t topology_constraint = topology_constraint_t::NO_LIMIT;
   int max_depth = 9999;
 
-  ValueSearchArgs(ComponentType type, const ValueList& values, int max_elems,
-                  value_t target, value_t target_min, value_t target_max)
+  ValueSearchArgs(ComponentType type, const ValueList& values,
+                  int num_elems_min, int num_elems_max, value_t target,
+                  value_t target_min, value_t target_max)
       : type(type),
         element_values(values),
-        max_elements(max_elems),
+        num_elems_min(num_elems_min),
+        num_elems_max(num_elems_max),
         target(target),
-        target_min(target_min),
+        target_min(0 > target_min ? 0 : target_min),
         target_max(target_max) {}
+
+  result_t validate() const {
+    result_t ret;
+    ret = element_values.validate();
+    if (ret != result_t::SUCCESS) {
+      return ret;
+    }
+    if (num_elems_max < num_elems_min) {
+      RCCOMB_DEBUG_PRINT("Element count range reversal: %d > %d\n",
+                         num_elems_max, num_elems_min);
+      return result_t::PARAMETER_RANGE_REVERSAL;
+    }
+    if (num_elems_min < 1 || MAX_COMBINATION_ELEMENTS < num_elems_max) {
+      RCCOMB_DEBUG_PRINT("Element count out of range: %d ... %d\n",
+                         num_elems_min, num_elems_max);
+      return result_t::PARAMETER_OUT_OF_RANGE;
+    }
+    if (!value_is_valid(target)) {
+      RCCOMB_DEBUG_PRINT("Invalid target value: %.9f\n", target);
+      return result_t::PARAMETER_OUT_OF_RANGE;
+    }
+    if (target_min < 0 || !value_is_valid(target_max)) {
+      RCCOMB_DEBUG_PRINT("Target range out of range: %.9f ... %.9f\n",
+                         target_min, target_max);
+      return result_t::PARAMETER_OUT_OF_RANGE;
+    }
+    if (target_max < target_min) {
+      RCCOMB_DEBUG_PRINT("Target range reversal: %.9f > %.9f\n", target_max,
+                         target_min);
+      return result_t::PARAMETER_RANGE_REVERSAL;
+    }
+    return result_t::SUCCESS;
+  }
 };
 
 struct DividerSearchArgs {
   const ValueList& element_values;
-  int max_elements;
+  int num_elems_min;
+  int num_elems_max;
   const value_t total_min;
   const value_t total_max;
   const value_t target_value;
@@ -47,16 +84,61 @@ struct DividerSearchArgs {
   topology_constraint_t topology_constraint = topology_constraint_t::NO_LIMIT;
   int max_depth = 9999;
 
-  DividerSearchArgs(const ValueList& values, int max_elems,
-                    value_t total_min_val, value_t total_max_val,
-                    value_t target_val, value_t target_min, value_t target_max)
+  DividerSearchArgs(const ValueList& values, int num_elems_min,
+                    int num_elems_max, value_t total_min_val,
+                    value_t total_max_val, value_t target_val,
+                    value_t target_min, value_t target_max)
       : element_values(values),
-        max_elements(max_elems),
-        total_min(total_min_val),
+        num_elems_min(num_elems_min),
+        num_elems_max(num_elems_max),
+        total_min(0 > total_min_val ? 0 : total_min_val),
         total_max(total_max_val),
         target_value(target_val),
-        target_min(target_min),
-        target_max(target_max) {}
+        target_min(0 > target_min ? 0 : target_min),
+        target_max(1 < target_max ? 1 : target_max) {}
+
+  result_t validate() const {
+    result_t ret;
+    ret = element_values.validate();
+    if (ret != result_t::SUCCESS) {
+      return ret;
+    }
+    if (num_elems_max < num_elems_min) {
+      RCCOMB_DEBUG_PRINT("Element count range reversal: %d > %d\n",
+                         num_elems_max, num_elems_min);
+      return result_t::PARAMETER_OUT_OF_RANGE;
+    }
+    if (num_elems_min < 2 || MAX_COMBINATION_ELEMENTS < num_elems_max) {
+      RCCOMB_DEBUG_PRINT("Element count out of range: %d ... %d\n",
+                         num_elems_min, num_elems_max);
+      return result_t::PARAMETER_OUT_OF_RANGE;
+    }
+    if (!value_is_valid(total_min) || !value_is_valid(total_max)) {
+      RCCOMB_DEBUG_PRINT("Total range out of range: %.9f ... %.9f\n", total_min,
+                         total_max);
+      return result_t::PARAMETER_OUT_OF_RANGE;
+    }
+    if (total_max < total_min) {
+      RCCOMB_DEBUG_PRINT("Total range reversal: %.9f > %.9f\n", total_max,
+                         total_min);
+      return result_t::PARAMETER_RANGE_REVERSAL;
+    }
+    if (target_value <= 0 || 1 <= target_value) {
+      RCCOMB_DEBUG_PRINT("Invalid target value: %.9f\n", target_value);
+      return result_t::PARAMETER_OUT_OF_RANGE;
+    }
+    if (target_min < 0 || 1 < target_max) {
+      RCCOMB_DEBUG_PRINT("Target range out of range: %.9f ... %.9f\n",
+                         target_min, target_max);
+      return result_t::PARAMETER_OUT_OF_RANGE;
+    }
+    if (target_max < target_min) {
+      RCCOMB_DEBUG_PRINT("Target range reversal: %.9f > %.9f\n", target_max,
+                         target_min);
+      return result_t::PARAMETER_RANGE_REVERSAL;
+    }
+    return result_t::SUCCESS;
+  }
 };
 
 result_t search_combinations(ValueSearchArgs& args,
@@ -234,9 +316,10 @@ static void filter_unnormalized_combinations(std::vector<Combination>& combs);
 // 合成抵抗・合成容量の探索
 result_t search_combinations(ValueSearchArgs& args,
                              std::vector<Combination>& best_combs) {
-  // 探索空間の大きさをチェック
-  if (args.max_elements > 15) {
-    return result_t::SEARCH_SPACE_TOO_LARGE;
+  result_t ret;
+  ret = args.validate();
+  if (ret != result_t::SUCCESS) {
+    return ret;
   }
 
   const value_t eps = args.target / 1e9;
@@ -253,7 +336,8 @@ result_t search_combinations(ValueSearchArgs& args,
 
   // 素子数が少ない順に試す
   std::vector<bool> parallels = {false, true};
-  for (int num_elems = 1; num_elems <= args.max_elements; num_elems++) {
+  for (int num_elems = args.num_elems_min; num_elems <= args.num_elems_max;
+       num_elems++) {
     //  並列・直列パターンを全部試す
     for (bool parallel : parallels) {
       // 1 素子の場合は直列のみ探索
@@ -324,9 +408,10 @@ result_t search_dividers(DividerSearchArgs& args,
                          std::vector<DoubleCombination>& best_combs) {
   const value_t eps = 1e-9;
 
-  // 探索空間の大きさをチェック
-  if (args.max_elements > 15) {
-    return result_t::SEARCH_SPACE_TOO_LARGE;
+  result_t ret;
+  ret = args.validate();
+  if (ret != result_t::SUCCESS) {
+    return ret;
   }
 
   value_t best_error = VALUE_POSITIVE_INFINITY;
@@ -350,7 +435,8 @@ result_t search_dividers(DividerSearchArgs& args,
 
   // 下側の抵抗値を列挙する
   std::vector<bool> parallels = {false, true};
-  for (int num_lowers = 1; num_lowers <= args.max_elements - 1; num_lowers++) {
+  for (int num_lowers = args.num_elems_min - 1;
+       num_lowers <= args.num_elems_max - 1; num_lowers++) {
     //  並列・直列パターンを全部試す
     for (bool parallel : parallels) {
       // 1 素子の場合は直列のみ探索
@@ -360,7 +446,7 @@ result_t search_dividers(DividerSearchArgs& args,
       auto& topos = get_topologies(num_lowers, parallel);
       for (auto& topo : topos) {
         // 上側の最大素子数
-        int upper_max_elements = args.max_elements - num_lowers;
+        int upper_max_elements = args.num_elems_max - num_lowers;
         if (best_error < eps) {
           // 既に誤差の無い組み合わせが見つかっている場合は素子数を絞る
           upper_max_elements = best_elems - num_lowers;
@@ -401,7 +487,7 @@ result_t search_dividers(DividerSearchArgs& args,
           }
 
           // 下側の抵抗値に対応する上側の抵抗を列挙する
-          ValueSearchArgs vsa(ComponentType::Resistor, args.element_values,
+          ValueSearchArgs vsa(ComponentType::Resistor, args.element_values, 1,
                               upper_max_elements, est_upper_val,
                               target_upper_min, target_upper_max);
           vsa.topology_constraint = args.topology_constraint;
@@ -409,7 +495,7 @@ result_t search_dividers(DividerSearchArgs& args,
           upper_combs.clear();
           result_t ret = search_combinations(vsa, upper_combs);
           if (ret != result_t::SUCCESS) {
-            upper_error = ret;
+            upper_error = result_t::INTERNAL_CORRUPTION;
             ctx.abort();
             return;
           }

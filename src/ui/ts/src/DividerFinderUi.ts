@@ -8,15 +8,15 @@ import {WorkerAgent} from './WorkerAgents';
 
 export class DividerFinderUi extends UiPages.UiPage {
   rangeSelector: RcmbUi.ValueRangeSelector|null = null;
-  numElementsInput =
-      RcmbUi.makeNumElementInput(RcmbJS.MAX_COMBINATION_ELEMENTS, 4);
+  numElemRangeBox =
+      new RcmbUi.RangeBox(true, false, 1, RcmbJS.MAX_COMBINATION_ELEMENTS);
   topTopologySelector = RcmbUi.makeTopologySelector();
   maxDepthInput = RcmbUi.makeDepthSelector();
   statusBox = RcmbUi.makeP();
   resultBox = RcmbUi.makeDiv();
-  totalRangeBox = new RcmbUi.RangeBox(false, '10k', '100k');
+  totalRangeBox = new RcmbUi.RangeBox(false, false, '10k', '100k');
   targetInput: RcmbUi.ValueBox|null = null;
-  targetToleranceBox = new RcmbUi.RangeBox(true, -10, 10);
+  targetToleranceBox = new RcmbUi.RangeBox(false, true, -10, 10);
 
   workerAgent = new WorkerAgent();
 
@@ -26,7 +26,9 @@ export class DividerFinderUi extends UiPages.UiPage {
     super(getStr('Voltage Divider'));
 
     this.rangeSelector = new RcmbUi.ValueRangeSelector(false);
-    this.targetInput = new RcmbUi.ValueBox('3.3 / 5.0');
+    this.targetInput = new RcmbUi.ValueBox(false, '3.3 / 5.0');
+    this.numElemRangeBox.minValue = 2;
+    this.numElemRangeBox.maxValue = 4;
 
     this.ui = RcmbUi.makeDiv([
       RcmbUi.makeH2(getStr('Find Voltage Dividers')),
@@ -39,7 +41,7 @@ export class DividerFinderUi extends UiPages.UiPage {
         [getStr('Custom Values'), this.rangeSelector.customValuesBox, 'Ω'],
         [getStr('Element Range'), this.rangeSelector.elementRangeBox.ui, 'Ω'],
         [getStr('Element Tolerance'), this.rangeSelector.toleranceUi.ui, '%'],
-        [getStr('Max Elements'), this.numElementsInput.inputBox, ''],
+        [getStr('Number of Elements'), this.numElemRangeBox.ui, ''],
         [getStr('Top Topology'), this.topTopologySelector, ''],
         [getStr('Max Nests'), this.maxDepthInput, ''],
         ['R1 + R2', this.totalRangeBox.ui, 'Ω'],
@@ -60,7 +62,7 @@ export class DividerFinderUi extends UiPages.UiPage {
     ]);
 
     this.rangeSelector.setOnChange(() => this.conditionChanged());
-    this.numElementsInput.setOnChange(() => this.conditionChanged());
+    this.numElemRangeBox.addEventListener(() => this.conditionChanged());
     this.topTopologySelector.addEventListener(
         'change', () => this.conditionChanged());
     this.maxDepthInput.addEventListener(
@@ -95,7 +97,8 @@ export class DividerFinderUi extends UiPages.UiPage {
 
       const args: RcmbJS.FindDividerArgs = {
         elementValues: rangeSelector.getAvailableValues(targetValue),
-        maxElements: this.numElementsInput.value,
+        numElemsMin: this.numElemRangeBox.minValue,
+        numElemsMax: this.numElemRangeBox.maxValue,
         elementTolMin: rangeSelector.toleranceUi.minValue / 100,
         elementTolMax: rangeSelector.toleranceUi.maxValue / 100,
         topologyConstraint: topoConstr,

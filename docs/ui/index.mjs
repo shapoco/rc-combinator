@@ -1209,7 +1209,8 @@ const texts = { "ja": {
 	"Target Tolerance": "結果の許容誤差",
 	"Voltage Ratio": "電圧比",
 	"Target Ratio": "目標電圧比",
-	"Search error": "探索エラー"
+	"Search error": "探索エラー",
+	"Number of Elements": "素子の数"
 } };
 function getStr(key, vars) {
 	let ret = key;
@@ -1274,8 +1275,8 @@ const PREFIXES = [
 var ValueRangeSelector = class {
 	seriesSelect = makeSeriesSelector();
 	customValuesBox = document.createElement("textarea");
-	elementRangeBox = new RangeBox();
-	toleranceUi = new RangeBox(true);
+	elementRangeBox = new RangeBox(false);
+	toleranceUi = new RangeBox(false, true);
 	constructor(capacitor) {
 		this.capacitor = capacitor;
 		if (capacitor) {
@@ -1289,6 +1290,7 @@ var ValueRangeSelector = class {
 			this.elementRangeBox.setDefaultValue("100", "1M", true);
 			this.toleranceUi.setDefaultValue(-1, 1);
 		}
+		this.customValuesBox.inputMode = "email";
 	}
 	getAvailableValues(targetValue) {
 		const series = this.seriesSelect.value;
@@ -1305,7 +1307,7 @@ var ValueRangeSelector = class {
 		} else {
 			const defaultMin = Math.max(1e-12, targetValue / 100);
 			const defaultMax = Math.min(0x38d7ea4c68000, targetValue * 100);
-			this.elementRangeBox.setDefaultValue(`(${formatValue(defaultMin, "", true)})`, `(${formatValue(defaultMax, "", true)})`);
+			this.elementRangeBox.setDefaultValue(`${formatValue(defaultMin, "", true)}`, `${formatValue(defaultMax, "", true)}`);
 			const minValue = this.elementRangeBox.minValue;
 			const maxValue = this.elementRangeBox.maxValue;
 			return makeAvaiableValues(series, minValue, maxValue);
@@ -1322,30 +1324,48 @@ var ValueRangeSelector = class {
 	}
 };
 var RangeBox = class {
-	minBox = new ValueBox();
-	hyphen = makeSpan("-");
-	maxBox = new ValueBox();
-	ui = makeSpan([
-		this.minBox.inputBox,
-		this.hyphen,
-		this.maxBox.inputBox
-	]);
-	callbacks = [];
-	constructor(symmetric = false, defaultMin = 0, defaultMax = 100) {
+	p_minBox = null;
+	p_hyphen = makeSpan("-");
+	p_maxBox = null;
+	p_ui = null;
+	p_callbacks = [];
+	constructor(integer, symmetric = false, min = 0, max = 100) {
+		this.integer = integer;
 		this.symmetric = symmetric;
-		this.defaultMin = defaultMin;
-		this.defaultMax = defaultMax;
+		this.min = min;
+		this.max = max;
+		if (integer) {
+			this.p_minBox = new ValueBox(integer, "", min, max);
+			this.p_maxBox = new ValueBox(integer, "", min, max);
+		} else {
+			this.p_minBox = new ValueBox(integer);
+			this.p_maxBox = new ValueBox(integer);
+		}
+		this.p_ui = makeSpan([
+			this.minBox.inputBox,
+			this.p_hyphen,
+			this.maxBox.inputBox
+		]);
 		this.updatePlaceholders();
 		this.minBox.inputBox.style.width = "55px";
 		this.maxBox.inputBox.style.width = "55px";
-		this.hyphen.style.display = "inline-block";
-		this.hyphen.style.width = "15px";
-		this.hyphen.style.textAlign = "center";
+		this.p_hyphen.style.display = "inline-block";
+		this.p_hyphen.style.width = "15px";
+		this.p_hyphen.style.textAlign = "center";
 		this.ui.style.whiteSpace = "nowrap";
 	}
+	get minBox() {
+		return this.p_minBox;
+	}
+	get maxBox() {
+		return this.p_maxBox;
+	}
+	get ui() {
+		return this.p_ui;
+	}
 	setDefaultValue(min, max, setAsValue = false) {
-		this.defaultMin = min;
-		this.defaultMax = max;
+		this.min = min;
+		this.max = max;
 		if (setAsValue) {
 			this.minBox.inputBox.value = min.toString();
 			this.maxBox.inputBox.value = max.toString();
@@ -1353,68 +1373,49 @@ var RangeBox = class {
 		this.updatePlaceholders();
 	}
 	addEventListener(callback) {
-		this.callbacks.push(callback);
+		this.p_callbacks.push(callback);
 		this.maxBox.setOnChange(() => this.onChange());
 		this.minBox.setOnChange(() => this.onChange());
 	}
 	onChange() {
 		this.updatePlaceholders();
-		this.callbacks.forEach((cb) => cb());
+		this.p_callbacks.forEach((cb) => cb());
 	}
 	updatePlaceholders() {
 		if (this.maxBox.empty && this.minBox.empty) {
-			this.maxBox.placeholder = this.defaultMax.toString();
-			this.minBox.placeholder = this.defaultMin.toString();
-		} else if (this.maxBox.empty) this.maxBox.placeholder = this.symmetric ? (-this.minBox.value).toString() : this.defaultMax.toString();
-		else if (this.minBox.empty) this.minBox.placeholder = this.symmetric ? (-this.maxBox.value).toString() : this.defaultMin.toString();
+			this.maxBox.placeholder = this.max.toString();
+			this.minBox.placeholder = this.min.toString();
+		} else if (this.maxBox.empty) this.maxBox.placeholder = this.symmetric ? (-this.minBox.value).toString() : this.max.toString();
+		else if (this.minBox.empty) this.minBox.placeholder = this.symmetric ? (-this.maxBox.value).toString() : this.min.toString();
 	}
 	get minValue() {
 		this.updatePlaceholders();
 		return this.minBox.value;
 	}
+	set minValue(value) {
+		this.minBox.value = value;
+	}
 	get maxValue() {
 		this.updatePlaceholders();
 		return this.maxBox.value;
 	}
-};
-var IntegerBox = class {
-	inputBox = document.createElement("input");
-	onChangeCallback = () => {};
-	constructor(value = null, min = 0, max = 9999, defaultValue = 0, placeholder = "") {
-		this.defaultValue = defaultValue;
-		this.inputBox.type = "number";
-		this.inputBox.min = min.toString();
-		this.inputBox.max = max.toString();
-		this.inputBox.placeholder = placeholder;
-		if (value !== null) this.inputBox.value = value.toString();
-		this.inputBox.addEventListener("focus", () => {
-			this.inputBox.select();
-		});
-	}
-	get value() {
-		let text = this.inputBox.value.trim();
-		if (text !== "") return Math.floor(evalExpr(text));
-		else return this.defaultValue;
-	}
-	setOnChange(callback) {
-		this.onChangeCallback = callback;
-		this.inputBox.addEventListener("input", () => this.onChange());
-		this.inputBox.addEventListener("change", () => this.onChange());
-	}
-	onChange() {
-		try {
-			this.inputBox.title = formatValue(this.value);
-		} catch (e) {
-			this.inputBox.title = e.message;
-		}
-		this.onChangeCallback();
+	set maxValue(value) {
+		this.maxBox.value = value;
 	}
 };
 var ValueBox = class {
 	inputBox = document.createElement("input");
 	onChangeCallback = () => {};
-	constructor(value = null, placeholder = "") {
-		this.inputBox.type = isMobile ? "text" : "tel";
+	constructor(integer, value = null, min = Number.MIN_VALUE, max = Number.MAX_VALUE, placeholder = "") {
+		this.integer = integer;
+		if (integer) {
+			this.inputBox.type = "number";
+			this.inputBox.min = min.toString();
+			this.inputBox.max = max.toString();
+		} else {
+			this.inputBox.type = "text";
+			this.inputBox.inputMode = "email";
+		}
 		if (value) {
 			this.inputBox.value = value;
 			this.onChange();
@@ -1431,6 +1432,11 @@ var ValueBox = class {
 		let text = this.inputBox.value.trim();
 		if (text === "") text = this.inputBox.placeholder.trim();
 		return evalExpr(text);
+	}
+	set value(v) {
+		if (this.integer) this.inputBox.value = v.toString();
+		else this.inputBox.value = formatValue(v, "", false);
+		this.onChange();
 	}
 	get placeholder() {
 		return this.inputBox.placeholder;
@@ -1460,9 +1466,6 @@ var ValueBox = class {
 const isMobile = (() => {
 	return !!navigator.userAgent.match(/iPhone|Android.+Mobile/);
 })();
-function makeNumElementInput(max, defaultValue) {
-	return new IntegerBox(defaultValue, 1, max, max, `(${getStr("No Limit")})`);
-}
 function makeTopologySelector() {
 	return makeSelectBox([
 		{
@@ -2011,13 +2014,13 @@ var WorkerAgent = class {
 //#region src/CombinationFinderUi.ts
 var CombinationFinderUi = class extends UiPage {
 	rangeSelector = null;
-	numElementsInput = makeNumElementInput(MAX_COMBINATION_ELEMENTS, 3);
+	numElemRangeBox = new RangeBox(true, false, 1, MAX_COMBINATION_ELEMENTS);
 	topTopologySelector = makeTopologySelector();
 	maxDepthInput = makeDepthSelector();
 	statusBox = makeP();
 	resultBox = makeDiv();
 	targetInput = null;
-	targetToleranceBox = new RangeBox(true);
+	targetToleranceBox = new RangeBox(false, true);
 	unit = "";
 	workerAgent = new WorkerAgent();
 	lastResult = null;
@@ -2026,8 +2029,10 @@ var CombinationFinderUi = class extends UiPage {
 		this.capacitor = capacitor;
 		this.unit = capacitor ? "F" : "Ω";
 		this.rangeSelector = new ValueRangeSelector(capacitor);
-		this.targetInput = new ValueBox(capacitor ? "3.14μ" : "5.1k");
+		this.targetInput = new ValueBox(false, capacitor ? "3.14μ" : "5.1k");
 		this.targetToleranceBox.setDefaultValue(-50, 50);
+		this.numElemRangeBox.minValue = 1;
+		this.numElemRangeBox.maxValue = 3;
 		const paramTable = makeTable([
 			[
 				getStr("Item"),
@@ -2055,8 +2060,8 @@ var CombinationFinderUi = class extends UiPage {
 				"%"
 			],
 			[
-				getStr("Max Elements"),
-				this.numElementsInput.inputBox,
+				getStr("Number of Elements"),
+				this.numElemRangeBox.ui,
 				""
 			],
 			[
@@ -2091,7 +2096,7 @@ var CombinationFinderUi = class extends UiPage {
 			makeP("トポロジーの複雑さは誤差の範囲の大小には影響しませんが、範囲内の誤差の分布は変化します。")
 		]);
 		this.rangeSelector.setOnChange(() => this.conditionChanged());
-		this.numElementsInput.setOnChange(() => this.conditionChanged());
+		this.numElemRangeBox.addEventListener(() => this.conditionChanged());
 		this.topTopologySelector.addEventListener("change", () => this.conditionChanged());
 		this.maxDepthInput.addEventListener("change", () => this.conditionChanged());
 		this.targetInput.setOnChange(() => this.conditionChanged());
@@ -2117,7 +2122,8 @@ var CombinationFinderUi = class extends UiPage {
 				elementValues: rangeSelector.getAvailableValues(targetValue),
 				elementTolMin: rangeSelector.toleranceUi.minValue / 100,
 				elementTolMax: rangeSelector.toleranceUi.maxValue / 100,
-				maxElements: this.numElementsInput.value,
+				numElemsMin: this.numElemRangeBox.minValue,
+				numElemsMax: this.numElemRangeBox.maxValue,
 				topologyConstraint: topoConstr,
 				maxDepth: parseInt(this.maxDepthInput.value),
 				targetValue,
@@ -2248,10 +2254,10 @@ var CombinationFinderUi = class extends UiPage {
 //#endregion
 //#region src/CurrentLimitterFinderUi.ts
 var CurrentLimitterFinderUi = class extends UiPage {
-	powerVoltageInput = new ValueBox("3.3");
-	forwardVoltageInput = new ValueBox("2");
-	forwardCurrentInput = new ValueBox("1m");
-	targetToleranceBox = new RangeBox(true, -50, 50);
+	powerVoltageInput = new ValueBox(false, "3.3");
+	forwardVoltageInput = new ValueBox(false, "2");
+	forwardCurrentInput = new ValueBox(false, "1m");
+	targetToleranceBox = new RangeBox(false, true, -50, 50);
 	resultBox = makeDiv();
 	constructor() {
 		super(getStr("Current Limitting Resistor"));
@@ -2387,20 +2393,22 @@ var CurrentLimitterFinderUi = class extends UiPage {
 //#region src/DividerFinderUi.ts
 var DividerFinderUi = class extends UiPage {
 	rangeSelector = null;
-	numElementsInput = makeNumElementInput(MAX_COMBINATION_ELEMENTS, 4);
+	numElemRangeBox = new RangeBox(true, false, 1, MAX_COMBINATION_ELEMENTS);
 	topTopologySelector = makeTopologySelector();
 	maxDepthInput = makeDepthSelector();
 	statusBox = makeP();
 	resultBox = makeDiv();
-	totalRangeBox = new RangeBox(false, "10k", "100k");
+	totalRangeBox = new RangeBox(false, false, "10k", "100k");
 	targetInput = null;
-	targetToleranceBox = new RangeBox(true, -10, 10);
+	targetToleranceBox = new RangeBox(false, true, -10, 10);
 	workerAgent = new WorkerAgent();
 	lastResult = null;
 	constructor() {
 		super(getStr("Voltage Divider"));
 		this.rangeSelector = new ValueRangeSelector(false);
-		this.targetInput = new ValueBox("3.3 / 5.0");
+		this.targetInput = new ValueBox(false, "3.3 / 5.0");
+		this.numElemRangeBox.minValue = 2;
+		this.numElemRangeBox.maxValue = 4;
 		this.ui = makeDiv([
 			makeH2(getStr("Find Voltage Dividers")),
 			makeP(`R1: ${getStr("Upper Resistor")}, R2: ${getStr("Lower Resistor")}, ${getStr("Voltage Ratio")}: Vout / Vin = R2 / (R1 + R2)`),
@@ -2431,8 +2439,8 @@ var DividerFinderUi = class extends UiPage {
 					"%"
 				],
 				[
-					getStr("Max Elements"),
-					this.numElementsInput.inputBox,
+					getStr("Number of Elements"),
+					this.numElemRangeBox.ui,
 					""
 				],
 				[
@@ -2468,7 +2476,7 @@ var DividerFinderUi = class extends UiPage {
 			makeP("誤差の typ 値は、全ての素子の誤差がゼロのときの値です。誤差の min/max 値は、R1 と R2 の間の誤差の偏りが最悪のときの値です。")
 		]);
 		this.rangeSelector.setOnChange(() => this.conditionChanged());
-		this.numElementsInput.setOnChange(() => this.conditionChanged());
+		this.numElemRangeBox.addEventListener(() => this.conditionChanged());
 		this.topTopologySelector.addEventListener("change", () => this.conditionChanged());
 		this.maxDepthInput.addEventListener("change", () => this.conditionChanged());
 		this.totalRangeBox.addEventListener(() => this.conditionChanged());
@@ -2492,7 +2500,8 @@ var DividerFinderUi = class extends UiPage {
 			const topoConstr = parseInt(this.topTopologySelector.value);
 			const args = {
 				elementValues: rangeSelector.getAvailableValues(targetValue),
-				maxElements: this.numElementsInput.value,
+				numElemsMin: this.numElemRangeBox.minValue,
+				numElemsMax: this.numElemRangeBox.maxValue,
 				elementTolMin: rangeSelector.toleranceUi.minValue / 100,
 				elementTolMax: rangeSelector.toleranceUi.maxValue / 100,
 				topologyConstraint: topoConstr,

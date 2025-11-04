@@ -35,9 +35,10 @@ std::string get_meta_info_json() {
 
 std::string findCombinations(bool capacitor,
                              const std::vector<double>& element_values,
-                             int max_elements, int topology_constraint,
-                             int max_depth, double target_value,
-                             double target_min, double target_max) {
+                             int num_elems_min, int num_elems_max,
+                             int topology_constraint, int max_depth,
+                             double target_value, double target_min,
+                             double target_max) {
   auto type = capacitor ? ComponentType::Capacitor : ComponentType::Resistor;
   std::vector<value_t> val_vec;
   for (const auto& v : element_values) {
@@ -45,8 +46,8 @@ std::string findCombinations(bool capacitor,
   }
   ValueList value_list(val_vec);
 
-  ValueSearchArgs args(type, value_list, max_elements, target_value, target_min,
-                       target_max);
+  ValueSearchArgs args(type, value_list, num_elems_min, num_elems_max,
+                       target_value, target_min, target_max);
   args.topology_constraint =
       static_cast<topology_constraint_t>(topology_constraint);
   args.max_depth = max_depth;
@@ -73,8 +74,9 @@ std::string findCombinations(bool capacitor,
 }
 
 std::string findDividers(const std::vector<double>& element_values,
-                         int max_elements, int topology_constraint,
-                         int max_depth, double total_min, double total_max,
+                         int num_elems_min, int num_elems_max,
+                         int topology_constraint, int max_depth,
+                         double total_min, double total_max,
                          double target_value, double target_min,
                          double target_max) {
   std::vector<value_t> val_vec;
@@ -83,8 +85,8 @@ std::string findDividers(const std::vector<double>& element_values,
   }
   ValueList value_list(val_vec);
 
-  DividerSearchArgs args(value_list, max_elements, total_min, total_max,
-                         target_value, target_min, target_max);
+  DividerSearchArgs args(value_list, num_elems_min, num_elems_max, total_min,
+                         total_max, target_value, target_min, target_max);
   args.topology_constraint =
       static_cast<topology_constraint_t>(topology_constraint);
   args.max_depth = max_depth;

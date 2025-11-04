@@ -38,7 +38,7 @@ thisWorker.onmessage = async (e: MessageEvent<any>) => {
           elementValues.push_back(v);
         }
         const retStr = wasmCore!.findCombinations(
-            args.capacitor, elementValues, args.maxElements,
+            args.capacitor, elementValues, args.numElemsMin, args.numElemsMax,
             args.topologyConstraint, args.maxDepth, args.targetValue,
             args.targetMin, args.targetMax);
         elementValues.delete();
@@ -52,9 +52,9 @@ thisWorker.onmessage = async (e: MessageEvent<any>) => {
           elementValues.push_back(v);
         }
         const retStr = wasmCore!.findDividers(
-            elementValues, args.maxElements, args.topologyConstraint,
-            args.maxDepth, args.totalMin, args.totalMax, args.targetValue,
-            args.targetMin, args.targetMax);
+            elementValues, args.numElemsMin, args.numElemsMax,
+            args.topologyConstraint, args.maxDepth, args.totalMin,
+            args.totalMax, args.targetValue, args.targetMin, args.targetMax);
         elementValues.delete();
         ret = JSON.parse(retStr);
       } break;
@@ -69,6 +69,6 @@ thisWorker.onmessage = async (e: MessageEvent<any>) => {
   } catch (err: any) {
     ret.error = (err && err.message) ? err.message : String(err);
   }
-  
+
   thisWorker.postMessage(ret);
 };

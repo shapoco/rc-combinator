@@ -85,10 +85,6 @@ result_t CombinationClass::verify() const {
   }
   accum = inv_sum ? (1 / accum) : accum;
 
-  if (accum < 0) {
-    return result_t::NEGATIVE_VALUE;
-  }
-
   value_t error = std::abs(accum - value);
   if (error > accum / 1e9) {
     return result_t::INACCURATE_RESULT;

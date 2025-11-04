@@ -15,7 +15,8 @@ export type FindCombinationArgs = {
   elementValues: number[],
   elementTolMin: number,
   elementTolMax: number,
-  maxElements: number,
+  numElemsMin: number,
+  numElemsMax: number,
   topologyConstraint: TopologyConstraint,
   maxDepth: number,
   targetValue: number,
@@ -27,7 +28,8 @@ export type FindDividerArgs = {
   elementValues: number[],
   elementTolMin: number,
   elementTolMax: number,
-  maxElements: number,
+  numElemsMin: number,
+  numElemsMax: number,
   topologyConstraint: TopologyConstraint,
   maxDepth: number,
   totalMin: number,
@@ -39,7 +41,7 @@ export type FindDividerArgs = {
 
 export type WorkerCommand = {
   method: Method,
-  args: FindCombinationArgs | FindDividerArgs,
+  args: FindCombinationArgs|FindDividerArgs,
 }
 
 export const MAX_COMBINATION_ELEMENTS = 15;

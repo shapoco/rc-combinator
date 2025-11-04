@@ -19,8 +19,8 @@ const PREFIXES = [
 export class ValueRangeSelector {
   seriesSelect = makeSeriesSelector();
   customValuesBox = document.createElement('textarea') as HTMLTextAreaElement;
-  elementRangeBox = new RangeBox();
-  toleranceUi = new RangeBox(true);
+  elementRangeBox = new RangeBox(false);
+  toleranceUi = new RangeBox(false, true);
 
   constructor(public capacitor: boolean) {
     if (capacitor) {
@@ -34,6 +34,7 @@ export class ValueRangeSelector {
       this.elementRangeBox.setDefaultValue('100', '1M', true);
       this.toleranceUi.setDefaultValue(-1, 1);
     }
+    this.customValuesBox.inputMode = 'email';
   }
 
   getAvailableValues(targetValue: number) {
@@ -54,8 +55,8 @@ export class ValueRangeSelector {
       const defaultMin = Math.max(1e-12, targetValue / 100);
       const defaultMax = Math.min(1e15, targetValue * 100);
       this.elementRangeBox.setDefaultValue(
-          `(${formatValue(defaultMin, '', true)})`,
-          `(${formatValue(defaultMax, '', true)})`);
+          `${formatValue(defaultMin, '', true)}`,
+          `${formatValue(defaultMax, '', true)}`);
       const minValue = this.elementRangeBox.minValue;
       const maxValue = this.elementRangeBox.maxValue;
       return Series.makeAvaiableValues(series, minValue, maxValue);
@@ -78,33 +79,51 @@ export class ValueRangeSelector {
 }
 
 export class RangeBox {
-  minBox = new ValueBox();
-  hyphen = makeSpan('-');
-  maxBox = new ValueBox();
-  ui = makeSpan([
-    this.minBox.inputBox,
-    this.hyphen,
-    this.maxBox.inputBox,
-  ]);
-
-  callbacks: (() => void)[] = [];
+  private p_minBox: ValueBox|null = null;
+  private p_hyphen = makeSpan('-');
+  private p_maxBox: ValueBox|null = null;
+  private p_ui: HTMLSpanElement|null = null;
+  private p_callbacks: (() => void)[] = [];
 
   constructor(
-      public symmetric: boolean = false, public defaultMin: number|string = 0,
-      public defaultMax: number|string = 100) {
+      public integer: boolean, public symmetric: boolean = false,
+      public min: number|string = 0, public max: number|string = 100) {
+    if (integer) {
+      this.p_minBox = new ValueBox(integer, '', min as number, max as number);
+      this.p_maxBox = new ValueBox(integer, '', min as number, max as number);
+    } else {
+      this.p_minBox = new ValueBox(integer);
+      this.p_maxBox = new ValueBox(integer);
+    }
+    this.p_ui = makeSpan([
+      this.minBox.inputBox!,
+      this.p_hyphen,
+      this.maxBox.inputBox!,
+    ]);
+
     this.updatePlaceholders();
     this.minBox.inputBox.style.width = '55px';
     this.maxBox.inputBox.style.width = '55px';
-    this.hyphen.style.display = 'inline-block';
-    this.hyphen.style.width = '15px';
-    this.hyphen.style.textAlign = 'center';
+    this.p_hyphen.style.display = 'inline-block';
+    this.p_hyphen.style.width = '15px';
+    this.p_hyphen.style.textAlign = 'center';
     this.ui.style.whiteSpace = 'nowrap';
+  }
+
+  get minBox(): ValueBox {
+    return this.p_minBox!;
+  }
+  get maxBox(): ValueBox {
+    return this.p_maxBox!;
+  }
+  get ui(): HTMLSpanElement {
+    return this.p_ui!;
   }
 
   setDefaultValue(
       min: number|string, max: number|string, setAsValue: boolean = false) {
-    this.defaultMin = min;
-    this.defaultMax = max;
+    this.min = min;
+    this.max = max;
     if (setAsValue) {
       this.minBox.inputBox.value = min.toString();
       this.maxBox.inputBox.value = max.toString();
@@ -113,28 +132,28 @@ export class RangeBox {
   }
 
   addEventListener(callback: () => void) {
-    this.callbacks.push(callback);
+    this.p_callbacks.push(callback);
     this.maxBox.setOnChange(() => this.onChange());
     this.minBox.setOnChange(() => this.onChange());
   }
 
   onChange() {
     this.updatePlaceholders();
-    this.callbacks.forEach(cb => cb());
+    this.p_callbacks.forEach(cb => cb());
   }
 
   updatePlaceholders() {
     if (this.maxBox.empty && this.minBox.empty) {
-      this.maxBox.placeholder = this.defaultMax.toString();
-      this.minBox.placeholder = this.defaultMin.toString();
+      this.maxBox.placeholder = this.max.toString();
+      this.minBox.placeholder = this.min.toString();
     } else if (this.maxBox.empty) {
       this.maxBox.placeholder = this.symmetric ?
           (-this.minBox.value).toString() :
-          this.defaultMax.toString();
+          this.max.toString();
     } else if (this.minBox.empty) {
       this.minBox.placeholder = this.symmetric ?
           (-this.maxBox.value).toString() :
-          this.defaultMin.toString();
+          this.min.toString();
     }
   }
 
@@ -143,53 +162,17 @@ export class RangeBox {
     return this.minBox.value;
   }
 
+  set minValue(value: number) {
+    this.minBox.value = value;
+  }
+
   get maxValue(): number {
     this.updatePlaceholders();
     return this.maxBox.value;
   }
-}
 
-export class IntegerBox {
-  inputBox = document.createElement('input');
-  onChangeCallback: () => void = () => {};
-
-  constructor(
-      value: number|null = null, min: number = 0, max: number = 9999,
-      public defaultValue: number = 0, placeholder: string = '') {
-    this.inputBox.type = 'number';
-    this.inputBox.min = min.toString();
-    this.inputBox.max = max.toString();
-    this.inputBox.placeholder = placeholder;
-    if (value !== null) {
-      this.inputBox.value = value.toString();
-    }
-    this.inputBox.addEventListener('focus', () => {
-      this.inputBox.select();
-    });
-  }
-
-  get value() {
-    let text = this.inputBox.value.trim();
-    if (text !== '') {
-      return Math.floor(Expr.evalExpr(text));
-    } else {
-      return this.defaultValue;
-    }
-  }
-
-  setOnChange(callback: () => void) {
-    this.onChangeCallback = callback;
-    this.inputBox.addEventListener('input', () => this.onChange());
-    this.inputBox.addEventListener('change', () => this.onChange());
-  }
-
-  onChange() {
-    try {
-      this.inputBox.title = formatValue(this.value);
-    } catch (e) {
-      this.inputBox.title = (e as Error).message;
-    }
-    this.onChangeCallback();
+  set maxValue(value: number) {
+    this.maxBox.value = value;
   }
 }
 
@@ -197,9 +180,19 @@ export class ValueBox {
   inputBox = document.createElement('input');
   onChangeCallback: () => void = () => {};
 
-  constructor(value: string|null = null, placeholder: string = '') {
-    // PC では IME をオフにするため 'tel' にする
-    this.inputBox.type = isMobile ? 'text' : 'tel';
+  constructor(
+      public integer: boolean, value: string|null = null,
+      min: number = Number.MIN_VALUE, max: number = Number.MAX_VALUE,
+      placeholder: string = '') {
+    if (integer) {
+      this.inputBox.type = 'number';
+      this.inputBox.min = min.toString();
+      this.inputBox.max = max.toString();
+    } else {
+      // PC では IME をオフにしたい
+      this.inputBox.type = 'text';
+      this.inputBox.inputMode = 'email';
+    }
     if (value) {
       this.inputBox.value = value;
       this.onChange();
@@ -220,6 +213,15 @@ export class ValueBox {
       text = this.inputBox.placeholder.trim();
     }
     return Expr.evalExpr(text);
+  }
+
+  set value(v: number) {
+    if (this.integer) {
+      this.inputBox.value = v.toString();
+    } else {
+      this.inputBox.value = formatValue(v, '', false);
+    }
+    this.onChange();
   }
 
   get placeholder(): string {
@@ -256,11 +258,6 @@ export class ValueBox {
 export const isMobile = (() => {
   return !!navigator.userAgent.match(/iPhone|Android.+Mobile/);
 })();
-
-export function makeNumElementInput(
-    max: number, defaultValue: number): IntegerBox {
-  return new IntegerBox(defaultValue, 1, max, max, `(${getStr('No Limit')})`);
-}
 
 export function makeTopologySelector(): HTMLSelectElement {
   const items = [
