@@ -173,7 +173,7 @@ class Node {
     }
     else if (this.parallel) {
       // 並列接続の配置
-      const PADDING = SCALE * 3;
+      const PADDING = SCALE * 2;
       let maxWidth = 0;
       let totalHeight = 0;
       for (const c of this.children) {
@@ -282,9 +282,11 @@ class Node {
  * @type {Node[]}
  */
 const eSerieses = {
-  'e3': { topologies: [], blockWidth: 16 * SCALE, blockHeight: 14 * SCALE },
-  'e6': { topologies: [], blockWidth: 13 * SCALE, blockHeight: 11 * SCALE },
-  'e12': { topologies: [], blockWidth: 10 * SCALE, blockHeight: 8 * SCALE },
+  'e1': { topologies: [], blockWidth: 30 * SCALE, blockHeight: 20 * SCALE },
+  'e3': { topologies: [], blockWidth: 20 * SCALE, blockHeight: 14 * SCALE },
+  'e6': { topologies: [], blockWidth: 15 * SCALE, blockHeight: 11 * SCALE },
+  'e12': { topologies: [], blockWidth: 12 * SCALE, blockHeight: 8 * SCALE },
+  'e24': { topologies: [], blockWidth: 12 * SCALE, blockHeight: 8 * SCALE },
 };
 
 /**
@@ -302,12 +304,17 @@ export async function main(container) {
     }
     eSeriesSelector.appendChild(option);
 
-    const resp = await fetch(`./topologies_${key}.json?20251026140800`);
-    const topos = await resp.json();
-    for (const topo of topos) {
-      const tree = generateTree(topo);
-      tree.offset(-tree.x, -tree.y);
-      eSerieses[key].topologies.push(tree);
+    const resp = await fetch(`./topologies_${key}.json?20251104230700`);
+    const topos_json = await resp.json();
+    topos_json.unshift([0]); // 0Ω用のダミー
+    for (const topo_list_json of topos_json) {
+      const topos = [];
+      for (const topo_json of topo_list_json) {
+        const tree = generateTree(topo_json);
+        tree.offset(-tree.x, -tree.y);
+        topos.push(tree);
+      }
+      eSerieses[key].topologies.push(topos);
     }
   }
 
@@ -347,10 +354,23 @@ function generateTree(json) {
 function tick() {
   const now = new Date();
 
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  const day = now.getDate();
+  const hours = now.getHours();
+  const minutes = now.getMinutes();
+  const seconds = now.getSeconds();
+
   const numbers = [
-    now.getHours(),
-    now.getMinutes(),
-    now.getSeconds(),
+    hours,
+    minutes,
+    seconds,
+  ];
+
+  const topoIndexes = [
+    (year + month + day) * hours,
+    (year + month + day + hours) * minutes,
+    (year + month + day + hours + minutes) * seconds,
   ];
 
   const eSeriesStr = eSeriesSelector.value || 'e12';
@@ -384,8 +404,10 @@ function tick() {
 
   const yCenter = y + bh / 2;
   let lastX = -1000;
-  for (const n of numbers) {
-    const topo = eSeries.topologies[n];
+  for (let i = 0; i < numbers.length; i++) {
+    const n = numbers[i];
+    const topos = eSeries.topologies[n];
+    const topo = topos[topoIndexes[i] % topos.length];
     ctx.save();
     const x0 = x + (bw - topo.width) / 2;
     const y0 = y + (bh - topo.height) / 2;

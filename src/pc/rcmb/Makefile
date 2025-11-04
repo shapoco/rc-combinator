@@ -2,6 +2,8 @@
 
 all: build
 
+BUILD_DIR := ./build
+
 BIN_DIR := ./bin
 BIN := $(BIN_DIR)/rcmb
 
@@ -12,12 +14,12 @@ RCMB_HPP_FILES := \
 	$(wildcard $(RCMB_INC_DIR)/rcmb/*.hpp)
 RCMB_CPP_FILES := \
 	$(wildcard $(RCMB_SRC_DIR)/*.cpp)
+RCMB_OBJ := $(BUILD_DIR)/rcmb_lib.o
 
 APP_SRC_DIR := src
 APP_CPP_FILES := \
 	$(wildcard $(APP_SRC_DIR)/*.cpp)
-
-BUILD_DIR := ./build
+APP_OBJ := $(BUILD_DIR)/rcmb_app.o
 
 CXXFLAGS := \
 	-std=c++20 \
@@ -28,15 +30,15 @@ CXXFLAGS := \
 
 build: $(BIN)
 
-$(BIN): $(BUILD_DIR)/rcmb.o $(BUILD_DIR)/test.o
+$(BIN): $(RCMB_OBJ) $(APP_OBJ)
 	@mkdir -p $(BIN_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-$(BUILD_DIR)/rcmb.o: $(RCMB_CPP_FILES) $(RCMB_HPP_FILES)
+$(RCMB_OBJ): $(RCMB_CPP_FILES) $(RCMB_HPP_FILES)
 	@mkdir -p $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -c -o $@ $(RCMB_CPP_FILES)
 
-$(BUILD_DIR)/test.o: $(APP_CPP_FILES) $(RCMB_HPP_FILES)
+$(APP_OBJ): $(APP_CPP_FILES) $(RCMB_HPP_FILES)
 	@mkdir -p $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -c -o $@ $(APP_CPP_FILES)
 

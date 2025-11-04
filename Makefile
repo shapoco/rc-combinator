@@ -10,6 +10,8 @@ DIST_DIR := $(REPO_DIR)/docs
 UI_TS_DIR := $(REPO_DIR)/src/web/ui/ts
 WORKER_TS_DIR := $(REPO_DIR)/src/web/worker/ts
 WORKER_WASM_DIR := $(REPO_DIR)/src/web/worker/wasm
+PC_APP_DIR := $(REPO_DIR)/src/pc/rcmb
+CLOCK_DIR := $(REPO_DIR)/src/web/clock
 
 CMD_UPDATE_POSTFIX := python3 $(BIN_DIR)/update_url_postfix.py
 
@@ -19,6 +21,8 @@ build:
 	make --no-print-directory -C $(WORKER_WASM_DIR) build
 	make --no-print-directory -C $(WORKER_TS_DIR) build
 	make --no-print-directory -C $(UI_TS_DIR) build
+	make --no-print-directory -C $(PC_APP_DIR) build
+	make --no-print-directory -C $(CLOCK_DIR) clock_json
 
 update_postfix:
 	$(CMD_UPDATE_POSTFIX) --base_dir $(DIST_DIR) --base_url $(BASE_URL) --file clock/index.html
