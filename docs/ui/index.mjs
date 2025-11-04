@@ -1,4 +1,4 @@
-//#region ../../lib/ts/src/RcmbJS.ts
+//#region ../../../lib/ts/src/RcmbJS.ts
 let Method = /* @__PURE__ */ function(Method$1) {
 	Method$1[Method$1["FindCombination"] = 1] = "FindCombination";
 	Method$1[Method$1["FindDivider"] = 2] = "FindDivider";

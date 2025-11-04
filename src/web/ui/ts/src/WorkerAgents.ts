@@ -1,4 +1,4 @@
-import {WorkerCommand} from '../../../lib/ts/src/RcmbJS';
+import {WorkerCommand} from '../../../../lib/ts/src/RcmbJS';
 
 export class WorkerAgent {
   urlPostfix = Math.floor(Date.now() / (60 * 1000)).toString();

@@ -1,4 +1,4 @@
-import * as RcmbJS from '../../../lib/ts/src/RcmbJS';
+import * as RcmbJS from '../../../../lib/ts/src/RcmbJS';
 
 import * as RcmbUi from './RcmbUi';
 import * as Schematics from './Schematics';

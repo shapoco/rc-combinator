@@ -27,8 +27,8 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 var __require = null; ///* @__PURE__ */ createRequire(import.meta.url);
 
 //#endregion
-//#region ../../lib/cpp_wasm/build/rcmb_wasm.js
-var require_rcmb_wasm = /* @__PURE__ */ __commonJS({ "../../lib/cpp_wasm/build/rcmb_wasm.js": ((exports, module) => {
+//#region ../wasm/build/rcmb_wasm.js
+var require_rcmb_wasm = /* @__PURE__ */ __commonJS({ "../wasm/build/rcmb_wasm.js": ((exports, module) => {
 	var createRcmbWasm$1 = (() => {
 		var _scriptName = globalThis.document?.currentScript?.src;
 		return async function(moduleArg = {}) {
@@ -141,7 +141,7 @@ var require_rcmb_wasm = /* @__PURE__ */ __commonJS({ "../../lib/cpp_wasm/build/r
 			}
 			var wasmBinaryFile;
 			function findWasmBinary() {
-				return locateFile("rcmb_wasm.wasm?17a8c1db");
+				return locateFile("rcmb_wasm.wasm");
 			}
 			function getBinarySync(file) {
 				if (file == wasmBinaryFile && wasmBinary) return new Uint8Array(wasmBinary);
@@ -1479,7 +1479,7 @@ var require_rcmb_wasm = /* @__PURE__ */ __commonJS({ "../../lib/cpp_wasm/build/r
 }) });
 
 //#endregion
-//#region ../../lib/ts/src/RcmbJS.ts
+//#region ../../../lib/ts/src/RcmbJS.ts
 var import_rcmb_wasm = /* @__PURE__ */ __toESM(require_rcmb_wasm());
 let Method = /* @__PURE__ */ function(Method$1) {
 	Method$1[Method$1["FindCombination"] = 1] = "FindCombination";

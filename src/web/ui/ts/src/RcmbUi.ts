@@ -1,4 +1,4 @@
-import * as RcmbJS from '../../../lib/ts/src/RcmbJS';
+import * as RcmbJS from '../../../../lib/ts/src/RcmbJS';
 
 import * as Expr from './Expr';
 import * as Series from './Series';

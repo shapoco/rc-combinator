@@ -1,6 +1,6 @@
 .PHONY: all build setup clean
 
-REPO_DIR := $(shell cd ../../.. ; pwd)
+REPO_DIR := $(shell cd ../../../.. ; pwd)
 
 APP_NAME := rc-combinator
 APP_TS_DIR := .
@@ -10,7 +10,7 @@ APP_TS_LIST := $(wildcard $(APP_SRC_DIR)/*.ts)
 APP_DIST_DIR := $(REPO_DIR)/docs/ui
 APP_JS := $(APP_DIST_DIR)/index.mjs
 
-LIB_DIR := ../../lib/ts
+LIB_DIR := ../../../lib/ts
 LIB_SRC_DIR := $(LIB_DIR)/src
 LIB_TS_LIST := $(wildcard $(LIB_SRC_DIR)/*.ts)
 

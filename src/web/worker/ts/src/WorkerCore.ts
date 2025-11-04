@@ -1,6 +1,6 @@
-import createRcmbWasm from '../../../lib/cpp_wasm/build/rcmb_wasm';
-import * as RcmbJS from '../../../lib/ts/src/RcmbJS';
-import * as RcmbWasm from '../../../lib/ts/src/RcmbWasm';
+import createRcmbWasm from '../../wasm/build/rcmb_wasm';
+import * as RcmbJS from '../../../../lib/ts/src/RcmbJS';
+import * as RcmbWasm from '../../../../lib/ts/src/RcmbWasm';
 
 let wasmCore: RcmbWasm.RcmbWasm|null = null;
 

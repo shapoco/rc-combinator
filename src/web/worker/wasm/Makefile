@@ -1,10 +1,10 @@
 .PHONY: all build clean
 
-REPO_DIR := $(shell cd ../../.. ; pwd)
+REPO_DIR := $(shell cd ../../../.. ; pwd)
 
 BUILD_DIR := build
 
-RCMB_DIR := ../cpp
+RCMB_DIR := ../../../lib/cpp
 RCMB_INC_DIR := $(RCMB_DIR)/include
 RCMB_SRC_DIR := $(RCMB_DIR)/src
 

@@ -7,16 +7,16 @@ BASE_URL := https://shapoco.github.io/rc-combinator/
 
 BIN_DIR := $(REPO_DIR)/bin
 DIST_DIR := $(REPO_DIR)/docs
-UI_TS_DIR := $(REPO_DIR)/src/ui/ts
-WORKER_TS_DIR := $(REPO_DIR)/src/worker/ts
-LIB_WASM_DIR := $(REPO_DIR)/src/lib/cpp_wasm
+UI_TS_DIR := $(REPO_DIR)/src/web/ui/ts
+WORKER_TS_DIR := $(REPO_DIR)/src/web/worker/ts
+WORKER_WASM_DIR := $(REPO_DIR)/src/web/worker/wasm
 
 CMD_UPDATE_POSTFIX := python3 $(BIN_DIR)/update_url_postfix.py
 
 all: build update_postfix
 
 build:
-	make --no-print-directory -C $(LIB_WASM_DIR) build
+	make --no-print-directory -C $(WORKER_WASM_DIR) build
 	make --no-print-directory -C $(WORKER_TS_DIR) build
 	make --no-print-directory -C $(UI_TS_DIR) build
 
@@ -27,7 +27,7 @@ update_postfix:
 	$(CMD_UPDATE_POSTFIX) --base_dir $(DIST_DIR) --base_url $(BASE_URL) --file worker/index.mjs
 clean:
 	@make --no-print-directory -C $(UI_TS_DIR) clean
-	@make --no-print-directory -C $(LIB_WASM_DIR) clean
+	@make --no-print-directory -C $(WORKER_WASM_DIR) clean
 
 test:
 	python3 -m http.server -d $(DIST_DIR) $(TEST_PORT)
