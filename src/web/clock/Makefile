@@ -4,6 +4,7 @@ REPO_DIR := $(shell cd ../../.. ; pwd)
 
 DIST_DIR := $(REPO_DIR)/docs/clock
 
+K10_JSON := $(DIST_DIR)/topologies_10k.json
 E1_JSON := $(DIST_DIR)/topologies_e1.json
 E3_JSON := $(DIST_DIR)/topologies_e3.json
 E6_JSON := $(DIST_DIR)/topologies_e6.json
@@ -17,10 +18,14 @@ RCMB_CMD := $(RCMB_DIR)/bin/rcmb
 RCMB_DEPENDENCIES := \
 	$(wildcard $(RCMB_DIR)/src/*.cpp)
 
-clock_json: $(E1_JSON) $(E3_JSON) $(E6_JSON) $(E12_JSON) $(E24_JSON)
+clock_json: $(K10_JSON) $(E1_JSON) $(E3_JSON) $(E6_JSON) $(E12_JSON) $(E24_JSON)
 
 $(RCMB_CMD): $(RCMB_DEPENDENCIES)
 	make --no-print-directory -C $(RCMB_DIR) all
+
+$(K10_JSON): $(RCMB_CMD) Makefile
+	@mkdir -p $(DIST_DIR)
+	$(RCMB_CMD) r -s 10000 -t $(VALUES) -n 15 -e 0 > $@
 
 $(E1_JSON): $(RCMB_CMD) Makefile
 	@mkdir -p $(DIST_DIR)

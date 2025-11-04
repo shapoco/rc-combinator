@@ -282,11 +282,12 @@ class Node {
  * @type {Node[]}
  */
 const eSerieses = {
-  'e1': { topologies: [], blockWidth: 30 * SCALE, blockHeight: 20 * SCALE },
-  'e3': { topologies: [], blockWidth: 20 * SCALE, blockHeight: 14 * SCALE },
-  'e6': { topologies: [], blockWidth: 15 * SCALE, blockHeight: 11 * SCALE },
-  'e12': { topologies: [], blockWidth: 12 * SCALE, blockHeight: 8 * SCALE },
-  'e24': { topologies: [], blockWidth: 12 * SCALE, blockHeight: 8 * SCALE },
+  '10k': { label: '10k only', topologies: [], blockWidth: 40 * SCALE, blockHeight: 30 * SCALE },
+  'e1': { label: 'E1', topologies: [], blockWidth: 30 * SCALE, blockHeight: 20 * SCALE },
+  'e3': { label: 'E3', topologies: [], blockWidth: 20 * SCALE, blockHeight: 14 * SCALE },
+  'e6': { label: 'E6', topologies: [], blockWidth: 15 * SCALE, blockHeight: 11 * SCALE },
+  'e12': { label: 'E12', topologies: [], blockWidth: 12 * SCALE, blockHeight: 8 * SCALE },
+  'e24': { label: 'E24', topologies: [], blockWidth: 12 * SCALE, blockHeight: 8 * SCALE },
 };
 
 /**
@@ -296,15 +297,16 @@ export async function main(container) {
   container.appendChild(canvas);
 
   for (const key in eSerieses) {
+    const eSeries = eSerieses[key];
     const option = document.createElement('option');
     option.value = key;
-    option.textContent = key.toUpperCase();
+    option.textContent = eSeries.label;
     if (key === 'e12') {
       option.selected = true;
     }
     eSeriesSelector.appendChild(option);
 
-    const resp = await fetch(`./topologies_${key}.json?20251104230700`);
+    const resp = await fetch(`./topologies_${key}.json?20251105005100`);
     const topos_json = await resp.json();
     topos_json.unshift([0]); // 0Ω用のダミー
     for (const topo_list_json of topos_json) {
@@ -314,7 +316,7 @@ export async function main(container) {
         tree.offset(-tree.x, -tree.y);
         topos.push(tree);
       }
-      eSerieses[key].topologies.push(topos);
+      eSeries.topologies.push(topos);
     }
   }
 
