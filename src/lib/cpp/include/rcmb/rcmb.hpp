@@ -235,7 +235,7 @@ static void filter_unnormalized_combinations(std::vector<Combination>& combs);
 result_t search_combinations(ValueSearchArgs& args,
                              std::vector<Combination>& best_combs) {
   // 探索空間の大きさをチェック
-  if (args.max_elements > 12) {
+  if (args.max_elements > 15) {
     return result_t::SEARCH_SPACE_TOO_LARGE;
   }
 
@@ -325,7 +325,7 @@ result_t search_dividers(DividerSearchArgs& args,
   const value_t eps = 1e-9;
 
   // 探索空間の大きさをチェック
-  if (args.max_elements > 12) {
+  if (args.max_elements > 15) {
     return result_t::SEARCH_SPACE_TOO_LARGE;
   }
 

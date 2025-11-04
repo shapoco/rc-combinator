@@ -84,16 +84,17 @@ export class WorkerAgent {
       ret.command = this.lastLaunchedCommand;
       if (ret.meta) {
         const meta = ret.meta;
-        if (meta.topologyCountList) {
-          const numTopoList = meta.topologyCountList as number[];
-          let totalTopos = 0;
-          for (let i = 0; i < numTopoList.length; i++) {
-            totalTopos += numTopoList[i];
-          }
-          console.log(`Total number of topologies: ${totalTopos}`);
-        }
+        // if (meta.topologyCountList) {
+        //   const numTopoList = meta.topologyCountList as number[];
+        //   let totalTopos = 0;
+        //   for (let i = 0; i < numTopoList.length; i++) {
+        //     totalTopos += numTopoList[i];
+        //   }
+        //   console.log(`Total number of topologies: ${totalTopos}`);
+        // }
         if (meta.numTopologies !== undefined) {
-          console.log(`Number of topology objects: ${meta.numTopologies}`);
+          console.log(
+              `Number of entry of topology cache: ${meta.numTopologies}`);
         }
         // if (meta.numCombinations !== undefined) {
         //   console.log(`Number of combination objects:

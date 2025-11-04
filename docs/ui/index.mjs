@@ -1990,13 +1990,7 @@ var WorkerAgent = class {
 			ret.command = this.lastLaunchedCommand;
 			if (ret.meta) {
 				const meta = ret.meta;
-				if (meta.topologyCountList) {
-					const numTopoList = meta.topologyCountList;
-					let totalTopos = 0;
-					for (let i = 0; i < numTopoList.length; i++) totalTopos += numTopoList[i];
-					console.log(`Total number of topologies: ${totalTopos}`);
-				}
-				if (meta.numTopologies !== void 0) console.log(`Number of topology objects: ${meta.numTopologies}`);
+				if (meta.numTopologies !== void 0) console.log(`Number of entry of topology cache: ${meta.numTopologies}`);
 				if (meta.heapSize) console.log(`Worker heap size: ${meta.heapSize / 1024 / 1024} MB`);
 			}
 			this.onFinished(ret);
