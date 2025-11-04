@@ -2393,7 +2393,7 @@ var CurrentLimitterFinderUi = class extends UiPage {
 //#region src/DividerFinderUi.ts
 var DividerFinderUi = class extends UiPage {
 	rangeSelector = null;
-	numElemRangeBox = new RangeBox(true, false, 1, MAX_COMBINATION_ELEMENTS);
+	numElemRangeBox = new RangeBox(true, false, 2, MAX_COMBINATION_ELEMENTS);
 	topTopologySelector = makeTopologySelector();
 	maxDepthInput = makeDepthSelector();
 	statusBox = makeP();

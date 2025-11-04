@@ -9,7 +9,7 @@ import {WorkerAgent} from './WorkerAgents';
 export class DividerFinderUi extends UiPages.UiPage {
   rangeSelector: RcmbUi.ValueRangeSelector|null = null;
   numElemRangeBox =
-      new RcmbUi.RangeBox(true, false, 1, RcmbJS.MAX_COMBINATION_ELEMENTS);
+      new RcmbUi.RangeBox(true, false, 2, RcmbJS.MAX_COMBINATION_ELEMENTS);
   topTopologySelector = RcmbUi.makeTopologySelector();
   maxDepthInput = RcmbUi.makeDepthSelector();
   statusBox = RcmbUi.makeP();
