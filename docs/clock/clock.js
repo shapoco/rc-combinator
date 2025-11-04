@@ -290,18 +290,29 @@ const eSerieses = {
   'e24': { label: 'E24', topologies: [], blockWidth: 12 * SCALE, blockHeight: 8 * SCALE },
 };
 
+let nextTickId = -1;
+let lastSec = -1;
+
 /**
  * @param {HTMLCanvasElement} canvas
  */
 export async function main(container) {
   container.appendChild(canvas);
 
+  let defaultKey = window.location.hash;
+  if (defaultKey.startsWith('#')) {
+    defaultKey = defaultKey.substring(1);
+  }
+  if (!(defaultKey in eSerieses)) {
+    defaultKey = 'e12';
+  }
+
   for (const key in eSerieses) {
     const eSeries = eSerieses[key];
     const option = document.createElement('option');
     option.value = key;
     option.textContent = eSeries.label;
-    if (key === 'e12') {
+    if (key === defaultKey) {
       option.selected = true;
     }
     eSeriesSelector.appendChild(option);
@@ -328,15 +339,20 @@ export async function main(container) {
 
   window.addEventListener('resize', resize);
 
-  setInterval(tick, 1000);
+  window.setTimeout(tick, 100);
 
   resize();
+
+  eSeriesSelector.addEventListener('change', () => {
+    window.location.replace(`#${eSeriesSelector.value}`);
+    tick(true);
+  });
 };
 
 function resize() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight - 200;
-  tick();
+  tick(true);
 }
 
 /**
@@ -353,7 +369,7 @@ function generateTree(json) {
   }
 }
 
-function tick() {
+function tick(force = false) {
   const now = new Date();
 
   const year = now.getFullYear();
@@ -362,6 +378,17 @@ function tick() {
   const hours = now.getHours();
   const minutes = now.getMinutes();
   const seconds = now.getSeconds();
+  const millis = now.getMilliseconds();
+
+  if (nextTickId>0) {
+    window.clearTimeout(nextTickId);
+  }
+  nextTickId = window.setTimeout(tick, 1000 - millis);
+  
+  if (seconds === lastSec && !force) {
+    return;
+  }
+  lastSec = seconds;
 
   const numbers = [
     hours,
