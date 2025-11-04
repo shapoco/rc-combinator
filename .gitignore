@@ -8,8 +8,6 @@ settings.json
 *.o
 *.out
 node_modules/
-src/ui/ts/dist/
-src/worker/ts/dist/
 package-lock.json
 package.json
 bin/emsdk/
