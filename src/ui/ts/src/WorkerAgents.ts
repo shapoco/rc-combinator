@@ -82,6 +82,31 @@ export class WorkerAgent {
     if (this.onFinished) {
       let ret = e.data;
       ret.command = this.lastLaunchedCommand;
+      if (ret.meta) {
+        const meta = ret.meta;
+        if (meta.topologyCountList) {
+          const numTopoList = meta.topologyCountList as number[];
+          let totalTopos = 0;
+          for (let i = 0; i < numTopoList.length; i++) {
+            totalTopos += numTopoList[i];
+          }
+          console.log(`Total number of topologies: ${totalTopos}`);
+        }
+        if (meta.numTopologies !== undefined) {
+          console.log(`Number of topology objects: ${meta.numTopologies}`);
+        }
+        // if (meta.numCombinations !== undefined) {
+        //   console.log(`Number of combination objects:
+        //   ${meta.numCombinations}`);
+        // }
+        // if (meta.numSearchStates !== undefined) {
+        //   console.log(
+        //       `Number of search state objects: ${meta.numSearchStates}`);
+        // }
+        if (meta.heapSize) {
+          console.log(`Worker heap size: ${meta.heapSize / 1024 / 1024} MB`);
+        }
+      }
       this.onFinished(ret);
     }
     if (this.startRequestTimerId !== null) {

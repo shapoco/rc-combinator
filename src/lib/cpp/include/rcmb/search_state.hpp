@@ -13,13 +13,15 @@
 
 namespace rcmb {
 
+extern uint32_t num_search_states;
+
 class SearchStateClass;
 using SearchState = std::shared_ptr<SearchStateClass>;
 
 class SearchStateClass {
  public:
   const uint32_t id;
-  const Topology topology;
+  const Topology& topology;
   bool inv_sum;
   const bool is_finisher;
 
@@ -38,7 +40,27 @@ class SearchStateClass {
       : id(generate_object_id()),
         topology(topo),
         inv_sum(inv_sum),
-        is_finisher(is_finisher) {}
+        is_finisher(is_finisher) {
+    num_search_states++;
+  }
+
+  ~SearchStateClass() {
+    num_search_states--;
+  }
+
+  inline void unlink() {
+    if (first_child) {
+      first_child->parent = nullptr;
+      first_child->unlink();
+      first_child = nullptr;
+    }
+    if (next_brother) {
+      next_brother->prev_brother = nullptr;
+      next_brother->unlink();
+      next_brother = nullptr;
+    }
+    parent = nullptr;
+  }
 
   inline bool is_leaf() const { return !first_child; }
   inline bool is_first_child() const { return !prev_brother; }
@@ -62,13 +84,15 @@ SearchState build_search_state_tree(ComponentType type,
 
 #ifdef RCCOMB_IMPLEMENTATION
 
+uint32_t num_search_states = 0;
+
 // このノードとその長男ノードに再帰的に min/max を設定
 void SearchStateClass::update_min_max(value_t min, value_t max) {
   if (min <= 0) min = 0;
   if (max <= 0) max = 0;
   if (max < min) max = min;
 
-  auto st = this;
+  SearchStateClass* st = this;
 
   min -= min / 1e9;
   max += max / 1e9;
@@ -90,10 +114,11 @@ Combination SearchStateClass::bake(ComponentType type) const {
   std::vector<Combination> child_combs;
   auto child = this->first_child;
   while (child) {
-    child_combs.push_back(child->bake(type));
+    child_combs.emplace_back(child->bake(type));
     child = child->next_brother;
   }
-  return create_combination(this->topology, type, child_combs, this->value);
+  return create_combination(this->topology, type, std::move(child_combs),
+                            this->value);
 }
 
 std::string SearchStateClass::to_string() const {
@@ -136,7 +161,7 @@ SearchState build_search_state_tree(ComponentType type,
   } else {
     SearchState prev_brother = nullptr;
     for (size_t i = 0; i < topology->children.size(); i++) {
-      auto child_topology = topology->children[i];
+      auto& child_topology = topology->children[i];
       bool is_last = (i + 1 >= topology->children.size());
       auto child_st = build_search_state_tree(type, leafs, child_topology,
                                               is_finisher && is_last);

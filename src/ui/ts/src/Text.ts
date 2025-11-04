@@ -57,6 +57,7 @@ const texts: {[key: string]: {[key: string]: string}} = {
     'Target Tolerance': '結果の許容誤差',
     'Voltage Ratio': '電圧比',
     'Target Ratio': '目標電圧比',
+    'Search error': '探索エラー',
   },
 };
 

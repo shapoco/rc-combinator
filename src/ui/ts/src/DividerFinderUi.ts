@@ -182,7 +182,7 @@ export class DividerFinderUi extends UiPages.UiPage {
       this.statusBox.style.color = '#c00';
       this.statusBox.appendChild(RcmbUi.makeIcon('❌'));
       this.statusBox.appendChild(
-          document.createTextNode(`Error: ${getStr(msg)}`));
+          document.createTextNode(`${getStr('Search error')}: ${getStr(msg)}`));
       this.resultBox.innerHTML = '';
     }
   }

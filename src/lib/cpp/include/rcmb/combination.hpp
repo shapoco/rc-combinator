@@ -8,6 +8,8 @@
 
 namespace rcmb {
 
+extern uint32_t num_combinations;
+
 class CombinationClass;
 using Combination = std::shared_ptr<CombinationClass>;
 
@@ -19,8 +21,15 @@ class CombinationClass {
   const value_t value;
 
   CombinationClass(const Topology &topology, ComponentType type,
-                   const std::vector<Combination> &children, value_t val)
-      : type(type), topology(topology), children(children), value(val) {}
+                   std::vector<Combination> &&children, value_t val)
+      : type(type),
+        topology(topology),
+        children(std::move(children)),
+        value(val) {
+    num_combinations++;
+  }
+
+  ~CombinationClass() { num_combinations--; }
 
   inline bool is_leaf() const { return topology->is_leaf(); }
   inline int num_leafs() const { return topology->num_leafs; }
@@ -33,11 +42,14 @@ class CombinationClass {
 
 static inline Combination create_combination(
     const Topology &topology, ComponentType type,
-    const std::vector<Combination> &children, value_t value) {
-  return std::make_shared<CombinationClass>(topology, type, children, value);
+    std::vector<Combination> &&children, value_t value) {
+  return std::make_shared<CombinationClass>(topology, type, std::move(children),
+                                            value);
 }
 
 #ifdef RCCOMB_IMPLEMENTATION
+
+uint32_t num_combinations = 0;
 
 // 値が正しいか確認
 result_t CombinationClass::verify() const {

@@ -141,7 +141,7 @@ var require_rcmb_wasm = /* @__PURE__ */ __commonJS({ "../../lib/cpp_wasm/build/r
 			}
 			var wasmBinaryFile;
 			function findWasmBinary() {
-				return locateFile("rcmb_wasm.wasm?a67e3bad");
+				return locateFile("rcmb_wasm.wasm?b4379f2c");
 			}
 			function getBinarySync(file) {
 				if (file == wasmBinaryFile && wasmBinary) return new Uint8Array(wasmBinary);
@@ -1498,40 +1498,44 @@ thisWorker.onmessage = async (e) => {
 		result: [],
 		timeSpent: 0
 	};
-	const cmd = e.data;
-	const method = cmd.method;
-	if (!wasmCore) {
-		console.log("Loading WASM module...");
-		wasmCore = await (0, import_rcmb_wasm.default)();
-		console.log("WASM module loaded.");
+	try {
+		const cmd = e.data;
+		const method = cmd.method;
+		if (!wasmCore) {
+			console.log("Loading WASM module...");
+			wasmCore = await (0, import_rcmb_wasm.default)();
+			console.log("WASM module loaded.");
+		}
+		const start = performance.now();
+		switch (method) {
+			case Method.FindCombination:
+				{
+					const args = cmd.args;
+					const elementValues = new wasmCore.VectorDouble();
+					for (const v of args.elementValues) elementValues.push_back(v);
+					const retStr = wasmCore.findCombinations(args.capacitor, elementValues, args.maxElements, args.topologyConstraint, args.maxDepth, args.targetValue, args.targetMin, args.targetMax);
+					elementValues.delete();
+					ret = JSON.parse(retStr);
+				}
+				break;
+			case Method.FindDivider:
+				{
+					const args = cmd.args;
+					const elementValues = new wasmCore.VectorDouble();
+					for (const v of args.elementValues) elementValues.push_back(v);
+					const retStr = wasmCore.findDividers(elementValues, args.maxElements, args.topologyConstraint, args.maxDepth, args.totalMin, args.totalMax, args.targetValue, args.targetMin, args.targetMax);
+					elementValues.delete();
+					ret = JSON.parse(retStr);
+				}
+				break;
+			default:
+				ret.error = "Invalid method";
+				break;
+		}
+		ret.timeSpent = performance.now() - start;
+	} catch (err) {
+		ret.error = err && err.message ? err.message : String(err);
 	}
-	const start = performance.now();
-	switch (method) {
-		case Method.FindCombination:
-			{
-				const args = cmd.args;
-				const elementValues = new wasmCore.VectorDouble();
-				for (const v of args.elementValues) elementValues.push_back(v);
-				const retStr = wasmCore.findCombinations(args.capacitor, elementValues, args.maxElements, args.topologyConstraint, args.maxDepth, args.targetValue, args.targetMin, args.targetMax);
-				elementValues.delete();
-				ret = JSON.parse(retStr);
-			}
-			break;
-		case Method.FindDivider:
-			{
-				const args = cmd.args;
-				const elementValues = new wasmCore.VectorDouble();
-				for (const v of args.elementValues) elementValues.push_back(v);
-				const retStr = wasmCore.findDividers(elementValues, args.maxElements, args.topologyConstraint, args.maxDepth, args.totalMin, args.totalMax, args.targetValue, args.targetMin, args.targetMax);
-				elementValues.delete();
-				ret = JSON.parse(retStr);
-			}
-			break;
-		default:
-			ret.error = "Invalid method";
-			break;
-	}
-	ret.timeSpent = performance.now() - start;
 	thisWorker.postMessage(ret);
 };
 

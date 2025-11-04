@@ -102,8 +102,6 @@ std::string value_to_json_string(value_t value);
 
 uint32_t next_object_id = 1;
 
-static constexpr uint32_t POLY = 0xEDB88320;
-
 value_t pow10(int exp) {
   bool neg = exp < 0;
   if (neg) exp = -exp;

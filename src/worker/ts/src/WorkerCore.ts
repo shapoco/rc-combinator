@@ -19,52 +19,56 @@ thisWorker.onmessage = async (e: MessageEvent<any>) => {
     timeSpent: 0,
   };
 
-  const cmd = e.data;
-  const method = cmd.method as RcmbJS.Method;
+  try {
+    const cmd = e.data;
+    const method = cmd.method as RcmbJS.Method;
 
-  if (!wasmCore) {
-    console.log('Loading WASM module...');
-    wasmCore = (await createRcmbWasm()) as RcmbWasm.RcmbWasm;
-    console.log('WASM module loaded.');
+    if (!wasmCore) {
+      console.log('Loading WASM module...');
+      wasmCore = (await createRcmbWasm()) as RcmbWasm.RcmbWasm;
+      console.log('WASM module loaded.');
+    }
+
+    const start = performance.now();
+    switch (method) {
+      case RcmbJS.Method.FindCombination: {
+        const args = cmd.args as RcmbJS.FindCombinationArgs;
+        const elementValues = new wasmCore!.VectorDouble();
+        for (const v of args.elementValues) {
+          elementValues.push_back(v);
+        }
+        const retStr = wasmCore!.findCombinations(
+            args.capacitor, elementValues, args.maxElements,
+            args.topologyConstraint, args.maxDepth, args.targetValue,
+            args.targetMin, args.targetMax);
+        elementValues.delete();
+        ret = JSON.parse(retStr);
+      } break;
+
+      case RcmbJS.Method.FindDivider: {
+        const args = cmd.args as RcmbJS.FindDividerArgs;
+        const elementValues = new wasmCore!.VectorDouble();
+        for (const v of args.elementValues) {
+          elementValues.push_back(v);
+        }
+        const retStr = wasmCore!.findDividers(
+            elementValues, args.maxElements, args.topologyConstraint,
+            args.maxDepth, args.totalMin, args.totalMax, args.targetValue,
+            args.targetMin, args.targetMax);
+        elementValues.delete();
+        ret = JSON.parse(retStr);
+      } break;
+
+      default:
+        ret.error = 'Invalid method';
+        break;
+    }
+
+    const end = performance.now();
+    ret.timeSpent = end - start;
+  } catch (err: any) {
+    ret.error = (err && err.message) ? err.message : String(err);
   }
-
-  const start = performance.now();
-  switch (method) {
-    case RcmbJS.Method.FindCombination: {
-      const args = cmd.args as RcmbJS.FindCombinationArgs;
-      const elementValues = new wasmCore!.VectorDouble();
-      for (const v of args.elementValues) {
-        elementValues.push_back(v);
-      }
-      const retStr = wasmCore!.findCombinations(
-          args.capacitor, elementValues, args.maxElements,
-          args.topologyConstraint, args.maxDepth, args.targetValue,
-          args.targetMin, args.targetMax);
-      elementValues.delete();
-      ret = JSON.parse(retStr);
-    } break;
-
-    case RcmbJS.Method.FindDivider: {
-      const args = cmd.args as RcmbJS.FindDividerArgs;
-      const elementValues = new wasmCore!.VectorDouble();
-      for (const v of args.elementValues) {
-        elementValues.push_back(v);
-      }
-      const retStr = wasmCore!.findDividers(
-          elementValues, args.maxElements, args.topologyConstraint,
-          args.maxDepth, args.totalMin, args.totalMax, args.targetValue,
-          args.targetMin, args.targetMax);
-      elementValues.delete();
-      ret = JSON.parse(retStr);
-    } break;
-
-    default:
-      ret.error = 'Invalid method';
-      break;
-  }
-
-  const end = performance.now();
-  ret.timeSpent = end - start;
-
+  
   thisWorker.postMessage(ret);
 };

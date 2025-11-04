@@ -18,7 +18,7 @@ namespace rcmb {
 
 struct ValueSearchArgs {
   const ComponentType type;
-  const ValueList& available_values;
+  const ValueList& element_values;
   const int max_elements;
   const value_t target;
   const value_t target_min;
@@ -29,7 +29,7 @@ struct ValueSearchArgs {
   ValueSearchArgs(ComponentType type, const ValueList& values, int max_elems,
                   value_t target, value_t target_min, value_t target_max)
       : type(type),
-        available_values(values),
+        element_values(values),
         max_elements(max_elems),
         target(target),
         target_min(target_min),
@@ -37,7 +37,7 @@ struct ValueSearchArgs {
 };
 
 struct DividerSearchArgs {
-  const ValueList& available_values;
+  const ValueList& element_values;
   int max_elements;
   const value_t total_min;
   const value_t total_max;
@@ -50,7 +50,7 @@ struct DividerSearchArgs {
   DividerSearchArgs(const ValueList& values, int max_elems,
                     value_t total_min_val, value_t total_max_val,
                     value_t target_val, value_t target_min, value_t target_max)
-      : available_values(values),
+      : element_values(values),
         max_elements(max_elems),
         total_min(total_min_val),
         total_max(total_max_val),
@@ -66,26 +66,31 @@ result_t search_dividers(DividerSearchArgs& args,
 
 #ifdef RCCOMB_IMPLEMENTATION
 
-struct CombinationEnumContext;
-
-struct CombinationEnumContext {
+class CombinationEnumContext {
+ public:
   const ComponentType type;
-  const ValueList& available_values;
+  const ValueList& element_values;
+  const int num_elements;
 
   SearchState root_state = nullptr;
   std::vector<SearchState> leaf_states;
-  int num_elements;
   bool aborted = false;
 
-  CombinationEnumContext(ComponentType type, const ValueList& values,
+  CombinationEnumContext(ComponentType type, const ValueList& elem_values,
                          Topology& topology, value_t min = 0,
                          value_t max = VALUE_POSITIVE_INFINITY,
                          value_t target = VALUE_NONE)
-      : type(type), available_values(values) {
+      : type(type),
+        element_values(elem_values),
+        num_elements(topology->num_leafs) {
     root_state = build_search_state_tree(type, leaf_states, topology);
     root_state->update_min_max(min, max);
     root_state->target = target;
-    num_elements = topology->num_leafs;
+  }
+
+  ~CombinationEnumContext() {
+    // 重要: ツリーを解体しないとメモリリークする
+    root_state->unlink();
   }
 
   void abort() { aborted = true; }
@@ -97,7 +102,7 @@ static void update_target_of_next_brother_of(SearchState st);
 template <class callback_t>
 void enum_combinations_recursive(CombinationEnumContext& ctx, int pos,
                                  const callback_t& callback) {
-  auto& st = ctx.leaf_states[pos];
+  auto st = ctx.leaf_states[pos];
 
   value_t min = st->min;
   value_t max = st->max;
@@ -110,12 +115,12 @@ void enum_combinations_recursive(CombinationEnumContext& ctx, int pos,
   const value_t* values = nullptr;
   if (value_is_valid(st->target)) {
     // ターゲット値が指定されている場合は最も近い値だけを試す
-    values = ctx.available_values.get_nearest(st->target, &count);
+    values = ctx.element_values.get_nearest(st->target, &count);
     if (values[count - 1] < min || max < values[0]) {
       return;
     }
   } else {
-    values = ctx.available_values.get_values(min, max, &count);
+    values = ctx.element_values.get_values(min, max, &count);
   }
 
   for (int i = 0; i < count; i++) {
@@ -263,7 +268,7 @@ result_t search_combinations(ValueSearchArgs& args,
         if (num_elems >= 2 && !(t & topo_constr)) continue;
         if (topo->depth > args.max_depth) continue;
 
-        CombinationEnumContext cec(args.type, args.available_values, topo,
+        CombinationEnumContext cec(args.type, args.element_values, topo,
                                    best_min, best_max, args.target);
         const auto cb = [&](CombinationEnumContext& ctx, value_t value) {
           if (value < target_min - eps || target_max + eps < value) {
@@ -282,7 +287,7 @@ result_t search_combinations(ValueSearchArgs& args,
           } else {
             best_combs.clear();
           }
-          best_combs.push_back(ctx.root_state->bake(args.type));
+          best_combs.emplace_back(ctx.root_state->bake(args.type));
           best_error = error;
           best_elems = num_elems;
           if (value < args.target) {
@@ -369,9 +374,8 @@ result_t search_dividers(DividerSearchArgs& args,
                     : static_cast<int>(topology_constraint_t::SERIES);
         if (num_lowers >= 2 && !(t & topo_constr)) continue;
         if (topo->depth > args.max_depth) continue;
-        CombinationEnumContext cec(ComponentType::Resistor,
-                                   args.available_values, topo,
-                                   target_lower_min, target_lower_max);
+        CombinationEnumContext cec(ComponentType::Resistor, args.element_values,
+                                   topo, target_lower_min, target_lower_max);
         result_t upper_error = result_t::SUCCESS;
         const auto cb = [&](CombinationEnumContext& ctx, value_t lower_val) {
           const value_t est_upper_val =
@@ -390,15 +394,14 @@ result_t search_dividers(DividerSearchArgs& args,
             const int memo_lowers = memo->lowers[0]->num_leafs();
             const int memo_elems = memo_lowers + memo->uppers[0]->num_leafs();
             if (num_lowers <= memo_lowers && memo_elems <= best_elems) {
-              const auto lower_comb =
-                  ctx.root_state->bake(ComponentType::Resistor);
-              memo->lowers.push_back(lower_comb);
+              memo->lowers.emplace_back(
+                  ctx.root_state->bake(ComponentType::Resistor));
             }
             return;
           }
 
           // 下側の抵抗値に対応する上側の抵抗を列挙する
-          ValueSearchArgs vsa(ComponentType::Resistor, args.available_values,
+          ValueSearchArgs vsa(ComponentType::Resistor, args.element_values,
                               upper_max_elements, est_upper_val,
                               target_upper_min, target_upper_max);
           vsa.topology_constraint = args.topology_constraint;
@@ -442,10 +445,10 @@ result_t search_dividers(DividerSearchArgs& args,
 
           auto double_comb = create_double_combination(ratio);
           double_comb->uppers = upper_combs;
-          double_comb->lowers.push_back(
+          double_comb->lowers.emplace_back(
               ctx.root_state->bake(ComponentType::Resistor));
           result_memo[lower_key] = double_comb;
-          best_combs.push_back(double_comb);
+          best_combs.emplace_back(std::move(double_comb));
           best_error = error;
           best_elems = num_elems;
         };

@@ -1,7 +1,7 @@
-#include <cstdio>
 #include <string>
 
 #include <emscripten/bind.h>
+#include <emscripten/heap.h>
 
 #include "rcmb/rcmb.hpp"
 
@@ -12,6 +12,26 @@
 #endif
 
 using namespace rcmb;
+
+std::string get_meta_info_json() {
+  std::string json_str;
+  std::vector<int> topos_count = get_num_topologies();
+  json_str += "{";
+  json_str += "\"topologyCountList\":[";
+  for (size_t i = 0; i < topos_count.size(); i++) {
+    if (i > 0) {
+      json_str += ",";
+    }
+    json_str += std::to_string(topos_count[i]);
+  }
+  json_str += "],";
+  json_str += "\"numTopologies\":" + std::to_string(num_topologies) + ",";
+  json_str += "\"numCombinations\":" + std::to_string(num_combinations) + ",";
+  json_str += "\"numSearchStates\":" + std::to_string(num_search_states) + ",";
+  json_str += "\"heapSize\":" + std::to_string(emscripten_get_heap_size());
+  json_str += "}";
+  return json_str;
+}
 
 std::string findCombinations(bool capacitor,
                              const std::vector<double>& element_values,
@@ -45,7 +65,10 @@ std::string findCombinations(bool capacitor,
     }
     result += comb->to_json_string();
   }
-  result += "]}";
+  result += "],";
+  result += "\"meta\":" + get_meta_info_json();
+  result += "}";
+
   return result;
 }
 
@@ -80,7 +103,9 @@ std::string findDividers(const std::vector<double>& element_values,
     }
     result += comb->to_json_string();
   }
-  result += "]}";
+  result += "],";
+  result += "\"meta\":" + get_meta_info_json();
+  result += "}";
   return result;
 }
 

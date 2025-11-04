@@ -25,7 +25,7 @@ class DoubleCombinationClass {
   std::string to_string() const;
 };
 
-inline DoubleCombination create_double_combination(value_t ratio) {
+static inline DoubleCombination create_double_combination(value_t ratio) {
   return std::make_shared<DoubleCombinationClass>(ratio);
 }
 

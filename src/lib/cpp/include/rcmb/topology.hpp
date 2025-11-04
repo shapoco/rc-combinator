@@ -10,15 +10,15 @@
 
 namespace rcmb {
 
+extern uint32_t num_topologies;
+
 class TopologyClass;
 using Topology = std::shared_ptr<TopologyClass>;
 
 class TopologyClass {
  public:
-  static constexpr uint32_t POLY = 0xEDB88320;
-
   const bool parallel;
-  const std::vector<Topology> children;
+  std::vector<Topology> children;
   const int num_leafs;
   const int depth;
   const uint32_t id;
@@ -50,29 +50,17 @@ class TopologyClass {
     }
   }
 
-  // inline static hash_t compute_hash(bool parallel,
-  //                                   const std::vector<Topology>& children) {
-  //   hash_t h = 0x12345678;
-  //   if (!children.empty()) {
-  //     if (parallel) {
-  //       h = crc32_add_u32(h, 0xF0F0F0F0);
-  //     } else {
-  //       h = crc32_add_u32(h, 0x0F0F0F0F);
-  //     }
-  //     for (const auto& child : children) {
-  //       h = crc32_add_u32(h, child->hash);
-  //     }
-  //   }
-  //   return h;
-  // }
-
  public:
-  TopologyClass(bool parallel, const std::vector<Topology>& children)
+  TopologyClass(bool parallel, std::vector<Topology>&& children)
       : parallel(parallel),
         children(children),
-        num_leafs(count_leafs(children)),
-        depth(count_depth(children)),
-        id(generate_object_id()) {}
+        num_leafs(count_leafs(this->children)),
+        depth(count_depth(this->children)),
+        id(generate_object_id()) {
+    num_topologies++;
+  }
+
+  ~TopologyClass() { num_topologies--; }
 
   inline bool is_leaf() const { return num_leafs == 1; }
 
@@ -98,14 +86,20 @@ class TopologyClass {
 #endif
 };
 
-static inline Topology create_topology_node(
-    bool parallel, const std::vector<Topology>& children) {
-  return std::make_shared<TopologyClass>(parallel, children);
+static inline Topology create_topology_node(bool parallel,
+                                            std::vector<Topology>&& children) {
+  return std::make_shared<TopologyClass>(parallel, std::move(children));
 }
 
 std::vector<Topology>& get_topologies(int num_leafs, bool parallel);
 
+std::vector<int> get_num_topologies();
+
 #ifdef RCCOMB_IMPLEMENTATION
+
+static int PARALLEL_OFFSET = 1024;
+
+uint32_t num_topologies = 0;
 
 // ノード分割のコンテキスト
 struct NodeDivideContext {
@@ -123,7 +117,8 @@ static void collect_children(NodeDivideContext& ctx, int num_parts);
 
 // num_children個の子ノードを持つ全トポロジーを取得
 std::vector<Topology>& get_topologies(int num_leafs, bool parallel) {
-  const uint32_t key = num_leafs + ((num_leafs >= 2 && parallel) ? 1000 : 0);
+  const uint32_t key =
+      num_leafs + ((num_leafs >= 2 && parallel) ? PARALLEL_OFFSET : 0);
 
   if (!cache.contains(key)) {
     if (num_leafs == 1) {
@@ -186,21 +181,21 @@ static void collect_children(NodeDivideContext& ctx, int num_parts) {
   if (num_parts == 0) return;
 
   // 孫ノードを収集
-  std::vector<std::vector<Topology>> parts;
+  std::vector<std::vector<Topology>*> parts;
   for (int i = 0; i < num_parts; i++) {
-    parts.push_back(get_topologies(ctx.part_sizes[i], !ctx.parallel));
+    parts.emplace_back(&get_topologies(ctx.part_sizes[i], !ctx.parallel));
   }
 
   // 孫ノードを総当たりで組み合わせて子ノードを生成
   std::vector<size_t> indices(num_parts, 0);
-  while (indices[num_parts - 1] < parts[num_parts - 1].size()) {
+  while (indices[num_parts - 1] < parts[num_parts - 1]->size()) {
     // 子ノードを生成
     int last_num_leafs = -1;
     uint32_t last_id = 0;
     bool skip = false;
     std::vector<Topology> children(num_parts);
     for (int i = 0; i < num_parts; i++) {
-      auto child = parts[i][indices[i]];
+      auto child = (*parts[i])[indices[i]];
       if (child->num_leafs == last_num_leafs && child->id > last_id) {
         // 重複回避: 葉の数が同じ子ノードは ID が同じか降順の場合のみ許可
         skip = true;
@@ -211,14 +206,14 @@ static void collect_children(NodeDivideContext& ctx, int num_parts) {
       children[i] = child;
     }
     if (!skip) {
-      const auto node = create_topology_node(ctx.parallel, children);
-      ctx.nodes.push_back(node);
+      ctx.nodes.push_back(
+          create_topology_node(ctx.parallel, std::move(children)));
     }
 
     // インデックスをインクリメント
     for (int i = 0; i < num_parts; i++) {
       indices[i]++;
-      if (indices[i] < parts[i].size()) {
+      if (indices[i] < parts[i]->size()) {
         break;
       } else if (i + 1 >= num_parts) {
         break;
@@ -227,6 +222,26 @@ static void collect_children(NodeDivideContext& ctx, int num_parts) {
       }
     }
   }
+}
+
+std::vector<int> get_num_topologies() {
+  std::vector<int> result;
+  uint32_t n = 1;
+  while (true) {
+    int num_topos = 0;
+    if (cache.contains(n)) {
+      num_topos += static_cast<int>(cache[n].size());
+    }
+    if (cache.contains(n | PARALLEL_OFFSET)) {
+      num_topos += static_cast<int>(cache[n | PARALLEL_OFFSET].size());
+    }
+    if (num_topos == 0) {
+      break;
+    }
+    result.push_back(num_topos);
+    n++;
+  }
+  return result;
 }
 
 #endif

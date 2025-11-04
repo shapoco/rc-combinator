@@ -41,10 +41,6 @@ CXXFLAGS := \
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-s EXPORT_NAME="createRcmbWasm"
 
-#	-s EXPORTED_RUNTIME_METHODS='["ccall","cwrap"]' \
-#	-s EXPORTED_FUNCTIONS='["_malloc","_free"]' 
-#	-fwasm-exceptions
-
 $(MODULE_WASM): $(DEPENDENCIES)
 	@mkdir -p $(BUILD_DIR)
 	emcc $(CXXFLAGS) -o $(MODULE_JS) $(CPP_FILES)

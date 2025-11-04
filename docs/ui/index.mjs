@@ -1208,7 +1208,8 @@ const texts = { "ja": {
 	"Element Tolerance": "素子の許容誤差",
 	"Target Tolerance": "結果の許容誤差",
 	"Voltage Ratio": "電圧比",
-	"Target Ratio": "目標電圧比"
+	"Target Ratio": "目標電圧比",
+	"Search error": "探索エラー"
 } };
 function getStr(key, vars) {
 	let ret = key;
@@ -1987,6 +1988,17 @@ var WorkerAgent = class {
 		if (this.onFinished) {
 			let ret = e.data;
 			ret.command = this.lastLaunchedCommand;
+			if (ret.meta) {
+				const meta = ret.meta;
+				if (meta.topologyCountList) {
+					const numTopoList = meta.topologyCountList;
+					let totalTopos = 0;
+					for (let i = 0; i < numTopoList.length; i++) totalTopos += numTopoList[i];
+					console.log(`Total number of topologies: ${totalTopos}`);
+				}
+				if (meta.numTopologies !== void 0) console.log(`Number of topology objects: ${meta.numTopologies}`);
+				if (meta.heapSize) console.log(`Worker heap size: ${meta.heapSize / 1024 / 1024} MB`);
+			}
 			this.onFinished(ret);
 		}
 		if (this.startRequestTimerId !== null) {
@@ -2233,7 +2245,7 @@ var CombinationFinderUi = class extends UiPage {
 			if (e.message) msg = e.message;
 			this.statusBox.style.color = "#c00";
 			this.statusBox.appendChild(makeIcon("❌"));
-			this.statusBox.appendChild(document.createTextNode(`Error: ${getStr(msg)}`));
+			this.statusBox.appendChild(document.createTextNode(`${getStr("Search error")}: ${getStr(msg)}`));
 			this.resultBox.innerHTML = "";
 		}
 	}
@@ -2554,7 +2566,7 @@ var DividerFinderUi = class extends UiPage {
 			if (e.message) msg = e.message;
 			this.statusBox.style.color = "#c00";
 			this.statusBox.appendChild(makeIcon("❌"));
-			this.statusBox.appendChild(document.createTextNode(`Error: ${getStr(msg)}`));
+			this.statusBox.appendChild(document.createTextNode(`${getStr("Search error")}: ${getStr(msg)}`));
 			this.resultBox.innerHTML = "";
 		}
 	}
