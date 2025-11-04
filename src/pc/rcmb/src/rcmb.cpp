@@ -105,13 +105,13 @@ int main(int argc, char** argv) {
     };
     for (const auto& type : types) {
       for (int max_elements = 1; max_elements <= 5; max_elements++) {
-        RCCOMB_DEBUG_PRINT(
+        RCMB_DEBUG_PRINT(
             "Testing search_combinations: type=%d, max_elements=%d\n",
             static_cast<int>(type), max_elements);
         for (const auto& target : targets) {
           bool ok = test_search_combinations(type, E3, max_elements, target);
           if (!ok) {
-            RCCOMB_DEBUG_PRINT(
+            RCMB_DEBUG_PRINT(
                 "Test failed: type=%d, max_elements=%d, target=%.9f\n",
                 static_cast<int>(type), max_elements, target);
             return -1;
@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
     const value_t target = 3.14;
     bool ok = test_search_combinations(type, series, max_elements, target);
     if (!ok) {
-      RCCOMB_DEBUG_PRINT("Test failed: type=%d, max_elements=%d, target=%.9f\n",
+      RCMB_DEBUG_PRINT("Test failed: type=%d, max_elements=%d, target=%.9f\n",
                          static_cast<int>(type), max_elements, target);
       return -1;
     }
@@ -141,12 +141,12 @@ int main(int argc, char** argv) {
     };
 
     for (int max_elements = 2; max_elements <= 6; max_elements++) {
-      RCCOMB_DEBUG_PRINT("Testing search_dividers: max_elements=%d\n",
+      RCMB_DEBUG_PRINT("Testing search_dividers: max_elements=%d\n",
                          max_elements);
       for (const auto& target : targets) {
         bool ok = test_search_dividers(E3, max_elements, target);
         if (!ok) {
-          RCCOMB_DEBUG_PRINT(
+          RCMB_DEBUG_PRINT(
               "Divider test failed: max_elements=%d, target=%.9f\n",
               max_elements, target);
           return -1;
@@ -160,7 +160,7 @@ int main(int argc, char** argv) {
     value_t target = 19.0 / 20.0;
     bool ok = test_search_dividers(K10, 10, target);
     if (!ok) {
-      RCCOMB_DEBUG_PRINT("Divider test failed: max_elements=%d, target=%.9f\n",
+      RCMB_DEBUG_PRINT("Divider test failed: max_elements=%d, target=%.9f\n",
                          max_elements, target);
       return -1;
     }
@@ -169,7 +169,7 @@ int main(int argc, char** argv) {
   auto t_elapsed = std::chrono::high_resolution_clock::now() - t_start;
   auto ms =
       std::chrono::duration_cast<std::chrono::milliseconds>(t_elapsed).count();
-  RCCOMB_DEBUG_PRINT("All tests passed. Elapsed time: %ld ms\n", ms);
+  RCMB_DEBUG_PRINT("All tests passed. Elapsed time: %ld ms\n", ms);
 
   return 0;
 }
@@ -238,7 +238,7 @@ bool test_search_combinations(ComponentType type, std::vector<value_t>& series,
               exp_error = error;
               exp_elements = num_elements;
               exp_comb = test_calc_value(true, type, topo, slot, 0);
-              // RCCOMB_DEBUG_PRINT("Found better combination: %lf
+              // RCMB_DEBUG_PRINT("Found better combination: %lf
               // (error=%lf)\n",
               //                    val, error);
             }
@@ -303,21 +303,21 @@ bool test_search_dividers(std::vector<value_t>& series, int max_elements,
   std::vector<DoubleCombination> dividers;
   result_t ret = search_dividers(dsa, dividers);
   if (ret != result_t::SUCCESS) {
-    RCCOMB_DEBUG_PRINT("Error: %s\n", result_to_string(ret));
+    RCMB_DEBUG_PRINT("Error: %s\n", result_to_string(ret));
     return false;
   }
 
   bool success = true;
 
   if (dividers.empty()) {
-    RCCOMB_DEBUG_PRINT(
+    RCMB_DEBUG_PRINT(
         "Divider test failed: no result found for target=%.9lf\n", target);
     success = false;
   } else {
     value_t result = dividers[0]->ratio;
     value_t error = std::abs(result - target);
     if (target < total_min - 1e9 || total_max + 1e9 < result) {
-      RCCOMB_DEBUG_PRINT(
+      RCMB_DEBUG_PRINT(
           "Divider test failed: target=%.9lf, result=%.9lf, error=%.9lf\n",
           target, result, error);
       success = false;
@@ -325,7 +325,7 @@ bool test_search_dividers(std::vector<value_t>& series, int max_elements,
     value_t total =
         dividers[0]->uppers[0]->value + dividers[0]->lowers[0]->value;
     if (total < total_min - 1e9 || total_max + 1e9 < total) {
-      RCCOMB_DEBUG_PRINT(
+      RCMB_DEBUG_PRINT(
           "Divider test failed: target=%.9lf, total=%.9lf, error=%.9lf\n",
           target, total, error);
       success = false;
@@ -335,11 +335,11 @@ bool test_search_dividers(std::vector<value_t>& series, int max_elements,
   if (!success || verbose) {
     auto end = std::chrono::high_resolution_clock::now();
     for (const auto& div : dividers) {
-      RCCOMB_DEBUG_PRINT("%s\n", div->to_string().c_str());
+      RCMB_DEBUG_PRINT("%s\n", div->to_string().c_str());
       // printf("%s\n", div->to_json_string().c_str());
     }
     std::chrono::duration<double, std::milli> duration = end - start;
-    RCCOMB_DEBUG_PRINT("Search took %.2f ms\n", duration.count());
+    RCMB_DEBUG_PRINT("Search took %.2f ms\n", duration.count());
   }
 
   return success;
@@ -437,7 +437,7 @@ std::vector<TestTopology>& test_get_topology(bool parallel, int n) {
     stack.push(part_size);
   }
   while (!stack.empty()) {
-    // RCCOMB_DEBUG_PRINT("stack.size()=%d\n", static_cast<int>(stack.size()));
+    // RCMB_DEBUG_PRINT("stack.size()=%d\n", static_cast<int>(stack.size()));
     const auto poses = stack.top();
     stack.pop();
 
@@ -446,7 +446,7 @@ std::vector<TestTopology>& test_get_topology(bool parallel, int n) {
       test_collect_topologies(parallel, result, poses);
       continue;
     } /*else if (pos > n) {
-      // RCCOMB_DEBUG_PRINT("Invalid pos=%d > n=%d\n", pos, n);
+      // RCMB_DEBUG_PRINT("Invalid pos=%d > n=%d\n", pos, n);
       throw std::runtime_error("Invalid state");
     }*/
 
@@ -464,12 +464,12 @@ std::vector<TestTopology>& test_get_topology(bool parallel, int n) {
       std::vector<int> new_poses = poses;
       new_poses.push_back(pos + next_size);
       stack.push(new_poses);
-      // RCCOMB_DEBUG_PRINT("pushed : %d, stack.size()=%d\n", next_size,
+      // RCMB_DEBUG_PRINT("pushed : %d, stack.size()=%d\n", next_size,
       //                    static_cast<int>(stack.size()));
     }
   }
 
-  // RCCOMB_DEBUG_PRINT("Generated %d topologies for n=%d, parallel=%d\n",
+  // RCMB_DEBUG_PRINT("Generated %d topologies for n=%d, parallel=%d\n",
   //                    static_cast<int>(result.size()), n, parallel ? 1 : 0);
   topologies[key] = result;
   return topologies[key];
@@ -477,7 +477,7 @@ std::vector<TestTopology>& test_get_topology(bool parallel, int n) {
 
 void test_collect_topologies(bool parallel, std::vector<TestTopology>& topos,
                              const std::vector<int>& poses) {
-  // RCCOMB_DEBUG_PRINT("Collecting topologies: parallel=%d, poses.size()=%d\n",
+  // RCMB_DEBUG_PRINT("Collecting topologies: parallel=%d, poses.size()=%d\n",
   //                    parallel ? 1 : 0, static_cast<int>(poses.size()));
 
   std::vector<std::vector<TestTopology>> parts;

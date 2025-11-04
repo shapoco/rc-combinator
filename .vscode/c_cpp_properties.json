@@ -7,8 +7,8 @@
                 "${workspaceFolder}/src/lib/cpp/include"
             ],
             "defines": [
-                "RCCOMB_IMPLEMENTATION",
-                "RCCOMB_DEBUG"
+                "RCMB_IMPLEMENTATION",
+                "RCMB_DEBUG"
             ],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c17",

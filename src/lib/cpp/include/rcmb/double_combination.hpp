@@ -1,5 +1,5 @@
-#ifndef RCCOMB_DOUBLE_COMBINATION_HPP
-#define RCCOMB_DOUBLE_COMBINATION_HPP
+#ifndef RCMB_DOUBLE_COMBINATION_HPP
+#define RCMB_DOUBLE_COMBINATION_HPP
 
 #include <memory>
 #include <vector>
@@ -29,7 +29,7 @@ static inline DoubleCombination create_double_combination(value_t ratio) {
   return std::make_shared<DoubleCombinationClass>(ratio);
 }
 
-#ifdef RCCOMB_IMPLEMENTATION
+#ifdef RCMB_IMPLEMENTATION
 
 result_t DoubleCombinationClass::verify() const {
   if (uppers.empty() || lowers.empty()) {
@@ -47,7 +47,7 @@ result_t DoubleCombinationClass::verify() const {
     } else {
       value_t error = std::abs(upper - comb->value);
       if (error > upper / 1e6) {
-        RCCOMB_DEBUG_PRINT("upper=%lf, comb->value=%lf, error=%lf\n", upper,
+        RCMB_DEBUG_PRINT("upper=%lf, comb->value=%lf, error=%lf\n", upper,
                            comb->value, error);
         return result_t::INACCURATE_RESULT;
       }
@@ -65,7 +65,7 @@ result_t DoubleCombinationClass::verify() const {
     } else {
       value_t error = std::abs(lower - comb->value);
       if (error > lower / 1e6) {
-        RCCOMB_DEBUG_PRINT("lower=%lf, comb->value=%lf, error=%lf\n", lower,
+        RCMB_DEBUG_PRINT("lower=%lf, comb->value=%lf, error=%lf\n", lower,
                            comb->value, error);
         return result_t::INACCURATE_RESULT;
       }
@@ -75,7 +75,7 @@ result_t DoubleCombinationClass::verify() const {
   value_t computed_ratio = lower / (upper + lower);
   value_t error = std::abs(computed_ratio - ratio);
   if (error > 1e9) {
-    RCCOMB_DEBUG_PRINT("computed_ratio=%lf, ratio=%lf, error=%lf\n",
+    RCMB_DEBUG_PRINT("computed_ratio=%lf, ratio=%lf, error=%lf\n",
                        computed_ratio, ratio, error);
     return result_t::INACCURATE_RESULT;
   }

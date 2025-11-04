@@ -1,5 +1,5 @@
-#ifndef RCCOMB_SEARCH_STATE_HPP
-#define RCCOMB_SEARCH_STATE_HPP
+#ifndef RCMB_SEARCH_STATE_HPP
+#define RCMB_SEARCH_STATE_HPP
 
 #include <cstdint>
 #include <map>
@@ -82,7 +82,7 @@ SearchState build_search_state_tree(ComponentType type,
                                     std::vector<SearchState>& leafs,
                                     Topology& node, bool is_finisher = true);
 
-#ifdef RCCOMB_IMPLEMENTATION
+#ifdef RCMB_IMPLEMENTATION
 
 uint32_t num_search_states = 0;
 

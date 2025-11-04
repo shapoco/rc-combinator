@@ -1,5 +1,5 @@
-#ifndef RCCOMB_COMMON_HPP
-#define RCCOMB_COMMON_HPP
+#ifndef RCMB_COMMON_HPP
+#define RCMB_COMMON_HPP
 
 #include <algorithm>
 #include <cmath>
@@ -8,21 +8,21 @@
 #include <limits>
 #include <vector>
 
-#ifdef RCCOMB_DEBUG
+#ifdef RCMB_DEBUG
 #include <cstdio>
 #include <string>
 #endif
 
 namespace rcmb {
 
-#ifdef RCCOMB_DEBUG
-#define RCCOMB_DEBUG_PRINT(fmt, ...)                              \
+#ifdef RCMB_DEBUG
+#define RCMB_DEBUG_PRINT(fmt, ...)                              \
   do {                                                            \
     std::fprintf(stderr, "[%s:%d] " fmt, __FILE_NAME__, __LINE__, \
                  ##__VA_ARGS__);                                  \
   } while (0)
 #else
-#define RCCOMB_DEBUG_PRINT(fmt, ...) \
+#define RCMB_DEBUG_PRINT(fmt, ...) \
   do {                               \
   } while (0)
 #endif
@@ -99,7 +99,7 @@ value_t pow10(int exp);
 uint32_t valueKeyOf(value_t value);
 std::string value_to_json_string(value_t value);
 
-#ifdef RCCOMB_IMPLEMENTATION
+#ifdef RCMB_IMPLEMENTATION
 
 uint32_t next_object_id = 1;
 

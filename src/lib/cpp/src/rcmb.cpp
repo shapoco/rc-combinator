@@ -1,2 +1,2 @@
-#define RCCOMB_IMPLEMENTATION
+#define RCMB_IMPLEMENTATION
 #include "rcmb/rcmb.hpp"

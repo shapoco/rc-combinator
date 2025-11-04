@@ -1,5 +1,5 @@
-#ifndef RCCOMB_TOPOLOGY_HPP
-#define RCCOMB_TOPOLOGY_HPP
+#ifndef RCMB_TOPOLOGY_HPP
+#define RCMB_TOPOLOGY_HPP
 
 #include <cstdint>
 #include <map>
@@ -64,7 +64,7 @@ class TopologyClass {
 
   inline bool is_leaf() const { return num_leafs == 1; }
 
-#ifdef RCCOMB_DEBUG
+#ifdef RCMB_DEBUG
   inline std::string to_string() const {
     if (is_leaf()) {
       return "Leaf";
@@ -95,7 +95,7 @@ std::vector<Topology>& get_topologies(int num_leafs, bool parallel);
 
 std::vector<int> get_num_topologies();
 
-#ifdef RCCOMB_IMPLEMENTATION
+#ifdef RCMB_IMPLEMENTATION
 
 static int PARALLEL_OFFSET = 1024;
 
@@ -140,11 +140,11 @@ std::vector<Topology>& get_topologies(int num_leafs, bool parallel) {
       throw std::runtime_error("num_leafs must be >= 1");
     }
 
-#ifdef RCCOMB_DEBUG
+#ifdef RCMB_DEBUG
     // for (const auto& topo : cache[key]) {
-    //   RCCOMB_DEBUG_PRINT("new topology: %s\n", topo->to_string().c_str());
+    //   RCMB_DEBUG_PRINT("new topology: %s\n", topo->to_string().c_str());
     // }
-    RCCOMB_DEBUG_PRINT("Generated %d topologies for n=%d, parallel=%d\n",
+    RCMB_DEBUG_PRINT("Generated %d topologies for n=%d, parallel=%d\n",
                        static_cast<int>(cache[key].size()), num_leafs,
                        parallel ? 1 : 0);
 #endif

@@ -1,5 +1,5 @@
-#ifndef RCCOMB_VALUE_LIST_HPP
-#define RCCOMB_VALUE_LIST_HPP
+#ifndef RCMB_VALUE_LIST_HPP
+#define RCMB_VALUE_LIST_HPP
 
 #include "rcmb/common.hpp"
 
@@ -19,11 +19,11 @@ class ValueList {
     value_t prev_value = -1;
     for (const auto& v : values) {
       if (!value_is_valid(v)) {
-        RCCOMB_DEBUG_PRINT("Invalid element in value list: %.9f\n", v);
+        RCMB_DEBUG_PRINT("Invalid element in value list: %.9f\n", v);
         return result_t::INVALID_ELEMENT_VALUE_LIST;
       }
       if (v == prev_value) {
-        RCCOMB_DEBUG_PRINT("Duplicate element in value list: %.9f\n", v);
+        RCMB_DEBUG_PRINT("Duplicate element in value list: %.9f\n", v);
         return result_t::INVALID_ELEMENT_VALUE_LIST;
       }
       prev_value = v;

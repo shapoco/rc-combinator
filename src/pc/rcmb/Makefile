@@ -2,16 +2,18 @@
 
 all: build
 
-BIN := test.out
+BIN_DIR := ./bin
+BIN := $(BIN_DIR)/rcmb
 
-RCCOMB_INC_DIR := ../include
-RCCOMB_SRC_DIR := ../src
-RCCOMB_HPP_FILES := \
-	$(wildcard $(RCCOMB_INC_DIR)/rcmb/*.hpp)
-RCCOMB_CPP_FILES := \
-	$(wildcard $(RCCOMB_SRC_DIR)/*.cpp)
+RCMB_DIR := ../../lib/cpp
+RCMB_INC_DIR := $(RCMB_DIR)/include
+RCMB_SRC_DIR := $(RCMB_DIR)/src
+RCMB_HPP_FILES := \
+	$(wildcard $(RCMB_INC_DIR)/rcmb/*.hpp)
+RCMB_CPP_FILES := \
+	$(wildcard $(RCMB_SRC_DIR)/*.cpp)
 
-APP_SRC_DIR := .
+APP_SRC_DIR := src
 APP_CPP_FILES := \
 	$(wildcard $(APP_SRC_DIR)/*.cpp)
 
@@ -19,21 +21,22 @@ BUILD_DIR := ./build
 
 CXXFLAGS := \
 	-std=c++20 \
-	-I$(RCCOMB_INC_DIR) \
-	-DRCCOMB_DEBUG \
+	-I$(RCMB_INC_DIR) \
+	-DRCMB_DEBUG \
 	-O2 \
 	-Wall
 
 build: $(BIN)
 
 $(BIN): $(BUILD_DIR)/rcmb.o $(BUILD_DIR)/test.o
+	@mkdir -p $(BIN_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-$(BUILD_DIR)/rcmb.o: $(RCCOMB_CPP_FILES) $(RCCOMB_HPP_FILES)
+$(BUILD_DIR)/rcmb.o: $(RCMB_CPP_FILES) $(RCMB_HPP_FILES)
 	@mkdir -p $(BUILD_DIR)
-	$(CXX) $(CXXFLAGS) -c -o $@ $(RCCOMB_CPP_FILES)
+	$(CXX) $(CXXFLAGS) -c -o $@ $(RCMB_CPP_FILES)
 
-$(BUILD_DIR)/test.o: $(APP_CPP_FILES) $(RCCOMB_HPP_FILES)
+$(BUILD_DIR)/test.o: $(APP_CPP_FILES) $(RCMB_HPP_FILES)
 	@mkdir -p $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -c -o $@ $(APP_CPP_FILES)
 
@@ -41,5 +44,5 @@ run: $(BIN)
 	./$(BIN)
 
 clean:
-	rm -f $(BIN)
-	rm -f $(BUILD_DIR)/*.o
+	rm -rf $(BIN_DIR)
+	rm -rf $(BUILD_DIR)

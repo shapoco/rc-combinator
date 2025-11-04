@@ -1,5 +1,5 @@
-#ifndef RCCOMB_COMBINATION_HPP
-#define RCCOMB_COMBINATION_HPP
+#ifndef RCMB_COMBINATION_HPP
+#define RCMB_COMBINATION_HPP
 
 #include <cmath>
 
@@ -47,7 +47,7 @@ static inline Combination create_combination(
                                             value);
 }
 
-#ifdef RCCOMB_IMPLEMENTATION
+#ifdef RCMB_IMPLEMENTATION
 
 uint32_t num_combinations = 0;
 
@@ -165,4 +165,4 @@ std::string CombinationClass::to_string() const {
 
 }  // namespace rcmb
 
-#endif  // RCCOMB_COMBINATION_HPP
+#endif  // RCMB_COMBINATION_HPP

@@ -1,5 +1,5 @@
-#ifndef RCCOMB_RCCOMB_HPP
-#define RCCOMB_RCCOMB_HPP
+#ifndef RCMB_RCMB_HPP
+#define RCMB_RCMB_HPP
 
 #include <cmath>
 #include <limits>
@@ -45,26 +45,26 @@ struct ValueSearchArgs {
       return ret;
     }
     if (num_elems_max < num_elems_min) {
-      RCCOMB_DEBUG_PRINT("Element count range reversal: %d > %d\n",
+      RCMB_DEBUG_PRINT("Element count range reversal: %d > %d\n",
                          num_elems_max, num_elems_min);
       return result_t::PARAMETER_RANGE_REVERSAL;
     }
     if (num_elems_min < 1 || MAX_COMBINATION_ELEMENTS < num_elems_max) {
-      RCCOMB_DEBUG_PRINT("Element count out of range: %d ... %d\n",
+      RCMB_DEBUG_PRINT("Element count out of range: %d ... %d\n",
                          num_elems_min, num_elems_max);
       return result_t::PARAMETER_OUT_OF_RANGE;
     }
     if (!value_is_valid(target)) {
-      RCCOMB_DEBUG_PRINT("Invalid target value: %.9f\n", target);
+      RCMB_DEBUG_PRINT("Invalid target value: %.9f\n", target);
       return result_t::PARAMETER_OUT_OF_RANGE;
     }
     if (target_min < 0 || !value_is_valid(target_max)) {
-      RCCOMB_DEBUG_PRINT("Target range out of range: %.9f ... %.9f\n",
+      RCMB_DEBUG_PRINT("Target range out of range: %.9f ... %.9f\n",
                          target_min, target_max);
       return result_t::PARAMETER_OUT_OF_RANGE;
     }
     if (target_max < target_min) {
-      RCCOMB_DEBUG_PRINT("Target range reversal: %.9f > %.9f\n", target_max,
+      RCMB_DEBUG_PRINT("Target range reversal: %.9f > %.9f\n", target_max,
                          target_min);
       return result_t::PARAMETER_RANGE_REVERSAL;
     }
@@ -104,36 +104,36 @@ struct DividerSearchArgs {
       return ret;
     }
     if (num_elems_max < num_elems_min) {
-      RCCOMB_DEBUG_PRINT("Element count range reversal: %d > %d\n",
+      RCMB_DEBUG_PRINT("Element count range reversal: %d > %d\n",
                          num_elems_max, num_elems_min);
       return result_t::PARAMETER_OUT_OF_RANGE;
     }
     if (num_elems_min < 2 || MAX_COMBINATION_ELEMENTS < num_elems_max) {
-      RCCOMB_DEBUG_PRINT("Element count out of range: %d ... %d\n",
+      RCMB_DEBUG_PRINT("Element count out of range: %d ... %d\n",
                          num_elems_min, num_elems_max);
       return result_t::PARAMETER_OUT_OF_RANGE;
     }
     if (!value_is_valid(total_min) || !value_is_valid(total_max)) {
-      RCCOMB_DEBUG_PRINT("Total range out of range: %.9f ... %.9f\n", total_min,
+      RCMB_DEBUG_PRINT("Total range out of range: %.9f ... %.9f\n", total_min,
                          total_max);
       return result_t::PARAMETER_OUT_OF_RANGE;
     }
     if (total_max < total_min) {
-      RCCOMB_DEBUG_PRINT("Total range reversal: %.9f > %.9f\n", total_max,
+      RCMB_DEBUG_PRINT("Total range reversal: %.9f > %.9f\n", total_max,
                          total_min);
       return result_t::PARAMETER_RANGE_REVERSAL;
     }
     if (target_value <= 0 || 1 <= target_value) {
-      RCCOMB_DEBUG_PRINT("Invalid target value: %.9f\n", target_value);
+      RCMB_DEBUG_PRINT("Invalid target value: %.9f\n", target_value);
       return result_t::PARAMETER_OUT_OF_RANGE;
     }
     if (target_min < 0 || 1 < target_max) {
-      RCCOMB_DEBUG_PRINT("Target range out of range: %.9f ... %.9f\n",
+      RCMB_DEBUG_PRINT("Target range out of range: %.9f ... %.9f\n",
                          target_min, target_max);
       return result_t::PARAMETER_OUT_OF_RANGE;
     }
     if (target_max < target_min) {
-      RCCOMB_DEBUG_PRINT("Target range reversal: %.9f > %.9f\n", target_max,
+      RCMB_DEBUG_PRINT("Target range reversal: %.9f > %.9f\n", target_max,
                          target_min);
       return result_t::PARAMETER_RANGE_REVERSAL;
     }
@@ -146,7 +146,7 @@ result_t search_combinations(ValueSearchArgs& args,
 result_t search_dividers(DividerSearchArgs& args,
                          std::vector<DoubleCombination>& best_combs);
 
-#ifdef RCCOMB_IMPLEMENTATION
+#ifdef RCMB_IMPLEMENTATION
 
 class CombinationEnumContext {
  public:
