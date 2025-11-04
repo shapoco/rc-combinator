@@ -42,7 +42,7 @@ export type WorkerCommand = {
   args: FindCombinationArgs | FindDividerArgs,
 }
 
-export const MAX_COMBINATION_ELEMENTS = 12;
+export const MAX_COMBINATION_ELEMENTS = 15;
 
 /*
 export class Topology {
