@@ -282,10 +282,10 @@ class Node {
  * @type {Node[]}
  */
 const eSerieses = {
-  '10k': { label: '10k only', topologies: [], blockWidth: 40 * SCALE, blockHeight: 30 * SCALE },
-  'e1': { label: 'E1', topologies: [], blockWidth: 30 * SCALE, blockHeight: 20 * SCALE },
-  'e3': { label: 'E3', topologies: [], blockWidth: 20 * SCALE, blockHeight: 14 * SCALE },
-  'e6': { label: 'E6', topologies: [], blockWidth: 15 * SCALE, blockHeight: 11 * SCALE },
+  '10k': { label: '10k only', topologies: [], blockWidth: 40 * SCALE, blockHeight: 32 * SCALE },
+  'e1': { label: 'E1', topologies: [], blockWidth: 30 * SCALE, blockHeight: 22 * SCALE },
+  'e3': { label: 'E3', topologies: [], blockWidth: 20 * SCALE, blockHeight: 15 * SCALE },
+  'e6': { label: 'E6', topologies: [], blockWidth: 15 * SCALE, blockHeight: 12 * SCALE },
   'e12': { label: 'E12', topologies: [], blockWidth: 12 * SCALE, blockHeight: 8 * SCALE },
   'e24': { label: 'E24', topologies: [], blockWidth: 12 * SCALE, blockHeight: 8 * SCALE },
 };
@@ -380,11 +380,11 @@ function tick(force = false) {
   const seconds = now.getSeconds();
   const millis = now.getMilliseconds();
 
-  if (nextTickId>0) {
+  if (nextTickId > 0) {
     window.clearTimeout(nextTickId);
   }
   nextTickId = window.setTimeout(tick, 1000 - millis);
-  
+
   if (seconds === lastSec && !force) {
     return;
   }
@@ -458,9 +458,11 @@ function tick(force = false) {
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#ccc";
-  ctx.font = `${SCALE * 1.5}px sans-serif`;
+  const maxFontSize = w / 20 / scale;
+  const fontSize = Math.min(maxFontSize, 2 * SCALE / scale);
+  ctx.font = `${fontSize.toFixed(2)}px sans-serif`;
   x = N_PADDING + bw / 2;
-  y = N_PADDING + bh + SCALE;
+  y = N_PADDING + bh + SCALE + (Math.max(0, h / w * 2 - 1) * 75) / scale;
   for (const n of numbers) {
     if (n === 0) {
       ctx.fillText('0 Ω', x, y);
