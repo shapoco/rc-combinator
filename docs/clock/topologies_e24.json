@@ -1,304 +1,304 @@
 [
   [
-    1000.000000
+    1000
   ],
   [
-    2000.000000
+    2000
   ],
   [
-    3000.000000
+    3000
   ],
   [
-    {"parallel":false,"value":4000.000000,"children":[2000.000000,2000.000000]},
-    {"parallel":false,"value":4000.000000,"children":[2200.000000,1800.000000]},
-    {"parallel":false,"value":4000.000000,"children":[2400.000000,1600.000000]},
-    {"parallel":false,"value":4000.000000,"children":[2700.000000,1300.000000]},
-    {"parallel":false,"value":4000.000000,"children":[3000.000000,1000.000000]},
-    {"parallel":false,"value":4000.000000,"children":[3900.000000,100.000000]}
+    {"parallel":false,"value":4000,"children":[2000,2000]},
+    {"parallel":false,"value":4000,"children":[2200,1800]},
+    {"parallel":false,"value":4000,"children":[2400,1600]},
+    {"parallel":false,"value":4000,"children":[2700,1300]},
+    {"parallel":false,"value":4000,"children":[3000,1000]},
+    {"parallel":false,"value":4000,"children":[3900,100]}
   ],
   [
-    {"parallel":false,"value":5000.000000,"children":[3000.000000,2000.000000]},
-    {"parallel":false,"value":5000.000000,"children":[3900.000000,1100.000000]},
-    {"parallel":false,"value":5000.000000,"children":[4700.000000,300.000000]},
-    {"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]},
-    {"parallel":true,"value":5000.000000,"children":[15000.000000,7500.000000]}
+    {"parallel":false,"value":5000,"children":[3000,2000]},
+    {"parallel":false,"value":5000,"children":[3900,1100]},
+    {"parallel":false,"value":5000,"children":[4700,300]},
+    {"parallel":true,"value":5000,"children":[10000,10000]},
+    {"parallel":true,"value":5000,"children":[15000,7500]}
   ],
   [
-    {"parallel":false,"value":6000.000000,"children":[3000.000000,3000.000000]},
-    {"parallel":false,"value":6000.000000,"children":[3300.000000,2700.000000]},
-    {"parallel":false,"value":6000.000000,"children":[3600.000000,2400.000000]},
-    {"parallel":false,"value":6000.000000,"children":[4700.000000,1300.000000]},
-    {"parallel":true,"value":6000.000000,"children":[12000.000000,12000.000000]},
-    {"parallel":true,"value":6000.000000,"children":[15000.000000,10000.000000]},
-    {"parallel":true,"value":6000.000000,"children":[30000.000000,7500.000000]},
-    {"parallel":true,"value":6000.000000,"children":[51000.000000,6800.000000]}
+    {"parallel":false,"value":6000,"children":[3000,3000]},
+    {"parallel":false,"value":6000,"children":[3300,2700]},
+    {"parallel":false,"value":6000,"children":[3600,2400]},
+    {"parallel":false,"value":6000,"children":[4700,1300]},
+    {"parallel":true,"value":6000,"children":[12000,12000]},
+    {"parallel":true,"value":6000,"children":[15000,10000]},
+    {"parallel":true,"value":6000,"children":[30000,7500]},
+    {"parallel":true,"value":6000,"children":[51000,6800]}
   ],
   [
-    {"parallel":false,"value":7000.000000,"children":[4300.000000,2700.000000]},
-    {"parallel":false,"value":7000.000000,"children":[6800.000000,200.000000]}
+    {"parallel":false,"value":7000,"children":[4300,2700]},
+    {"parallel":false,"value":7000,"children":[6800,200]}
   ],
   [
-    {"parallel":false,"value":8000.000000,"children":[4700.000000,3300.000000]},
-    {"parallel":false,"value":8000.000000,"children":[5600.000000,2400.000000]},
-    {"parallel":false,"value":8000.000000,"children":[6200.000000,1800.000000]},
-    {"parallel":false,"value":8000.000000,"children":[6800.000000,1200.000000]},
-    {"parallel":true,"value":8000.000000,"children":[16000.000000,16000.000000]},
-    {"parallel":true,"value":8000.000000,"children":[24000.000000,12000.000000]}
+    {"parallel":false,"value":8000,"children":[4700,3300]},
+    {"parallel":false,"value":8000,"children":[5600,2400]},
+    {"parallel":false,"value":8000,"children":[6200,1800]},
+    {"parallel":false,"value":8000,"children":[6800,1200]},
+    {"parallel":true,"value":8000,"children":[16000,16000]},
+    {"parallel":true,"value":8000,"children":[24000,12000]}
   ],
   [
-    {"parallel":false,"value":9000.000000,"children":[4700.000000,4300.000000]},
-    {"parallel":false,"value":9000.000000,"children":[5100.000000,3900.000000]},
-    {"parallel":false,"value":9000.000000,"children":[6800.000000,2200.000000]},
-    {"parallel":false,"value":9000.000000,"children":[7500.000000,1500.000000]},
-    {"parallel":true,"value":9000.000000,"children":[18000.000000,18000.000000]},
-    {"parallel":true,"value":9000.000000,"children":[36000.000000,12000.000000]}
+    {"parallel":false,"value":9000,"children":[4700,4300]},
+    {"parallel":false,"value":9000,"children":[5100,3900]},
+    {"parallel":false,"value":9000,"children":[6800,2200]},
+    {"parallel":false,"value":9000,"children":[7500,1500]},
+    {"parallel":true,"value":9000,"children":[18000,18000]},
+    {"parallel":true,"value":9000,"children":[36000,12000]}
   ],
   [
-    10000.000000
+    10000
   ],
   [
-    11000.000000
+    11000
   ],
   [
-    12000.000000
+    12000
   ],
   [
-    13000.000000
+    13000
   ],
   [
-    {"parallel":false,"value":14000.000000,"children":[11000.000000,3000.000000]},
-    {"parallel":false,"value":14000.000000,"children":[12000.000000,2000.000000]},
-    {"parallel":false,"value":14000.000000,"children":[13000.000000,1000.000000]}
+    {"parallel":false,"value":14000,"children":[11000,3000]},
+    {"parallel":false,"value":14000,"children":[12000,2000]},
+    {"parallel":false,"value":14000,"children":[13000,1000]}
   ],
   [
-    15000.000000
+    15000
   ],
   [
-    16000.000000
+    16000
   ],
   [
-    {"parallel":false,"value":17000.000000,"children":[15000.000000,2000.000000]},
-    {"parallel":false,"value":17000.000000,"children":[16000.000000,1000.000000]}
+    {"parallel":false,"value":17000,"children":[15000,2000]},
+    {"parallel":false,"value":17000,"children":[16000,1000]}
   ],
   [
-    18000.000000
+    18000
   ],
   [
-    {"parallel":false,"value":19000.000000,"children":[16000.000000,3000.000000]},
-    {"parallel":false,"value":19000.000000,"children":[18000.000000,1000.000000]}
+    {"parallel":false,"value":19000,"children":[16000,3000]},
+    {"parallel":false,"value":19000,"children":[18000,1000]}
   ],
   [
-    20000.000000
+    20000
   ],
   [
-    {"parallel":false,"value":21000.000000,"children":[11000.000000,10000.000000]},
-    {"parallel":false,"value":21000.000000,"children":[18000.000000,3000.000000]},
-    {"parallel":false,"value":21000.000000,"children":[20000.000000,1000.000000]}
+    {"parallel":false,"value":21000,"children":[11000,10000]},
+    {"parallel":false,"value":21000,"children":[18000,3000]},
+    {"parallel":false,"value":21000,"children":[20000,1000]}
   ],
   [
-    22000.000000
+    22000
   ],
   [
-    {"parallel":false,"value":23000.000000,"children":[12000.000000,11000.000000]},
-    {"parallel":false,"value":23000.000000,"children":[13000.000000,10000.000000]},
-    {"parallel":false,"value":23000.000000,"children":[20000.000000,3000.000000]},
-    {"parallel":false,"value":23000.000000,"children":[22000.000000,1000.000000]}
+    {"parallel":false,"value":23000,"children":[12000,11000]},
+    {"parallel":false,"value":23000,"children":[13000,10000]},
+    {"parallel":false,"value":23000,"children":[20000,3000]},
+    {"parallel":false,"value":23000,"children":[22000,1000]}
   ],
   [
-    24000.000000
+    24000
   ],
   [
-    {"parallel":false,"value":25000.000000,"children":[13000.000000,12000.000000]},
-    {"parallel":false,"value":25000.000000,"children":[15000.000000,10000.000000]},
-    {"parallel":false,"value":25000.000000,"children":[22000.000000,3000.000000]},
-    {"parallel":false,"value":25000.000000,"children":[24000.000000,1000.000000]},
-    {"parallel":true,"value":25000.000000,"children":[150000.000000,30000.000000]}
+    {"parallel":false,"value":25000,"children":[13000,12000]},
+    {"parallel":false,"value":25000,"children":[15000,10000]},
+    {"parallel":false,"value":25000,"children":[22000,3000]},
+    {"parallel":false,"value":25000,"children":[24000,1000]},
+    {"parallel":true,"value":25000,"children":[150000,30000]}
   ],
   [
-    {"parallel":false,"value":26000.000000,"children":[13000.000000,13000.000000]},
-    {"parallel":false,"value":26000.000000,"children":[15000.000000,11000.000000]},
-    {"parallel":false,"value":26000.000000,"children":[16000.000000,10000.000000]},
-    {"parallel":false,"value":26000.000000,"children":[24000.000000,2000.000000]}
+    {"parallel":false,"value":26000,"children":[13000,13000]},
+    {"parallel":false,"value":26000,"children":[15000,11000]},
+    {"parallel":false,"value":26000,"children":[16000,10000]},
+    {"parallel":false,"value":26000,"children":[24000,2000]}
   ],
   [
-    27000.000000
+    27000
   ],
   [
-    {"parallel":false,"value":28000.000000,"children":[15000.000000,13000.000000]},
-    {"parallel":false,"value":28000.000000,"children":[16000.000000,12000.000000]},
-    {"parallel":false,"value":28000.000000,"children":[18000.000000,10000.000000]},
-    {"parallel":false,"value":28000.000000,"children":[27000.000000,1000.000000]},
-    {"parallel":true,"value":28000.000000,"children":[56000.000000,56000.000000]}
+    {"parallel":false,"value":28000,"children":[15000,13000]},
+    {"parallel":false,"value":28000,"children":[16000,12000]},
+    {"parallel":false,"value":28000,"children":[18000,10000]},
+    {"parallel":false,"value":28000,"children":[27000,1000]},
+    {"parallel":true,"value":28000,"children":[56000,56000]}
   ],
   [
-    {"parallel":false,"value":29000.000000,"children":[16000.000000,13000.000000]},
-    {"parallel":false,"value":29000.000000,"children":[18000.000000,11000.000000]},
-    {"parallel":false,"value":29000.000000,"children":[27000.000000,2000.000000]}
+    {"parallel":false,"value":29000,"children":[16000,13000]},
+    {"parallel":false,"value":29000,"children":[18000,11000]},
+    {"parallel":false,"value":29000,"children":[27000,2000]}
   ],
   [
-    30000.000000
+    30000
   ],
   [
-    {"parallel":false,"value":31000.000000,"children":[16000.000000,15000.000000]},
-    {"parallel":false,"value":31000.000000,"children":[18000.000000,13000.000000]},
-    {"parallel":false,"value":31000.000000,"children":[20000.000000,11000.000000]},
-    {"parallel":false,"value":31000.000000,"children":[30000.000000,1000.000000]},
-    {"parallel":true,"value":31000.000000,"children":[62000.000000,62000.000000]}
+    {"parallel":false,"value":31000,"children":[16000,15000]},
+    {"parallel":false,"value":31000,"children":[18000,13000]},
+    {"parallel":false,"value":31000,"children":[20000,11000]},
+    {"parallel":false,"value":31000,"children":[30000,1000]},
+    {"parallel":true,"value":31000,"children":[62000,62000]}
   ],
   [
-    {"parallel":false,"value":32000.000000,"children":[16000.000000,16000.000000]},
-    {"parallel":false,"value":32000.000000,"children":[20000.000000,12000.000000]},
-    {"parallel":false,"value":32000.000000,"children":[22000.000000,10000.000000]},
-    {"parallel":false,"value":32000.000000,"children":[30000.000000,2000.000000]}
+    {"parallel":false,"value":32000,"children":[16000,16000]},
+    {"parallel":false,"value":32000,"children":[20000,12000]},
+    {"parallel":false,"value":32000,"children":[22000,10000]},
+    {"parallel":false,"value":32000,"children":[30000,2000]}
   ],
   [
-    33000.000000
+    33000
   ],
   [
-    {"parallel":false,"value":34000.000000,"children":[18000.000000,16000.000000]},
-    {"parallel":false,"value":34000.000000,"children":[22000.000000,12000.000000]},
-    {"parallel":false,"value":34000.000000,"children":[24000.000000,10000.000000]},
-    {"parallel":false,"value":34000.000000,"children":[33000.000000,1000.000000]},
-    {"parallel":true,"value":34000.000000,"children":[68000.000000,68000.000000]}
+    {"parallel":false,"value":34000,"children":[18000,16000]},
+    {"parallel":false,"value":34000,"children":[22000,12000]},
+    {"parallel":false,"value":34000,"children":[24000,10000]},
+    {"parallel":false,"value":34000,"children":[33000,1000]},
+    {"parallel":true,"value":34000,"children":[68000,68000]}
   ],
   [
-    {"parallel":false,"value":35000.000000,"children":[20000.000000,15000.000000]},
-    {"parallel":false,"value":35000.000000,"children":[22000.000000,13000.000000]},
-    {"parallel":false,"value":35000.000000,"children":[24000.000000,11000.000000]},
-    {"parallel":false,"value":35000.000000,"children":[33000.000000,2000.000000]}
+    {"parallel":false,"value":35000,"children":[20000,15000]},
+    {"parallel":false,"value":35000,"children":[22000,13000]},
+    {"parallel":false,"value":35000,"children":[24000,11000]},
+    {"parallel":false,"value":35000,"children":[33000,2000]}
   ],
   [
-    36000.000000
+    36000
   ],
   [
-    {"parallel":false,"value":37000.000000,"children":[22000.000000,15000.000000]},
-    {"parallel":false,"value":37000.000000,"children":[24000.000000,13000.000000]},
-    {"parallel":false,"value":37000.000000,"children":[27000.000000,10000.000000]},
-    {"parallel":false,"value":37000.000000,"children":[36000.000000,1000.000000]}
+    {"parallel":false,"value":37000,"children":[22000,15000]},
+    {"parallel":false,"value":37000,"children":[24000,13000]},
+    {"parallel":false,"value":37000,"children":[27000,10000]},
+    {"parallel":false,"value":37000,"children":[36000,1000]}
   ],
   [
-    {"parallel":false,"value":38000.000000,"children":[20000.000000,18000.000000]},
-    {"parallel":false,"value":38000.000000,"children":[22000.000000,16000.000000]},
-    {"parallel":false,"value":38000.000000,"children":[27000.000000,11000.000000]},
-    {"parallel":false,"value":38000.000000,"children":[36000.000000,2000.000000]}
+    {"parallel":false,"value":38000,"children":[20000,18000]},
+    {"parallel":false,"value":38000,"children":[22000,16000]},
+    {"parallel":false,"value":38000,"children":[27000,11000]},
+    {"parallel":false,"value":38000,"children":[36000,2000]}
   ],
   [
-    39000.000000
+    39000
   ],
   [
-    {"parallel":false,"value":40000.000000,"children":[20000.000000,20000.000000]},
-    {"parallel":false,"value":40000.000000,"children":[22000.000000,18000.000000]},
-    {"parallel":false,"value":40000.000000,"children":[24000.000000,16000.000000]},
-    {"parallel":false,"value":40000.000000,"children":[27000.000000,13000.000000]},
-    {"parallel":false,"value":40000.000000,"children":[30000.000000,10000.000000]},
-    {"parallel":false,"value":40000.000000,"children":[39000.000000,1000.000000]}
+    {"parallel":false,"value":40000,"children":[20000,20000]},
+    {"parallel":false,"value":40000,"children":[22000,18000]},
+    {"parallel":false,"value":40000,"children":[24000,16000]},
+    {"parallel":false,"value":40000,"children":[27000,13000]},
+    {"parallel":false,"value":40000,"children":[30000,10000]},
+    {"parallel":false,"value":40000,"children":[39000,1000]}
   ],
   [
-    {"parallel":false,"value":41000.000000,"children":[30000.000000,11000.000000]},
-    {"parallel":false,"value":41000.000000,"children":[39000.000000,2000.000000]},
-    {"parallel":true,"value":41000.000000,"children":[82000.000000,82000.000000]}
+    {"parallel":false,"value":41000,"children":[30000,11000]},
+    {"parallel":false,"value":41000,"children":[39000,2000]},
+    {"parallel":true,"value":41000,"children":[82000,82000]}
   ],
   [
-    {"parallel":false,"value":42000.000000,"children":[22000.000000,20000.000000]},
-    {"parallel":false,"value":42000.000000,"children":[24000.000000,18000.000000]},
-    {"parallel":false,"value":42000.000000,"children":[27000.000000,15000.000000]},
-    {"parallel":false,"value":42000.000000,"children":[30000.000000,12000.000000]},
-    {"parallel":false,"value":42000.000000,"children":[39000.000000,3000.000000]}
+    {"parallel":false,"value":42000,"children":[22000,20000]},
+    {"parallel":false,"value":42000,"children":[24000,18000]},
+    {"parallel":false,"value":42000,"children":[27000,15000]},
+    {"parallel":false,"value":42000,"children":[30000,12000]},
+    {"parallel":false,"value":42000,"children":[39000,3000]}
   ],
   [
-    43000.000000
+    43000
   ],
   [
-    {"parallel":false,"value":44000.000000,"children":[22000.000000,22000.000000]},
-    {"parallel":false,"value":44000.000000,"children":[24000.000000,20000.000000]},
-    {"parallel":false,"value":44000.000000,"children":[33000.000000,11000.000000]},
-    {"parallel":false,"value":44000.000000,"children":[43000.000000,1000.000000]}
+    {"parallel":false,"value":44000,"children":[22000,22000]},
+    {"parallel":false,"value":44000,"children":[24000,20000]},
+    {"parallel":false,"value":44000,"children":[33000,11000]},
+    {"parallel":false,"value":44000,"children":[43000,1000]}
   ],
   [
-    {"parallel":false,"value":45000.000000,"children":[27000.000000,18000.000000]},
-    {"parallel":false,"value":45000.000000,"children":[30000.000000,15000.000000]},
-    {"parallel":false,"value":45000.000000,"children":[33000.000000,12000.000000]},
-    {"parallel":false,"value":45000.000000,"children":[43000.000000,2000.000000]}
+    {"parallel":false,"value":45000,"children":[27000,18000]},
+    {"parallel":false,"value":45000,"children":[30000,15000]},
+    {"parallel":false,"value":45000,"children":[33000,12000]},
+    {"parallel":false,"value":45000,"children":[43000,2000]}
   ],
   [
-    {"parallel":false,"value":46000.000000,"children":[24000.000000,22000.000000]},
-    {"parallel":false,"value":46000.000000,"children":[30000.000000,16000.000000]},
-    {"parallel":false,"value":46000.000000,"children":[33000.000000,13000.000000]},
-    {"parallel":false,"value":46000.000000,"children":[36000.000000,10000.000000]},
-    {"parallel":false,"value":46000.000000,"children":[43000.000000,3000.000000]}
+    {"parallel":false,"value":46000,"children":[24000,22000]},
+    {"parallel":false,"value":46000,"children":[30000,16000]},
+    {"parallel":false,"value":46000,"children":[33000,13000]},
+    {"parallel":false,"value":46000,"children":[36000,10000]},
+    {"parallel":false,"value":46000,"children":[43000,3000]}
   ],
   [
-    47000.000000
+    47000
   ],
   [
-    {"parallel":false,"value":48000.000000,"children":[24000.000000,24000.000000]},
-    {"parallel":false,"value":48000.000000,"children":[30000.000000,18000.000000]},
-    {"parallel":false,"value":48000.000000,"children":[33000.000000,15000.000000]},
-    {"parallel":false,"value":48000.000000,"children":[36000.000000,12000.000000]},
-    {"parallel":false,"value":48000.000000,"children":[47000.000000,1000.000000]}
+    {"parallel":false,"value":48000,"children":[24000,24000]},
+    {"parallel":false,"value":48000,"children":[30000,18000]},
+    {"parallel":false,"value":48000,"children":[33000,15000]},
+    {"parallel":false,"value":48000,"children":[36000,12000]},
+    {"parallel":false,"value":48000,"children":[47000,1000]}
   ],
   [
-    {"parallel":false,"value":49000.000000,"children":[27000.000000,22000.000000]},
-    {"parallel":false,"value":49000.000000,"children":[33000.000000,16000.000000]},
-    {"parallel":false,"value":49000.000000,"children":[36000.000000,13000.000000]},
-    {"parallel":false,"value":49000.000000,"children":[39000.000000,10000.000000]},
-    {"parallel":false,"value":49000.000000,"children":[47000.000000,2000.000000]}
+    {"parallel":false,"value":49000,"children":[27000,22000]},
+    {"parallel":false,"value":49000,"children":[33000,16000]},
+    {"parallel":false,"value":49000,"children":[36000,13000]},
+    {"parallel":false,"value":49000,"children":[39000,10000]},
+    {"parallel":false,"value":49000,"children":[47000,2000]}
   ],
   [
-    {"parallel":false,"value":50000.000000,"children":[30000.000000,20000.000000]},
-    {"parallel":false,"value":50000.000000,"children":[39000.000000,11000.000000]},
-    {"parallel":false,"value":50000.000000,"children":[47000.000000,3000.000000]},
-    {"parallel":true,"value":50000.000000,"children":[100000.000000,100000.000000]},
-    {"parallel":true,"value":50000.000000,"children":[150000.000000,75000.000000]}
+    {"parallel":false,"value":50000,"children":[30000,20000]},
+    {"parallel":false,"value":50000,"children":[39000,11000]},
+    {"parallel":false,"value":50000,"children":[47000,3000]},
+    {"parallel":true,"value":50000,"children":[100000,100000]},
+    {"parallel":true,"value":50000,"children":[150000,75000]}
   ],
   [
-    51000.000000
+    51000
   ],
   [
-    {"parallel":false,"value":52000.000000,"children":[30000.000000,22000.000000]},
-    {"parallel":false,"value":52000.000000,"children":[36000.000000,16000.000000]},
-    {"parallel":false,"value":52000.000000,"children":[39000.000000,13000.000000]},
-    {"parallel":false,"value":52000.000000,"children":[51000.000000,1000.000000]}
+    {"parallel":false,"value":52000,"children":[30000,22000]},
+    {"parallel":false,"value":52000,"children":[36000,16000]},
+    {"parallel":false,"value":52000,"children":[39000,13000]},
+    {"parallel":false,"value":52000,"children":[51000,1000]}
   ],
   [
-    {"parallel":false,"value":53000.000000,"children":[33000.000000,20000.000000]},
-    {"parallel":false,"value":53000.000000,"children":[43000.000000,10000.000000]},
-    {"parallel":false,"value":53000.000000,"children":[51000.000000,2000.000000]}
+    {"parallel":false,"value":53000,"children":[33000,20000]},
+    {"parallel":false,"value":53000,"children":[43000,10000]},
+    {"parallel":false,"value":53000,"children":[51000,2000]}
   ],
   [
-    {"parallel":false,"value":54000.000000,"children":[27000.000000,27000.000000]},
-    {"parallel":false,"value":54000.000000,"children":[30000.000000,24000.000000]},
-    {"parallel":false,"value":54000.000000,"children":[36000.000000,18000.000000]},
-    {"parallel":false,"value":54000.000000,"children":[39000.000000,15000.000000]},
-    {"parallel":false,"value":54000.000000,"children":[43000.000000,11000.000000]},
-    {"parallel":false,"value":54000.000000,"children":[51000.000000,3000.000000]}
+    {"parallel":false,"value":54000,"children":[27000,27000]},
+    {"parallel":false,"value":54000,"children":[30000,24000]},
+    {"parallel":false,"value":54000,"children":[36000,18000]},
+    {"parallel":false,"value":54000,"children":[39000,15000]},
+    {"parallel":false,"value":54000,"children":[43000,11000]},
+    {"parallel":false,"value":54000,"children":[51000,3000]}
   ],
   [
-    {"parallel":false,"value":55000.000000,"children":[33000.000000,22000.000000]},
-    {"parallel":false,"value":55000.000000,"children":[39000.000000,16000.000000]},
-    {"parallel":false,"value":55000.000000,"children":[43000.000000,12000.000000]},
-    {"parallel":true,"value":55000.000000,"children":[110000.000000,110000.000000]}
+    {"parallel":false,"value":55000,"children":[33000,22000]},
+    {"parallel":false,"value":55000,"children":[39000,16000]},
+    {"parallel":false,"value":55000,"children":[43000,12000]},
+    {"parallel":true,"value":55000,"children":[110000,110000]}
   ],
   [
-    56000.000000
+    56000
   ],
   [
-    {"parallel":false,"value":57000.000000,"children":[30000.000000,27000.000000]},
-    {"parallel":false,"value":57000.000000,"children":[33000.000000,24000.000000]},
-    {"parallel":false,"value":57000.000000,"children":[39000.000000,18000.000000]},
-    {"parallel":false,"value":57000.000000,"children":[47000.000000,10000.000000]},
-    {"parallel":false,"value":57000.000000,"children":[56000.000000,1000.000000]}
+    {"parallel":false,"value":57000,"children":[30000,27000]},
+    {"parallel":false,"value":57000,"children":[33000,24000]},
+    {"parallel":false,"value":57000,"children":[39000,18000]},
+    {"parallel":false,"value":57000,"children":[47000,10000]},
+    {"parallel":false,"value":57000,"children":[56000,1000]}
   ],
   [
-    {"parallel":false,"value":58000.000000,"children":[36000.000000,22000.000000]},
-    {"parallel":false,"value":58000.000000,"children":[43000.000000,15000.000000]},
-    {"parallel":false,"value":58000.000000,"children":[47000.000000,11000.000000]},
-    {"parallel":false,"value":58000.000000,"children":[56000.000000,2000.000000]}
+    {"parallel":false,"value":58000,"children":[36000,22000]},
+    {"parallel":false,"value":58000,"children":[43000,15000]},
+    {"parallel":false,"value":58000,"children":[47000,11000]},
+    {"parallel":false,"value":58000,"children":[56000,2000]}
   ],
   [
-    {"parallel":false,"value":59000.000000,"children":[39000.000000,20000.000000]},
-    {"parallel":false,"value":59000.000000,"children":[43000.000000,16000.000000]},
-    {"parallel":false,"value":59000.000000,"children":[47000.000000,12000.000000]},
-    {"parallel":false,"value":59000.000000,"children":[56000.000000,3000.000000]}
+    {"parallel":false,"value":59000,"children":[39000,20000]},
+    {"parallel":false,"value":59000,"children":[43000,16000]},
+    {"parallel":false,"value":59000,"children":[47000,12000]},
+    {"parallel":false,"value":59000,"children":[56000,3000]}
   ]
 ]

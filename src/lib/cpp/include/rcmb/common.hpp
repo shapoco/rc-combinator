@@ -16,14 +16,14 @@
 namespace rcmb {
 
 #ifdef RCMB_DEBUG
-#define RCMB_DEBUG_PRINT(fmt, ...)                              \
+#define RCMB_DEBUG_PRINT(fmt, ...)                                \
   do {                                                            \
     std::fprintf(stderr, "[%s:%d] " fmt, __FILE_NAME__, __LINE__, \
                  ##__VA_ARGS__);                                  \
   } while (0)
 #else
 #define RCMB_DEBUG_PRINT(fmt, ...) \
-  do {                               \
+  do {                             \
   } while (0)
 #endif
 
@@ -124,12 +124,19 @@ uint32_t valueKeyOf(value_t value) {
 
 std::string value_to_json_string(value_t value) {
   int exp = std::floor(std::log10(value) + 1e-6);
-  if (exp >= -3 && exp <= 6) {
-    return std::to_string(value);
+  exp = static_cast<int>(std::floor(static_cast<float>(exp) / 3)) * 3;
+  char buffer[32];
+  if (-6 <= exp && exp < 6) {
+    std::snprintf(buffer, sizeof(buffer), "%.12lg", value);
   } else {
-    value /= pow10(exp);
-    return std::to_string(value) + "e" + std::to_string(exp);
+    if (exp > 0) {
+      value /= pow10(exp);
+    } else {
+      value *= pow10(-exp);
+    }
+    std::snprintf(buffer, sizeof(buffer), "%.12lge%d", value, exp);
   }
+  return std::string(buffer);
 }
 
 #endif

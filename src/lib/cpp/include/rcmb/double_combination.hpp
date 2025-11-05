@@ -37,7 +37,7 @@ result_t DoubleCombinationClass::verify() const {
   }
 
   value_t upper = -1;
-  for (const auto &comb : uppers) {
+  for (const auto& comb : uppers) {
     result_t ret = comb->verify();
     if (ret != result_t::SUCCESS) {
       return ret;
@@ -48,14 +48,14 @@ result_t DoubleCombinationClass::verify() const {
       value_t error = std::abs(upper - comb->value);
       if (error > upper / 1e6) {
         RCMB_DEBUG_PRINT("upper=%lf, comb->value=%lf, error=%lf\n", upper,
-                           comb->value, error);
+                         comb->value, error);
         return result_t::INACCURATE_RESULT;
       }
     }
   }
 
   value_t lower = -1;
-  for (const auto &comb : lowers) {
+  for (const auto& comb : lowers) {
     result_t ret = comb->verify();
     if (ret != result_t::SUCCESS) {
       return ret;
@@ -66,7 +66,7 @@ result_t DoubleCombinationClass::verify() const {
       value_t error = std::abs(lower - comb->value);
       if (error > lower / 1e6) {
         RCMB_DEBUG_PRINT("lower=%lf, comb->value=%lf, error=%lf\n", lower,
-                           comb->value, error);
+                         comb->value, error);
         return result_t::INACCURATE_RESULT;
       }
     }
@@ -76,7 +76,7 @@ result_t DoubleCombinationClass::verify() const {
   value_t error = std::abs(computed_ratio - ratio);
   if (error > 1e9) {
     RCMB_DEBUG_PRINT("computed_ratio=%lf, ratio=%lf, error=%lf\n",
-                       computed_ratio, ratio, error);
+                     computed_ratio, ratio, error);
     return result_t::INACCURATE_RESULT;
   }
 
@@ -108,14 +108,24 @@ std::string DoubleCombinationClass::to_json_string() const {
 
 std::string DoubleCombinationClass::to_string() const {
   std::string s;
-  s += "ratio:" + std::to_string(ratio) + "\n";
-  s += "  uppers:\n";
+  s += "  ratio:" + value_to_json_string(ratio) + "\n";
+  s += "    uppers:\n";
   for (size_t i = 0; i < uppers.size(); i++) {
-    s += "    " + uppers[i]->to_string() + "\n";
+    const auto& comb = uppers[i];
+    s += "      " + value_to_json_string(comb->value);
+    if (!comb->is_leaf()) {
+      s += " <-- " + comb->to_string();
+    }
+    s += "\n";
   }
-  s += "  lowers:\n";
+  s += "    lowers:\n";
   for (size_t i = 0; i < lowers.size(); i++) {
-    s += "    " + lowers[i]->to_string() + "\n";
+    const auto& comb = lowers[i];
+    s += "      " + value_to_json_string(comb->value);
+    if (!comb->is_leaf()) {
+      s += " <-- " + comb->to_string();
+    }
+    s += "\n";
   }
   return s;
 }

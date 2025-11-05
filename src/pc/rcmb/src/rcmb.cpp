@@ -11,11 +11,14 @@
 
 using namespace rcmb;
 
-//  DividerSearchArgs dsa(value_list, 2, max_elements, total_min, total_max,
-//                        target, target_min, target_max);
+enum class output_format_t {
+  TEXT,
+  JSON,
+};
 
 static constexpr char OPT_SERIES = 's';
 static constexpr char OPT_TARGET = 't';
+static constexpr char OPT_FORMAT = 'f';
 static constexpr char OPT_NUM_ELEMS_MIN = 0x82;
 static constexpr char OPT_NUM_ELEMS_MAX = 'n';
 static constexpr char OPT_TARGET_TOL = 0x84;
@@ -38,6 +41,7 @@ static struct option long_opts[] = {
     {"target-tol-max", required_argument, 0, OPT_TARGET_TOL_MAX},
     {"total-min", required_argument, 0, OPT_TOTAL_MIN},
     {"total-max", required_argument, 0, OPT_TOTAL_MAX},
+    {"format", required_argument, 0, OPT_FORMAT},
     {0, 0, 0, 0},
 };
 
@@ -190,10 +194,12 @@ void test_collect_topologies(bool parallel, std::vector<TestTopology>& topos,
                              const std::vector<int>& poses);
 
 std::vector<std::string> split(std::string str, char delimiter = ',');
+output_format_t parse_output_format(const std::string& format_str);
 
 int main_xcmb(ComponentType type, int argc, char** argv);
 int main_rdiv(int argc, char** argv);
 int main_alt(int argc, char** argv);
+
 std::vector<value_t> get_values_vector(
     const std::string& series,
     value_t min = -std::numeric_limits<value_t>::infinity(),
@@ -226,6 +232,7 @@ int main(int argc, char** argv) {
 int main_xcmb(ComponentType type, int argc, char** argv) {
   std::string series_str = "e3";
   std::string target_str = "";
+  output_format_t output_format = output_format_t::TEXT;
   int num_elems_min = 1;
   int num_elems_max = 3;
   value_t target_tol = VALUE_NONE;
@@ -235,9 +242,9 @@ int main_xcmb(ComponentType type, int argc, char** argv) {
   value_t series_max = VALUE_NONE;
 
   char short_opts[256];
-  snprintf(short_opts, sizeof(short_opts), "%c:%c:%c:%c:%c:%c:", OPT_SERIES,
-           OPT_TARGET, OPT_NUM_ELEMS_MAX, OPT_TARGET_TOL_MAX, OPT_SERIES_MIN,
-           OPT_SERIES_MAX);
+  snprintf(short_opts, sizeof(short_opts), "%c:%c:%c:%c:%c:%c:%c:", OPT_SERIES,
+           OPT_TARGET, OPT_FORMAT, OPT_NUM_ELEMS_MAX, OPT_TARGET_TOL_MAX,
+           OPT_SERIES_MIN, OPT_SERIES_MAX);
 
   int opt;
   while ((opt = getopt_long(argc, argv, short_opts, long_opts, NULL)) != -1) {
@@ -247,6 +254,9 @@ int main_xcmb(ComponentType type, int argc, char** argv) {
         break;
       case OPT_TARGET:
         target_str = optarg;
+        break;
+      case OPT_FORMAT:
+        output_format = parse_output_format(optarg);
         break;
       case OPT_NUM_ELEMS_MIN:
         num_elems_min = std::stoi(optarg);
@@ -295,7 +305,9 @@ int main_xcmb(ComponentType type, int argc, char** argv) {
     target_tol_max = 0.5;
   }
 
-  std::printf("[\n");
+  if (output_format == output_format_t::JSON) {
+    std::printf("[\n");
+  }
 
   std::vector<value_t> target_values = get_values_vector(target_str);
   for (size_t ti = 0; ti < target_values.size(); ti++) {
@@ -327,31 +339,48 @@ int main_xcmb(ComponentType type, int argc, char** argv) {
                    result_to_string(res));
       return -1;
     }
-    std::printf("  [\n");
-    for (size_t i = 0; i < combs.size(); i++) {
-      const auto& comb = combs[i];
-      std::printf("    %s", comb->to_json_string().c_str());
-      if (i + 1 < combs.size()) {
+
+    if (output_format == output_format_t::JSON) {
+      std::printf("  [\n");
+      for (size_t i = 0; i < combs.size(); i++) {
+        const auto& comb = combs[i];
+        std::printf("    %s", comb->to_json_string().c_str());
+        if (i + 1 < combs.size()) {
+          std::printf(",\n");
+        } else {
+          std::printf("\n");
+        }
+      }
+      std::printf("  ]");
+
+      if (ti + 1 < target_values.size()) {
         std::printf(",\n");
       } else {
         std::printf("\n");
       }
-    }
-    std::printf("  ]");
-
-    if (ti + 1 < target_values.size()) {
-      std::printf(",\n");
-    } else {
-      std::printf("\n");
+    } else if (output_format == output_format_t::TEXT) {
+      std::printf("Target: %g\n", target);
+      for (size_t i = 0; i < combs.size(); i++) {
+        const auto& comb = combs[i];
+        std::string line = value_to_json_string(comb->value);
+        if (!comb->is_leaf()) {
+          line += " <-- " + comb->to_string();
+        }
+        std::printf("  %s\n", line.c_str());
+      }
     }
   }
-  std::printf("]\n");
+
+  if (output_format == output_format_t::JSON) {
+    std::printf("]\n");
+  }
   return 0;
 }
 
 int main_rdiv(int argc, char** argv) {
   std::string series_str = "e3";
   std::string target_str = "";
+  output_format_t output_format = output_format_t::TEXT;
   int num_elems_min = 2;
   int num_elems_max = 4;
   value_t target_tol = VALUE_NONE;
@@ -364,7 +393,7 @@ int main_rdiv(int argc, char** argv) {
 
   char short_opts[256];
   snprintf(short_opts, sizeof(short_opts),
-           "%c:%c:%c:%c:%c:%c:%c:%c:", OPT_SERIES, OPT_TARGET,
+           "%c:%c:%c:%c:%c:%c:%c:%c:%c:", OPT_SERIES, OPT_TARGET, OPT_FORMAT,
            OPT_NUM_ELEMS_MAX, OPT_TARGET_TOL_MAX, OPT_SERIES_MIN,
            OPT_SERIES_MAX, OPT_TOTAL_MIN, OPT_TOTAL_MAX);
 
@@ -376,6 +405,9 @@ int main_rdiv(int argc, char** argv) {
         break;
       case OPT_TARGET:
         target_str = optarg;
+        break;
+      case OPT_FORMAT:
+        output_format = parse_output_format(optarg);
         break;
       case OPT_NUM_ELEMS_MIN:
         num_elems_min = std::stoi(optarg);
@@ -431,7 +463,9 @@ int main_rdiv(int argc, char** argv) {
     target_tol_max = 0.5;
   }
 
-  std::printf("[\n");
+  if (output_format == output_format_t::JSON) {
+    std::printf("[\n");
+  }
 
   std::vector<value_t> target_values = get_values_vector(target_str);
   for (size_t ti = 0; ti < target_values.size(); ti++) {
@@ -463,25 +497,37 @@ int main_rdiv(int argc, char** argv) {
                    result_to_string(res));
       return -1;
     }
-    std::printf("  [\n");
-    for (size_t i = 0; i < combs.size(); i++) {
-      const auto& comb = combs[i];
-      std::printf("    %s", comb->to_json_string().c_str());
-      if (i + 1 < combs.size()) {
+
+    if (output_format == output_format_t::JSON) {
+      std::printf("  [\n");
+      for (size_t i = 0; i < combs.size(); i++) {
+        const auto& comb = combs[i];
+        std::printf("    %s", comb->to_json_string().c_str());
+        if (i + 1 < combs.size()) {
+          std::printf(",\n");
+        } else {
+          std::printf("\n");
+        }
+      }
+      std::printf("  ]");
+
+      if (ti + 1 < target_values.size()) {
         std::printf(",\n");
       } else {
         std::printf("\n");
       }
-    }
-    std::printf("  ]");
-
-    if (ti + 1 < target_values.size()) {
-      std::printf(",\n");
-    } else {
-      std::printf("\n");
+    } else if (output_format == output_format_t::TEXT) {
+      std::printf("Target: %g\n", target);
+      for (size_t i = 0; i < combs.size(); i++) {
+        const auto& comb = combs[i];
+        std::printf("%s", comb->to_string().c_str());
+      }
     }
   }
-  std::printf("]\n");
+
+  if (output_format == output_format_t::JSON) {
+    std::printf("]\n");
+  }
   return 0;
 }
 
@@ -980,4 +1026,14 @@ std::vector<std::string> split(std::string str, char delimiter) {
     }
   }
   return result;
+}
+
+output_format_t parse_output_format(const std::string& format_str) {
+  if (format_str == "t" || format_str == "text") {
+    return output_format_t::TEXT;
+  } else if (format_str == "j" || format_str == "json") {
+    return output_format_t::JSON;
+  } else {
+    throw std::invalid_argument("Invalid output format: '" + format_str + "'");
+  }
 }

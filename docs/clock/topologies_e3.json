@@ -1,296 +1,296 @@
 [
   [
-    1000.000000
+    1000
   ],
   [
-    {"parallel":false,"value":2000.000000,"children":[1000.000000,1000.000000]},
-    {"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]}
+    {"parallel":false,"value":2000,"children":[1000,1000]},
+    {"parallel":true,"value":2000,"children":[22000,2200]}
   ],
   [
-    {"parallel":false,"value":3000.000000,"children":[1000.000000,1000.000000,1000.000000]},
-    {"parallel":false,"value":3000.000000,"children":[{"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]},1000.000000]}
+    {"parallel":false,"value":3000,"children":[1000,1000,1000]},
+    {"parallel":false,"value":3000,"children":[{"parallel":true,"value":2000,"children":[22000,2200]},1000]}
   ],
   [
-    {"parallel":false,"value":4000.000000,"children":[1000.000000,1000.000000,1000.000000,1000.000000]},
-    {"parallel":false,"value":4000.000000,"children":[{"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]},1000.000000,1000.000000]},
-    {"parallel":false,"value":4000.000000,"children":[{"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]},{"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]}]},
-    {"parallel":true,"value":4000.000000,"children":[220000.000000,22000.000000,10000.000000,10000.000000]},
-    {"parallel":true,"value":4000.000000,"children":[{"parallel":false,"value":20000.000000,"children":[10000.000000,10000.000000]},10000.000000,10000.000000]},
-    {"parallel":true,"value":4000.000000,"children":[{"parallel":false,"value":44000.000000,"children":[22000.000000,22000.000000]},{"parallel":false,"value":4400.000000,"children":[2200.000000,2200.000000]}]}
+    {"parallel":false,"value":4000,"children":[1000,1000,1000,1000]},
+    {"parallel":false,"value":4000,"children":[{"parallel":true,"value":2000,"children":[22000,2200]},1000,1000]},
+    {"parallel":false,"value":4000,"children":[{"parallel":true,"value":2000,"children":[22000,2200]},{"parallel":true,"value":2000,"children":[22000,2200]}]},
+    {"parallel":true,"value":4000,"children":[220000,22000,10000,10000]},
+    {"parallel":true,"value":4000,"children":[{"parallel":false,"value":20000,"children":[10000,10000]},10000,10000]},
+    {"parallel":true,"value":4000,"children":[{"parallel":false,"value":44000,"children":[22000,22000]},{"parallel":false,"value":4400,"children":[2200,2200]}]}
   ],
   [
-    {"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]}
+    {"parallel":true,"value":5000,"children":[10000,10000]}
   ],
   [
-    {"parallel":false,"value":6000.000000,"children":[{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]},1000.000000]}
+    {"parallel":false,"value":6000,"children":[{"parallel":true,"value":5000,"children":[10000,10000]},1000]}
   ],
   [
-    {"parallel":false,"value":7000.000000,"children":[4700.000000,2200.000000,100.000000]}
+    {"parallel":false,"value":7000,"children":[4700,2200,100]}
   ],
   [
-    {"parallel":false,"value":8000.000000,"children":[4700.000000,2200.000000,1000.000000,100.000000]},
-    {"parallel":false,"value":8000.000000,"children":[{"parallel":true,"value":1100.000000,"children":[2200.000000,2200.000000]},4700.000000,2200.000000]}
+    {"parallel":false,"value":8000,"children":[4700,2200,1000,100]},
+    {"parallel":false,"value":8000,"children":[{"parallel":true,"value":1100,"children":[2200,2200]},4700,2200]}
   ],
   [
-    {"parallel":false,"value":9000.000000,"children":[4700.000000,2200.000000,1000.000000,1000.000000,100.000000]},
-    {"parallel":false,"value":9000.000000,"children":[{"parallel":true,"value":1100.000000,"children":[2200.000000,2200.000000]},4700.000000,2200.000000,1000.000000]},
-    {"parallel":false,"value":9000.000000,"children":[{"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]},4700.000000,2200.000000,100.000000]},
-    {"parallel":true,"value":9000.000000,"children":[{"parallel":false,"value":10687.500000,"children":[{"parallel":true,"value":687.500000,"children":[2200.000000,1000.000000]},10000.000000]},{"parallel":false,"value":57000.000000,"children":[47000.000000,10000.000000]}]}
+    {"parallel":false,"value":9000,"children":[4700,2200,1000,1000,100]},
+    {"parallel":false,"value":9000,"children":[{"parallel":true,"value":1100,"children":[2200,2200]},4700,2200,1000]},
+    {"parallel":false,"value":9000,"children":[{"parallel":true,"value":2000,"children":[22000,2200]},4700,2200,100]},
+    {"parallel":true,"value":9000,"children":[{"parallel":false,"value":10687.5,"children":[{"parallel":true,"value":687.5,"children":[2200,1000]},10000]},{"parallel":false,"value":57000,"children":[47000,10000]}]}
   ],
   [
-    10000.000000
+    10000
   ],
   [
-    {"parallel":false,"value":11000.000000,"children":[10000.000000,1000.000000]},
-    {"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]}
+    {"parallel":false,"value":11000,"children":[10000,1000]},
+    {"parallel":true,"value":11000,"children":[22000,22000]}
   ],
   [
-    {"parallel":false,"value":12000.000000,"children":[10000.000000,1000.000000,1000.000000]},
-    {"parallel":false,"value":12000.000000,"children":[{"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]},10000.000000]},
-    {"parallel":false,"value":12000.000000,"children":[{"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]},1000.000000]}
+    {"parallel":false,"value":12000,"children":[10000,1000,1000]},
+    {"parallel":false,"value":12000,"children":[{"parallel":true,"value":2000,"children":[22000,2200]},10000]},
+    {"parallel":false,"value":12000,"children":[{"parallel":true,"value":11000,"children":[22000,22000]},1000]}
   ],
   [
-    {"parallel":false,"value":13000.000000,"children":[10000.000000,1000.000000,1000.000000,1000.000000]},
-    {"parallel":false,"value":13000.000000,"children":[{"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]},10000.000000,1000.000000]},
-    {"parallel":false,"value":13000.000000,"children":[{"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]},1000.000000,1000.000000]},
-    {"parallel":false,"value":13000.000000,"children":[{"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]},{"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]}]}
+    {"parallel":false,"value":13000,"children":[10000,1000,1000,1000]},
+    {"parallel":false,"value":13000,"children":[{"parallel":true,"value":2000,"children":[22000,2200]},10000,1000]},
+    {"parallel":false,"value":13000,"children":[{"parallel":true,"value":11000,"children":[22000,22000]},1000,1000]},
+    {"parallel":false,"value":13000,"children":[{"parallel":true,"value":11000,"children":[22000,22000]},{"parallel":true,"value":2000,"children":[22000,2200]}]}
   ],
   [
-    {"parallel":false,"value":14000.000000,"children":[10000.000000,1000.000000,1000.000000,1000.000000,1000.000000]},
-    {"parallel":false,"value":14000.000000,"children":[{"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]},10000.000000,1000.000000,1000.000000]},
-    {"parallel":false,"value":14000.000000,"children":[{"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]},1000.000000,1000.000000,1000.000000]},
-    {"parallel":false,"value":14000.000000,"children":[{"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]},{"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]},10000.000000]},
-    {"parallel":false,"value":14000.000000,"children":[{"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]},{"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]},1000.000000]},
-    {"parallel":false,"value":14000.000000,"children":[{"parallel":true,"value":4000.000000,"children":[220000.000000,22000.000000,10000.000000,10000.000000]},10000.000000]},
-    {"parallel":false,"value":14000.000000,"children":[{"parallel":true,"value":4000.000000,"children":[{"parallel":false,"value":20000.000000,"children":[10000.000000,10000.000000]},10000.000000,10000.000000]},10000.000000]},
-    {"parallel":false,"value":14000.000000,"children":[{"parallel":true,"value":4000.000000,"children":[{"parallel":false,"value":44000.000000,"children":[22000.000000,22000.000000]},{"parallel":false,"value":4400.000000,"children":[2200.000000,2200.000000]}]},10000.000000]}
+    {"parallel":false,"value":14000,"children":[10000,1000,1000,1000,1000]},
+    {"parallel":false,"value":14000,"children":[{"parallel":true,"value":2000,"children":[22000,2200]},10000,1000,1000]},
+    {"parallel":false,"value":14000,"children":[{"parallel":true,"value":11000,"children":[22000,22000]},1000,1000,1000]},
+    {"parallel":false,"value":14000,"children":[{"parallel":true,"value":2000,"children":[22000,2200]},{"parallel":true,"value":2000,"children":[22000,2200]},10000]},
+    {"parallel":false,"value":14000,"children":[{"parallel":true,"value":11000,"children":[22000,22000]},{"parallel":true,"value":2000,"children":[22000,2200]},1000]},
+    {"parallel":false,"value":14000,"children":[{"parallel":true,"value":4000,"children":[220000,22000,10000,10000]},10000]},
+    {"parallel":false,"value":14000,"children":[{"parallel":true,"value":4000,"children":[{"parallel":false,"value":20000,"children":[10000,10000]},10000,10000]},10000]},
+    {"parallel":false,"value":14000,"children":[{"parallel":true,"value":4000,"children":[{"parallel":false,"value":44000,"children":[22000,22000]},{"parallel":false,"value":4400,"children":[2200,2200]}]},10000]}
   ],
   [
-    {"parallel":false,"value":15000.000000,"children":[{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]},10000.000000]}
+    {"parallel":false,"value":15000,"children":[{"parallel":true,"value":5000,"children":[10000,10000]},10000]}
   ],
   [
-    {"parallel":false,"value":16000.000000,"children":[{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]},10000.000000,1000.000000]},
-    {"parallel":false,"value":16000.000000,"children":[{"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]},{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]}]},
-    {"parallel":true,"value":16000.000000,"children":[{"parallel":false,"value":32000.000000,"children":[22000.000000,10000.000000]},{"parallel":false,"value":32000.000000,"children":[22000.000000,10000.000000]}]}
+    {"parallel":false,"value":16000,"children":[{"parallel":true,"value":5000,"children":[10000,10000]},10000,1000]},
+    {"parallel":false,"value":16000,"children":[{"parallel":true,"value":11000,"children":[22000,22000]},{"parallel":true,"value":5000,"children":[10000,10000]}]},
+    {"parallel":true,"value":16000,"children":[{"parallel":false,"value":32000,"children":[22000,10000]},{"parallel":false,"value":32000,"children":[22000,10000]}]}
   ],
   [
-    {"parallel":false,"value":17000.000000,"children":[10000.000000,4700.000000,2200.000000,100.000000]}
+    {"parallel":false,"value":17000,"children":[10000,4700,2200,100]}
   ],
   [
-    {"parallel":false,"value":18000.000000,"children":[10000.000000,4700.000000,2200.000000,1000.000000,100.000000]},
-    {"parallel":false,"value":18000.000000,"children":[{"parallel":true,"value":1100.000000,"children":[2200.000000,2200.000000]},10000.000000,4700.000000,2200.000000]},
-    {"parallel":false,"value":18000.000000,"children":[{"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]},4700.000000,2200.000000,100.000000]},
-    {"parallel":true,"value":18000.000000,"children":[{"parallel":false,"value":99000.000000,"children":[{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]},47000.000000,47000.000000]},22000.000000]}
+    {"parallel":false,"value":18000,"children":[10000,4700,2200,1000,100]},
+    {"parallel":false,"value":18000,"children":[{"parallel":true,"value":1100,"children":[2200,2200]},10000,4700,2200]},
+    {"parallel":false,"value":18000,"children":[{"parallel":true,"value":11000,"children":[22000,22000]},4700,2200,100]},
+    {"parallel":true,"value":18000,"children":[{"parallel":false,"value":99000,"children":[{"parallel":true,"value":5000,"children":[10000,10000]},47000,47000]},22000]}
   ],
   [
-    {"parallel":false,"value":19000.000000,"children":[4700.000000,4700.000000,4700.000000,4700.000000,100.000000,100.000000]},
-    {"parallel":false,"value":19000.000000,"children":[10000.000000,4700.000000,2200.000000,1000.000000,1000.000000,100.000000]},
-    {"parallel":false,"value":19000.000000,"children":[{"parallel":true,"value":200.000000,"children":[2200.000000,220.000000]},4700.000000,4700.000000,4700.000000,4700.000000]},
-    {"parallel":false,"value":19000.000000,"children":[{"parallel":true,"value":1100.000000,"children":[2200.000000,2200.000000]},10000.000000,4700.000000,2200.000000,1000.000000]},
-    {"parallel":false,"value":19000.000000,"children":[{"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]},10000.000000,4700.000000,2200.000000,100.000000]},
-    {"parallel":false,"value":19000.000000,"children":[{"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]},4700.000000,2200.000000,1000.000000,100.000000]},
-    {"parallel":false,"value":19000.000000,"children":[{"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]},{"parallel":true,"value":1100.000000,"children":[2200.000000,2200.000000]},4700.000000,2200.000000]},
-    {"parallel":false,"value":19000.000000,"children":[{"parallel":true,"value":15666.666667,"children":[47000.000000,47000.000000,47000.000000]},{"parallel":true,"value":3333.333333,"children":[10000.000000,10000.000000,10000.000000]}]},
-    {"parallel":false,"value":19000.000000,"children":[{"parallel":true,"value":18333.333333,"children":[220000.000000,220000.000000,22000.000000]},{"parallel":true,"value":666.666667,"children":[22000.000000,2200.000000,1000.000000]}]},
-    {"parallel":false,"value":19000.000000,"children":[{"parallel":true,"value":666.666667,"children":[{"parallel":false,"value":2000.000000,"children":[1000.000000,1000.000000]},1000.000000]},{"parallel":true,"value":18333.333333,"children":[220000.000000,220000.000000,22000.000000]}]},
-    {"parallel":false,"value":19000.000000,"children":[{"parallel":true,"value":18333.333333,"children":[{"parallel":false,"value":20000.000000,"children":[10000.000000,10000.000000]},220000.000000]},{"parallel":true,"value":666.666667,"children":[22000.000000,2200.000000,1000.000000]}]},
-    {"parallel":false,"value":19000.000000,"children":[{"parallel":true,"value":18333.333333,"children":[{"parallel":false,"value":110000.000000,"children":[100000.000000,10000.000000]},22000.000000]},{"parallel":true,"value":666.666667,"children":[22000.000000,2200.000000,1000.000000]}]},
-    {"parallel":false,"value":19000.000000,"children":[{"parallel":true,"value":18333.333333,"children":[{"parallel":false,"value":20000.000000,"children":[10000.000000,10000.000000]},220000.000000]},{"parallel":true,"value":666.666667,"children":[{"parallel":false,"value":2000.000000,"children":[1000.000000,1000.000000]},1000.000000]}]},
-    {"parallel":false,"value":19000.000000,"children":[{"parallel":true,"value":18333.333333,"children":[{"parallel":false,"value":110000.000000,"children":[100000.000000,10000.000000]},22000.000000]},{"parallel":true,"value":666.666667,"children":[{"parallel":false,"value":2000.000000,"children":[1000.000000,1000.000000]},1000.000000]}]},
-    {"parallel":false,"value":19000.000000,"children":[{"parallel":true,"value":18800.000000,"children":[{"parallel":false,"value":94000.000000,"children":[47000.000000,47000.000000]},47000.000000,47000.000000]},100.000000,100.000000]},
-    {"parallel":false,"value":19000.000000,"children":[{"parallel":true,"value":12100.000000,"children":[{"parallel":false,"value":24200.000000,"children":[22000.000000,2200.000000]},{"parallel":false,"value":24200.000000,"children":[22000.000000,2200.000000]}]},4700.000000,2200.000000]},
-    {"parallel":false,"value":19000.000000,"children":[{"parallel":true,"value":9600.000000,"children":[{"parallel":false,"value":240000.000000,"children":[220000.000000,10000.000000,10000.000000]},10000.000000]},4700.000000,4700.000000]},
-    {"parallel":false,"value":19000.000000,"children":[{"parallel":true,"value":9600.000000,"children":[{"parallel":false,"value":240000.000000,"children":[{"parallel":true,"value":20000.000000,"children":[220000.000000,22000.000000]},220000.000000]},10000.000000]},4700.000000,4700.000000]},
-    {"parallel":false,"value":19000.000000,"children":[{"parallel":true,"value":18800.000000,"children":[{"parallel":false,"value":94000.000000,"children":[47000.000000,47000.000000]},47000.000000,47000.000000]},{"parallel":true,"value":200.000000,"children":[2200.000000,220.000000]}]},
-    {"parallel":false,"value":19000.000000,"children":[{"parallel":true,"value":16800.000000,"children":[{"parallel":false,"value":105000.000000,"children":[{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]},100000.000000]},220000.000000,22000.000000]},2200.000000]},
-    {"parallel":false,"value":19000.000000,"children":[{"parallel":true,"value":9000.000000,"children":[{"parallel":false,"value":10687.500000,"children":[{"parallel":true,"value":687.500000,"children":[2200.000000,1000.000000]},10000.000000]},{"parallel":false,"value":57000.000000,"children":[47000.000000,10000.000000]}]},10000.000000]},
-    {"parallel":false,"value":19000.000000,"children":[{"parallel":true,"value":16800.000000,"children":[{"parallel":false,"value":105000.000000,"children":[{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]},100000.000000]},{"parallel":false,"value":20000.000000,"children":[10000.000000,10000.000000]}]},2200.000000]},
-    {"parallel":false,"value":19000.000000,"children":[{"parallel":true,"value":18000.000000,"children":[{"parallel":false,"value":99000.000000,"children":[{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]},47000.000000,47000.000000]},22000.000000]},1000.000000]},
-    {"parallel":true,"value":19000.000000,"children":[{"parallel":false,"value":57000.000000,"children":[47000.000000,10000.000000]},{"parallel":false,"value":57000.000000,"children":[47000.000000,10000.000000]},{"parallel":false,"value":57000.000000,"children":[47000.000000,10000.000000]}]},
-    {"parallel":true,"value":19000.000000,"children":[{"parallel":false,"value":475000.000000,"children":[{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]},470000.000000]},{"parallel":false,"value":19791.666667,"children":[{"parallel":true,"value":9791.666667,"children":[470000.000000,10000.000000]},10000.000000]}]},
-    {"parallel":true,"value":19000.000000,"children":[{"parallel":false,"value":28500.000000,"children":[{"parallel":true,"value":23500.000000,"children":[47000.000000,47000.000000]},{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]}]},{"parallel":false,"value":57000.000000,"children":[47000.000000,10000.000000]}]}
+    {"parallel":false,"value":19000,"children":[4700,4700,4700,4700,100,100]},
+    {"parallel":false,"value":19000,"children":[10000,4700,2200,1000,1000,100]},
+    {"parallel":false,"value":19000,"children":[{"parallel":true,"value":200,"children":[2200,220]},4700,4700,4700,4700]},
+    {"parallel":false,"value":19000,"children":[{"parallel":true,"value":1100,"children":[2200,2200]},10000,4700,2200,1000]},
+    {"parallel":false,"value":19000,"children":[{"parallel":true,"value":2000,"children":[22000,2200]},10000,4700,2200,100]},
+    {"parallel":false,"value":19000,"children":[{"parallel":true,"value":11000,"children":[22000,22000]},4700,2200,1000,100]},
+    {"parallel":false,"value":19000,"children":[{"parallel":true,"value":11000,"children":[22000,22000]},{"parallel":true,"value":1100,"children":[2200,2200]},4700,2200]},
+    {"parallel":false,"value":19000,"children":[{"parallel":true,"value":15666.6666667,"children":[47000,47000,47000]},{"parallel":true,"value":3333.33333333,"children":[10000,10000,10000]}]},
+    {"parallel":false,"value":19000,"children":[{"parallel":true,"value":18333.3333333,"children":[220000,220000,22000]},{"parallel":true,"value":666.666666667,"children":[22000,2200,1000]}]},
+    {"parallel":false,"value":19000,"children":[{"parallel":true,"value":666.666666667,"children":[{"parallel":false,"value":2000,"children":[1000,1000]},1000]},{"parallel":true,"value":18333.3333333,"children":[220000,220000,22000]}]},
+    {"parallel":false,"value":19000,"children":[{"parallel":true,"value":18333.3333333,"children":[{"parallel":false,"value":20000,"children":[10000,10000]},220000]},{"parallel":true,"value":666.666666667,"children":[22000,2200,1000]}]},
+    {"parallel":false,"value":19000,"children":[{"parallel":true,"value":18333.3333333,"children":[{"parallel":false,"value":110000,"children":[100000,10000]},22000]},{"parallel":true,"value":666.666666667,"children":[22000,2200,1000]}]},
+    {"parallel":false,"value":19000,"children":[{"parallel":true,"value":18333.3333333,"children":[{"parallel":false,"value":20000,"children":[10000,10000]},220000]},{"parallel":true,"value":666.666666667,"children":[{"parallel":false,"value":2000,"children":[1000,1000]},1000]}]},
+    {"parallel":false,"value":19000,"children":[{"parallel":true,"value":18333.3333333,"children":[{"parallel":false,"value":110000,"children":[100000,10000]},22000]},{"parallel":true,"value":666.666666667,"children":[{"parallel":false,"value":2000,"children":[1000,1000]},1000]}]},
+    {"parallel":false,"value":19000,"children":[{"parallel":true,"value":18800,"children":[{"parallel":false,"value":94000,"children":[47000,47000]},47000,47000]},100,100]},
+    {"parallel":false,"value":19000,"children":[{"parallel":true,"value":12100,"children":[{"parallel":false,"value":24200,"children":[22000,2200]},{"parallel":false,"value":24200,"children":[22000,2200]}]},4700,2200]},
+    {"parallel":false,"value":19000,"children":[{"parallel":true,"value":9600,"children":[{"parallel":false,"value":240000,"children":[220000,10000,10000]},10000]},4700,4700]},
+    {"parallel":false,"value":19000,"children":[{"parallel":true,"value":9600,"children":[{"parallel":false,"value":240000,"children":[{"parallel":true,"value":20000,"children":[220000,22000]},220000]},10000]},4700,4700]},
+    {"parallel":false,"value":19000,"children":[{"parallel":true,"value":18800,"children":[{"parallel":false,"value":94000,"children":[47000,47000]},47000,47000]},{"parallel":true,"value":200,"children":[2200,220]}]},
+    {"parallel":false,"value":19000,"children":[{"parallel":true,"value":16800,"children":[{"parallel":false,"value":105000,"children":[{"parallel":true,"value":5000,"children":[10000,10000]},100000]},220000,22000]},2200]},
+    {"parallel":false,"value":19000,"children":[{"parallel":true,"value":9000,"children":[{"parallel":false,"value":10687.5,"children":[{"parallel":true,"value":687.5,"children":[2200,1000]},10000]},{"parallel":false,"value":57000,"children":[47000,10000]}]},10000]},
+    {"parallel":false,"value":19000,"children":[{"parallel":true,"value":16800,"children":[{"parallel":false,"value":105000,"children":[{"parallel":true,"value":5000,"children":[10000,10000]},100000]},{"parallel":false,"value":20000,"children":[10000,10000]}]},2200]},
+    {"parallel":false,"value":19000,"children":[{"parallel":true,"value":18000,"children":[{"parallel":false,"value":99000,"children":[{"parallel":true,"value":5000,"children":[10000,10000]},47000,47000]},22000]},1000]},
+    {"parallel":true,"value":19000,"children":[{"parallel":false,"value":57000,"children":[47000,10000]},{"parallel":false,"value":57000,"children":[47000,10000]},{"parallel":false,"value":57000,"children":[47000,10000]}]},
+    {"parallel":true,"value":19000,"children":[{"parallel":false,"value":475000,"children":[{"parallel":true,"value":5000,"children":[10000,10000]},470000]},{"parallel":false,"value":19791.6666667,"children":[{"parallel":true,"value":9791.66666667,"children":[470000,10000]},10000]}]},
+    {"parallel":true,"value":19000,"children":[{"parallel":false,"value":28500,"children":[{"parallel":true,"value":23500,"children":[47000,47000]},{"parallel":true,"value":5000,"children":[10000,10000]}]},{"parallel":false,"value":57000,"children":[47000,10000]}]}
   ],
   [
-    {"parallel":false,"value":20000.000000,"children":[10000.000000,10000.000000]},
-    {"parallel":true,"value":20000.000000,"children":[220000.000000,22000.000000]}
+    {"parallel":false,"value":20000,"children":[10000,10000]},
+    {"parallel":true,"value":20000,"children":[220000,22000]}
   ],
   [
-    {"parallel":false,"value":21000.000000,"children":[10000.000000,10000.000000,1000.000000]},
-    {"parallel":false,"value":21000.000000,"children":[{"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]},10000.000000]},
-    {"parallel":false,"value":21000.000000,"children":[{"parallel":true,"value":20000.000000,"children":[220000.000000,22000.000000]},1000.000000]}
+    {"parallel":false,"value":21000,"children":[10000,10000,1000]},
+    {"parallel":false,"value":21000,"children":[{"parallel":true,"value":11000,"children":[22000,22000]},10000]},
+    {"parallel":false,"value":21000,"children":[{"parallel":true,"value":20000,"children":[220000,22000]},1000]}
   ],
   [
-    22000.000000
+    22000
   ],
   [
-    {"parallel":false,"value":23000.000000,"children":[22000.000000,1000.000000]}
+    {"parallel":false,"value":23000,"children":[22000,1000]}
   ],
   [
-    {"parallel":false,"value":24000.000000,"children":[22000.000000,1000.000000,1000.000000]},
-    {"parallel":false,"value":24000.000000,"children":[{"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]},22000.000000]}
+    {"parallel":false,"value":24000,"children":[22000,1000,1000]},
+    {"parallel":false,"value":24000,"children":[{"parallel":true,"value":2000,"children":[22000,2200]},22000]}
   ],
   [
-    {"parallel":false,"value":25000.000000,"children":[22000.000000,1000.000000,1000.000000,1000.000000]},
-    {"parallel":false,"value":25000.000000,"children":[{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]},10000.000000,10000.000000]},
-    {"parallel":false,"value":25000.000000,"children":[{"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]},22000.000000,1000.000000]},
-    {"parallel":false,"value":25000.000000,"children":[{"parallel":true,"value":20000.000000,"children":[220000.000000,22000.000000]},{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]}]},
-    {"parallel":true,"value":25000.000000,"children":[100000.000000,100000.000000,100000.000000,100000.000000]}
+    {"parallel":false,"value":25000,"children":[22000,1000,1000,1000]},
+    {"parallel":false,"value":25000,"children":[{"parallel":true,"value":5000,"children":[10000,10000]},10000,10000]},
+    {"parallel":false,"value":25000,"children":[{"parallel":true,"value":2000,"children":[22000,2200]},22000,1000]},
+    {"parallel":false,"value":25000,"children":[{"parallel":true,"value":20000,"children":[220000,22000]},{"parallel":true,"value":5000,"children":[10000,10000]}]},
+    {"parallel":true,"value":25000,"children":[100000,100000,100000,100000]}
   ],
   [
-    {"parallel":false,"value":26000.000000,"children":[22000.000000,1000.000000,1000.000000,1000.000000,1000.000000]},
-    {"parallel":false,"value":26000.000000,"children":[{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]},10000.000000,10000.000000,1000.000000]},
-    {"parallel":false,"value":26000.000000,"children":[{"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]},22000.000000,1000.000000,1000.000000]},
-    {"parallel":false,"value":26000.000000,"children":[{"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]},{"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]},22000.000000]},
-    {"parallel":false,"value":26000.000000,"children":[{"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]},{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]},10000.000000]},
-    {"parallel":false,"value":26000.000000,"children":[{"parallel":true,"value":20000.000000,"children":[220000.000000,22000.000000]},{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]},1000.000000]},
-    {"parallel":false,"value":26000.000000,"children":[{"parallel":true,"value":25000.000000,"children":[100000.000000,100000.000000,100000.000000,100000.000000]},1000.000000]},
-    {"parallel":false,"value":26000.000000,"children":[{"parallel":true,"value":4000.000000,"children":[220000.000000,22000.000000,10000.000000,10000.000000]},22000.000000]},
-    {"parallel":false,"value":26000.000000,"children":[{"parallel":true,"value":4000.000000,"children":[{"parallel":false,"value":20000.000000,"children":[10000.000000,10000.000000]},10000.000000,10000.000000]},22000.000000]},
-    {"parallel":false,"value":26000.000000,"children":[{"parallel":true,"value":16000.000000,"children":[{"parallel":false,"value":32000.000000,"children":[22000.000000,10000.000000]},{"parallel":false,"value":32000.000000,"children":[22000.000000,10000.000000]}]},10000.000000]},
-    {"parallel":false,"value":26000.000000,"children":[{"parallel":true,"value":4000.000000,"children":[{"parallel":false,"value":44000.000000,"children":[22000.000000,22000.000000]},{"parallel":false,"value":4400.000000,"children":[2200.000000,2200.000000]}]},22000.000000]}
+    {"parallel":false,"value":26000,"children":[22000,1000,1000,1000,1000]},
+    {"parallel":false,"value":26000,"children":[{"parallel":true,"value":5000,"children":[10000,10000]},10000,10000,1000]},
+    {"parallel":false,"value":26000,"children":[{"parallel":true,"value":2000,"children":[22000,2200]},22000,1000,1000]},
+    {"parallel":false,"value":26000,"children":[{"parallel":true,"value":2000,"children":[22000,2200]},{"parallel":true,"value":2000,"children":[22000,2200]},22000]},
+    {"parallel":false,"value":26000,"children":[{"parallel":true,"value":11000,"children":[22000,22000]},{"parallel":true,"value":5000,"children":[10000,10000]},10000]},
+    {"parallel":false,"value":26000,"children":[{"parallel":true,"value":20000,"children":[220000,22000]},{"parallel":true,"value":5000,"children":[10000,10000]},1000]},
+    {"parallel":false,"value":26000,"children":[{"parallel":true,"value":25000,"children":[100000,100000,100000,100000]},1000]},
+    {"parallel":false,"value":26000,"children":[{"parallel":true,"value":4000,"children":[220000,22000,10000,10000]},22000]},
+    {"parallel":false,"value":26000,"children":[{"parallel":true,"value":4000,"children":[{"parallel":false,"value":20000,"children":[10000,10000]},10000,10000]},22000]},
+    {"parallel":false,"value":26000,"children":[{"parallel":true,"value":16000,"children":[{"parallel":false,"value":32000,"children":[22000,10000]},{"parallel":false,"value":32000,"children":[22000,10000]}]},10000]},
+    {"parallel":false,"value":26000,"children":[{"parallel":true,"value":4000,"children":[{"parallel":false,"value":44000,"children":[22000,22000]},{"parallel":false,"value":4400,"children":[2200,2200]}]},22000]}
   ],
   [
-    {"parallel":false,"value":27000.000000,"children":[{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]},22000.000000]}
+    {"parallel":false,"value":27000,"children":[{"parallel":true,"value":5000,"children":[10000,10000]},22000]}
   ],
   [
-    {"parallel":false,"value":28000.000000,"children":[{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]},22000.000000,1000.000000]}
+    {"parallel":false,"value":28000,"children":[{"parallel":true,"value":5000,"children":[10000,10000]},22000,1000]}
   ],
   [
-    {"parallel":false,"value":29000.000000,"children":[22000.000000,4700.000000,2200.000000,100.000000]}
+    {"parallel":false,"value":29000,"children":[22000,4700,2200,100]}
   ],
   [
-    {"parallel":false,"value":30000.000000,"children":[10000.000000,10000.000000,10000.000000]},
-    {"parallel":false,"value":30000.000000,"children":[{"parallel":true,"value":20000.000000,"children":[220000.000000,22000.000000]},10000.000000]}
+    {"parallel":false,"value":30000,"children":[10000,10000,10000]},
+    {"parallel":false,"value":30000,"children":[{"parallel":true,"value":20000,"children":[220000,22000]},10000]}
   ],
   [
-    {"parallel":false,"value":31000.000000,"children":[10000.000000,10000.000000,10000.000000,1000.000000]},
-    {"parallel":false,"value":31000.000000,"children":[{"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]},10000.000000,10000.000000]},
-    {"parallel":false,"value":31000.000000,"children":[{"parallel":true,"value":20000.000000,"children":[220000.000000,22000.000000]},10000.000000,1000.000000]},
-    {"parallel":false,"value":31000.000000,"children":[{"parallel":true,"value":20000.000000,"children":[220000.000000,22000.000000]},{"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]}]}
+    {"parallel":false,"value":31000,"children":[10000,10000,10000,1000]},
+    {"parallel":false,"value":31000,"children":[{"parallel":true,"value":11000,"children":[22000,22000]},10000,10000]},
+    {"parallel":false,"value":31000,"children":[{"parallel":true,"value":20000,"children":[220000,22000]},10000,1000]},
+    {"parallel":false,"value":31000,"children":[{"parallel":true,"value":20000,"children":[220000,22000]},{"parallel":true,"value":11000,"children":[22000,22000]}]}
   ],
   [
-    {"parallel":false,"value":32000.000000,"children":[22000.000000,10000.000000]}
+    {"parallel":false,"value":32000,"children":[22000,10000]}
   ],
   [
-    {"parallel":false,"value":33000.000000,"children":[22000.000000,10000.000000,1000.000000]},
-    {"parallel":false,"value":33000.000000,"children":[{"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]},22000.000000]}
+    {"parallel":false,"value":33000,"children":[22000,10000,1000]},
+    {"parallel":false,"value":33000,"children":[{"parallel":true,"value":11000,"children":[22000,22000]},22000]}
   ],
   [
-    {"parallel":false,"value":34000.000000,"children":[22000.000000,10000.000000,1000.000000,1000.000000]},
-    {"parallel":false,"value":34000.000000,"children":[{"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]},22000.000000,10000.000000]},
-    {"parallel":false,"value":34000.000000,"children":[{"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]},22000.000000,1000.000000]}
+    {"parallel":false,"value":34000,"children":[22000,10000,1000,1000]},
+    {"parallel":false,"value":34000,"children":[{"parallel":true,"value":2000,"children":[22000,2200]},22000,10000]},
+    {"parallel":false,"value":34000,"children":[{"parallel":true,"value":11000,"children":[22000,22000]},22000,1000]}
   ],
   [
-    {"parallel":false,"value":35000.000000,"children":[22000.000000,10000.000000,1000.000000,1000.000000,1000.000000]},
-    {"parallel":false,"value":35000.000000,"children":[{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]},10000.000000,10000.000000,10000.000000]},
-    {"parallel":false,"value":35000.000000,"children":[{"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]},22000.000000,10000.000000,1000.000000]},
-    {"parallel":false,"value":35000.000000,"children":[{"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]},22000.000000,1000.000000,1000.000000]},
-    {"parallel":false,"value":35000.000000,"children":[{"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]},{"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]},22000.000000]},
-    {"parallel":false,"value":35000.000000,"children":[{"parallel":true,"value":20000.000000,"children":[220000.000000,22000.000000]},{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]},10000.000000]},
-    {"parallel":false,"value":35000.000000,"children":[{"parallel":true,"value":25000.000000,"children":[100000.000000,100000.000000,100000.000000,100000.000000]},10000.000000]}
+    {"parallel":false,"value":35000,"children":[22000,10000,1000,1000,1000]},
+    {"parallel":false,"value":35000,"children":[{"parallel":true,"value":5000,"children":[10000,10000]},10000,10000,10000]},
+    {"parallel":false,"value":35000,"children":[{"parallel":true,"value":2000,"children":[22000,2200]},22000,10000,1000]},
+    {"parallel":false,"value":35000,"children":[{"parallel":true,"value":11000,"children":[22000,22000]},22000,1000,1000]},
+    {"parallel":false,"value":35000,"children":[{"parallel":true,"value":11000,"children":[22000,22000]},{"parallel":true,"value":2000,"children":[22000,2200]},22000]},
+    {"parallel":false,"value":35000,"children":[{"parallel":true,"value":20000,"children":[220000,22000]},{"parallel":true,"value":5000,"children":[10000,10000]},10000]},
+    {"parallel":false,"value":35000,"children":[{"parallel":true,"value":25000,"children":[100000,100000,100000,100000]},10000]}
   ],
   [
-    {"parallel":true,"value":36000.000000,"children":[{"parallel":false,"value":144000.000000,"children":[100000.000000,22000.000000,22000.000000]},{"parallel":false,"value":48000.000000,"children":[47000.000000,1000.000000]}]}
+    {"parallel":true,"value":36000,"children":[{"parallel":false,"value":144000,"children":[100000,22000,22000]},{"parallel":false,"value":48000,"children":[47000,1000]}]}
   ],
   [
-    {"parallel":false,"value":37000.000000,"children":[{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]},22000.000000,10000.000000]}
+    {"parallel":false,"value":37000,"children":[{"parallel":true,"value":5000,"children":[10000,10000]},22000,10000]}
   ],
   [
-    {"parallel":false,"value":38000.000000,"children":[{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]},22000.000000,10000.000000,1000.000000]},
-    {"parallel":false,"value":38000.000000,"children":[{"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]},{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]},22000.000000]},
-    {"parallel":false,"value":38000.000000,"children":[{"parallel":true,"value":16000.000000,"children":[{"parallel":false,"value":32000.000000,"children":[22000.000000,10000.000000]},{"parallel":false,"value":32000.000000,"children":[22000.000000,10000.000000]}]},22000.000000]}
+    {"parallel":false,"value":38000,"children":[{"parallel":true,"value":5000,"children":[10000,10000]},22000,10000,1000]},
+    {"parallel":false,"value":38000,"children":[{"parallel":true,"value":11000,"children":[22000,22000]},{"parallel":true,"value":5000,"children":[10000,10000]},22000]},
+    {"parallel":false,"value":38000,"children":[{"parallel":true,"value":16000,"children":[{"parallel":false,"value":32000,"children":[22000,10000]},{"parallel":false,"value":32000,"children":[22000,10000]}]},22000]}
   ],
   [
-    {"parallel":false,"value":39000.000000,"children":[22000.000000,10000.000000,4700.000000,2200.000000,100.000000]},
-    {"parallel":true,"value":39000.000000,"children":[{"parallel":false,"value":123500.000000,"children":[{"parallel":true,"value":23500.000000,"children":[47000.000000,47000.000000]},100000.000000]},{"parallel":false,"value":57000.000000,"children":[47000.000000,10000.000000]}]}
+    {"parallel":false,"value":39000,"children":[22000,10000,4700,2200,100]},
+    {"parallel":true,"value":39000,"children":[{"parallel":false,"value":123500,"children":[{"parallel":true,"value":23500,"children":[47000,47000]},100000]},{"parallel":false,"value":57000,"children":[47000,10000]}]}
   ],
   [
-    {"parallel":false,"value":40000.000000,"children":[10000.000000,10000.000000,10000.000000,10000.000000]},
-    {"parallel":false,"value":40000.000000,"children":[{"parallel":true,"value":20000.000000,"children":[220000.000000,22000.000000]},10000.000000,10000.000000]},
-    {"parallel":false,"value":40000.000000,"children":[{"parallel":true,"value":20000.000000,"children":[220000.000000,22000.000000]},{"parallel":true,"value":20000.000000,"children":[220000.000000,22000.000000]}]},
-    {"parallel":true,"value":40000.000000,"children":[{"parallel":false,"value":200000.000000,"children":[100000.000000,100000.000000]},100000.000000,100000.000000]},
-    {"parallel":true,"value":40000.000000,"children":[{"parallel":false,"value":440000.000000,"children":[220000.000000,220000.000000]},{"parallel":false,"value":44000.000000,"children":[22000.000000,22000.000000]}]}
+    {"parallel":false,"value":40000,"children":[10000,10000,10000,10000]},
+    {"parallel":false,"value":40000,"children":[{"parallel":true,"value":20000,"children":[220000,22000]},10000,10000]},
+    {"parallel":false,"value":40000,"children":[{"parallel":true,"value":20000,"children":[220000,22000]},{"parallel":true,"value":20000,"children":[220000,22000]}]},
+    {"parallel":true,"value":40000,"children":[{"parallel":false,"value":200000,"children":[100000,100000]},100000,100000]},
+    {"parallel":true,"value":40000,"children":[{"parallel":false,"value":440000,"children":[220000,220000]},{"parallel":false,"value":44000,"children":[22000,22000]}]}
   ],
   [
-    {"parallel":false,"value":41000.000000,"children":[10000.000000,10000.000000,10000.000000,10000.000000,1000.000000]},
-    {"parallel":false,"value":41000.000000,"children":[{"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]},10000.000000,10000.000000,10000.000000]},
-    {"parallel":false,"value":41000.000000,"children":[{"parallel":true,"value":20000.000000,"children":[220000.000000,22000.000000]},10000.000000,10000.000000,1000.000000]},
-    {"parallel":false,"value":41000.000000,"children":[{"parallel":true,"value":20000.000000,"children":[220000.000000,22000.000000]},{"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]},10000.000000]},
-    {"parallel":false,"value":41000.000000,"children":[{"parallel":true,"value":20000.000000,"children":[220000.000000,22000.000000]},{"parallel":true,"value":20000.000000,"children":[220000.000000,22000.000000]},1000.000000]},
-    {"parallel":false,"value":41000.000000,"children":[{"parallel":true,"value":40000.000000,"children":[{"parallel":false,"value":200000.000000,"children":[100000.000000,100000.000000]},100000.000000,100000.000000]},1000.000000]},
-    {"parallel":false,"value":41000.000000,"children":[{"parallel":true,"value":40000.000000,"children":[{"parallel":false,"value":440000.000000,"children":[220000.000000,220000.000000]},{"parallel":false,"value":44000.000000,"children":[22000.000000,22000.000000]}]},1000.000000]}
+    {"parallel":false,"value":41000,"children":[10000,10000,10000,10000,1000]},
+    {"parallel":false,"value":41000,"children":[{"parallel":true,"value":11000,"children":[22000,22000]},10000,10000,10000]},
+    {"parallel":false,"value":41000,"children":[{"parallel":true,"value":20000,"children":[220000,22000]},10000,10000,1000]},
+    {"parallel":false,"value":41000,"children":[{"parallel":true,"value":20000,"children":[220000,22000]},{"parallel":true,"value":11000,"children":[22000,22000]},10000]},
+    {"parallel":false,"value":41000,"children":[{"parallel":true,"value":20000,"children":[220000,22000]},{"parallel":true,"value":20000,"children":[220000,22000]},1000]},
+    {"parallel":false,"value":41000,"children":[{"parallel":true,"value":40000,"children":[{"parallel":false,"value":200000,"children":[100000,100000]},100000,100000]},1000]},
+    {"parallel":false,"value":41000,"children":[{"parallel":true,"value":40000,"children":[{"parallel":false,"value":440000,"children":[220000,220000]},{"parallel":false,"value":44000,"children":[22000,22000]}]},1000]}
   ],
   [
-    {"parallel":false,"value":42000.000000,"children":[22000.000000,10000.000000,10000.000000]},
-    {"parallel":false,"value":42000.000000,"children":[{"parallel":true,"value":20000.000000,"children":[220000.000000,22000.000000]},22000.000000]}
+    {"parallel":false,"value":42000,"children":[22000,10000,10000]},
+    {"parallel":false,"value":42000,"children":[{"parallel":true,"value":20000,"children":[220000,22000]},22000]}
   ],
   [
-    {"parallel":false,"value":43000.000000,"children":[22000.000000,10000.000000,10000.000000,1000.000000]},
-    {"parallel":false,"value":43000.000000,"children":[{"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]},22000.000000,10000.000000]},
-    {"parallel":false,"value":43000.000000,"children":[{"parallel":true,"value":20000.000000,"children":[220000.000000,22000.000000]},22000.000000,1000.000000]}
+    {"parallel":false,"value":43000,"children":[22000,10000,10000,1000]},
+    {"parallel":false,"value":43000,"children":[{"parallel":true,"value":11000,"children":[22000,22000]},22000,10000]},
+    {"parallel":false,"value":43000,"children":[{"parallel":true,"value":20000,"children":[220000,22000]},22000,1000]}
   ],
   [
-    {"parallel":false,"value":44000.000000,"children":[22000.000000,22000.000000]}
+    {"parallel":false,"value":44000,"children":[22000,22000]}
   ],
   [
-    {"parallel":false,"value":45000.000000,"children":[22000.000000,22000.000000,1000.000000]}
+    {"parallel":false,"value":45000,"children":[22000,22000,1000]}
   ],
   [
-    {"parallel":false,"value":46000.000000,"children":[22000.000000,22000.000000,1000.000000,1000.000000]},
-    {"parallel":false,"value":46000.000000,"children":[{"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]},22000.000000,22000.000000]}
+    {"parallel":false,"value":46000,"children":[22000,22000,1000,1000]},
+    {"parallel":false,"value":46000,"children":[{"parallel":true,"value":2000,"children":[22000,2200]},22000,22000]}
   ],
   [
-    47000.000000
+    47000
   ],
   [
-    {"parallel":false,"value":48000.000000,"children":[47000.000000,1000.000000]}
+    {"parallel":false,"value":48000,"children":[47000,1000]}
   ],
   [
-    {"parallel":false,"value":49000.000000,"children":[47000.000000,1000.000000,1000.000000]},
-    {"parallel":false,"value":49000.000000,"children":[{"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]},47000.000000]}
+    {"parallel":false,"value":49000,"children":[47000,1000,1000]},
+    {"parallel":false,"value":49000,"children":[{"parallel":true,"value":2000,"children":[22000,2200]},47000]}
   ],
   [
-    {"parallel":true,"value":50000.000000,"children":[100000.000000,100000.000000]}
+    {"parallel":true,"value":50000,"children":[100000,100000]}
   ],
   [
-    {"parallel":false,"value":51000.000000,"children":[{"parallel":true,"value":50000.000000,"children":[100000.000000,100000.000000]},1000.000000]}
+    {"parallel":false,"value":51000,"children":[{"parallel":true,"value":50000,"children":[100000,100000]},1000]}
   ],
   [
-    {"parallel":false,"value":52000.000000,"children":[{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]},47000.000000]}
+    {"parallel":false,"value":52000,"children":[{"parallel":true,"value":5000,"children":[10000,10000]},47000]}
   ],
   [
-    {"parallel":false,"value":53000.000000,"children":[{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]},47000.000000,1000.000000]}
+    {"parallel":false,"value":53000,"children":[{"parallel":true,"value":5000,"children":[10000,10000]},47000,1000]}
   ],
   [
-    {"parallel":false,"value":54000.000000,"children":[22000.000000,22000.000000,10000.000000]}
+    {"parallel":false,"value":54000,"children":[22000,22000,10000]}
   ],
   [
-    {"parallel":false,"value":55000.000000,"children":[22000.000000,22000.000000,10000.000000,1000.000000]},
-    {"parallel":false,"value":55000.000000,"children":[{"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]},22000.000000,22000.000000]},
-    {"parallel":false,"value":55000.000000,"children":[{"parallel":true,"value":50000.000000,"children":[100000.000000,100000.000000]},{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]}]},
-    {"parallel":true,"value":55000.000000,"children":[220000.000000,220000.000000,220000.000000,220000.000000]},
-    {"parallel":true,"value":55000.000000,"children":[{"parallel":false,"value":110000.000000,"children":[100000.000000,10000.000000]},220000.000000,220000.000000]},
-    {"parallel":true,"value":55000.000000,"children":[{"parallel":false,"value":110000.000000,"children":[100000.000000,10000.000000]},{"parallel":false,"value":110000.000000,"children":[100000.000000,10000.000000]}]}
+    {"parallel":false,"value":55000,"children":[22000,22000,10000,1000]},
+    {"parallel":false,"value":55000,"children":[{"parallel":true,"value":11000,"children":[22000,22000]},22000,22000]},
+    {"parallel":false,"value":55000,"children":[{"parallel":true,"value":50000,"children":[100000,100000]},{"parallel":true,"value":5000,"children":[10000,10000]}]},
+    {"parallel":true,"value":55000,"children":[220000,220000,220000,220000]},
+    {"parallel":true,"value":55000,"children":[{"parallel":false,"value":110000,"children":[100000,10000]},220000,220000]},
+    {"parallel":true,"value":55000,"children":[{"parallel":false,"value":110000,"children":[100000,10000]},{"parallel":false,"value":110000,"children":[100000,10000]}]}
   ],
   [
-    {"parallel":false,"value":56000.000000,"children":[22000.000000,22000.000000,10000.000000,1000.000000,1000.000000]},
-    {"parallel":false,"value":56000.000000,"children":[{"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]},22000.000000,22000.000000,10000.000000]},
-    {"parallel":false,"value":56000.000000,"children":[{"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]},22000.000000,22000.000000,1000.000000]},
-    {"parallel":false,"value":56000.000000,"children":[{"parallel":true,"value":50000.000000,"children":[100000.000000,100000.000000]},{"parallel":true,"value":5000.000000,"children":[10000.000000,10000.000000]},1000.000000]},
-    {"parallel":false,"value":56000.000000,"children":[{"parallel":true,"value":55000.000000,"children":[220000.000000,220000.000000,220000.000000,220000.000000]},1000.000000]},
-    {"parallel":false,"value":56000.000000,"children":[{"parallel":true,"value":55000.000000,"children":[{"parallel":false,"value":110000.000000,"children":[100000.000000,10000.000000]},220000.000000,220000.000000]},1000.000000]},
-    {"parallel":false,"value":56000.000000,"children":[{"parallel":true,"value":55000.000000,"children":[{"parallel":false,"value":110000.000000,"children":[100000.000000,10000.000000]},{"parallel":false,"value":110000.000000,"children":[100000.000000,10000.000000]}]},1000.000000]}
+    {"parallel":false,"value":56000,"children":[22000,22000,10000,1000,1000]},
+    {"parallel":false,"value":56000,"children":[{"parallel":true,"value":2000,"children":[22000,2200]},22000,22000,10000]},
+    {"parallel":false,"value":56000,"children":[{"parallel":true,"value":11000,"children":[22000,22000]},22000,22000,1000]},
+    {"parallel":false,"value":56000,"children":[{"parallel":true,"value":50000,"children":[100000,100000]},{"parallel":true,"value":5000,"children":[10000,10000]},1000]},
+    {"parallel":false,"value":56000,"children":[{"parallel":true,"value":55000,"children":[220000,220000,220000,220000]},1000]},
+    {"parallel":false,"value":56000,"children":[{"parallel":true,"value":55000,"children":[{"parallel":false,"value":110000,"children":[100000,10000]},220000,220000]},1000]},
+    {"parallel":false,"value":56000,"children":[{"parallel":true,"value":55000,"children":[{"parallel":false,"value":110000,"children":[100000,10000]},{"parallel":false,"value":110000,"children":[100000,10000]}]},1000]}
   ],
   [
-    {"parallel":false,"value":57000.000000,"children":[47000.000000,10000.000000]}
+    {"parallel":false,"value":57000,"children":[47000,10000]}
   ],
   [
-    {"parallel":false,"value":58000.000000,"children":[47000.000000,10000.000000,1000.000000]},
-    {"parallel":false,"value":58000.000000,"children":[{"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]},47000.000000]}
+    {"parallel":false,"value":58000,"children":[47000,10000,1000]},
+    {"parallel":false,"value":58000,"children":[{"parallel":true,"value":11000,"children":[22000,22000]},47000]}
   ],
   [
-    {"parallel":false,"value":59000.000000,"children":[47000.000000,10000.000000,1000.000000,1000.000000]},
-    {"parallel":false,"value":59000.000000,"children":[{"parallel":true,"value":2000.000000,"children":[22000.000000,2200.000000]},47000.000000,10000.000000]},
-    {"parallel":false,"value":59000.000000,"children":[{"parallel":true,"value":11000.000000,"children":[22000.000000,22000.000000]},47000.000000,1000.000000]}
+    {"parallel":false,"value":59000,"children":[47000,10000,1000,1000]},
+    {"parallel":false,"value":59000,"children":[{"parallel":true,"value":2000,"children":[22000,2200]},47000,10000]},
+    {"parallel":false,"value":59000,"children":[{"parallel":true,"value":11000,"children":[22000,22000]},47000,1000]}
   ]
 ]

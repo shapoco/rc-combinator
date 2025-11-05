@@ -125,6 +125,8 @@ std::string CombinationClass::to_json_string() const {
     return value_to_json_string(value);
   } else {
     std::string s = "{";
+    // s += std::string("\"num_leafs\":") +
+    //      std::to_string(num_leafs()) + ",";
     s += std::string("\"parallel\":") +
          (topology->parallel ? "true" : "false") + ",";
     s += std::string("\"value\":") + value_to_json_string(value) + ",";
@@ -142,7 +144,7 @@ std::string CombinationClass::to_json_string() const {
 
 std::string CombinationClass::to_string() const {
   if (is_leaf()) {
-    return std::to_string(value);
+    return value_to_json_string(value);
   } else {
     std::string s;
     for (size_t i = 0; i < children.size(); i++) {
