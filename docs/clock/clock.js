@@ -282,7 +282,7 @@ class Node {
  * @type {Node[]}
  */
 const eSerieses = {
-  '10k': { label: '10k only', topologies: [], blockWidth: 40 * SCALE, blockHeight: 32 * SCALE },
+  '10k': { label: '10kΩ only', topologies: [], blockWidth: 40 * SCALE, blockHeight: 32 * SCALE },
   'e1': { label: 'E1', topologies: [], blockWidth: 30 * SCALE, blockHeight: 22 * SCALE },
   'e3': { label: 'E3', topologies: [], blockWidth: 20 * SCALE, blockHeight: 15 * SCALE },
   'e6': { label: 'E6', topologies: [], blockWidth: 15 * SCALE, blockHeight: 12 * SCALE },
