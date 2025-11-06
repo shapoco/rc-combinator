@@ -108,20 +108,20 @@ std::string DoubleCombinationClass::to_json_string() const {
 
 std::string DoubleCombinationClass::to_string() const {
   std::string s;
-  s += "  ratio:" + value_to_json_string(ratio) + "\n";
-  s += "    uppers:\n";
+  s += "  ratio: " + value_to_json_string(ratio) + "\n";
+  s += "    R1:\n";
   for (size_t i = 0; i < uppers.size(); i++) {
     const auto& comb = uppers[i];
-    s += "      " + value_to_json_string(comb->value);
+    s += "      " + value_to_prefixed(comb->value);
     if (!comb->is_leaf()) {
       s += " <-- " + comb->to_string();
     }
     s += "\n";
   }
-  s += "    lowers:\n";
+  s += "    R2:\n";
   for (size_t i = 0; i < lowers.size(); i++) {
     const auto& comb = lowers[i];
-    s += "      " + value_to_json_string(comb->value);
+    s += "      " + value_to_prefixed(comb->value);
     if (!comb->is_leaf()) {
       s += " <-- " + comb->to_string();
     }

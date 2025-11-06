@@ -6,11 +6,11 @@
 #include <cstdint>
 #include <exception>
 #include <limits>
+#include <string>
 #include <vector>
 
 #ifdef RCMB_DEBUG
 #include <cstdio>
-#include <string>
 #endif
 
 namespace rcmb {
@@ -85,6 +85,17 @@ inline bool value_is_valid(value_t v) {
   return 0 < v && v < VALUE_POSITIVE_INFINITY;
 }
 
+struct Prefix {
+  char symbol;
+  int exp;
+};
+
+static constexpr Prefix PREFIXES[] = {
+    {'p', -12}, {'n', -9}, {'u', -6}, {'m', -3}, {'\0', 0},
+    {'k', 3},   {'M', 6},  {'G', 9},  {'T', 12},
+};
+static constexpr int NUM_PREFIXES = sizeof(PREFIXES) / sizeof(PREFIXES[0]);
+
 extern uint32_t next_object_id;
 inline uint32_t generate_object_id() { return next_object_id++; }
 
@@ -97,6 +108,8 @@ static inline std::vector<value_t> sort_values(
 
 value_t pow10(int exp);
 uint32_t valueKeyOf(value_t value);
+value_t parse_prefixed(std::string s);
+std::string value_to_prefixed(value_t value);
 std::string value_to_json_string(value_t value);
 
 #ifdef RCMB_IMPLEMENTATION
@@ -122,11 +135,66 @@ uint32_t valueKeyOf(value_t value) {
   return (exp + 128) << 24 | (frac & 0x00FFFFFF);
 }
 
+value_t parse_prefixed(std::string s) {
+  if (s.empty()) {
+    return 0;
+  }
+
+  char last_char = s.back();
+  int exp = 0;
+  for (int i = 0; i < NUM_PREFIXES; i++) {
+    if (PREFIXES[i].symbol == last_char) {
+      exp = PREFIXES[i].exp;
+      s.pop_back();
+      break;
+    }
+  }
+
+  value_t value = std::stod(s);
+  if (exp > 0) {
+    value *= pow10(exp);
+  } else {
+    value /= pow10(-exp);
+  }
+  return value;
+}
+
+std::string value_to_prefixed(value_t value) {
+  int exp = std::floor(std::log10(value) + 1e-6);
+  if (exp < PREFIXES[0].exp) {
+    exp = PREFIXES[0].exp;
+  } else if (exp > PREFIXES[NUM_PREFIXES - 1].exp) {
+    exp = PREFIXES[NUM_PREFIXES - 1].exp;
+  }
+
+  char prefix = '\0';
+  for (int i = 0; i < NUM_PREFIXES - 1; i++) {
+    if (PREFIXES[i].exp <= exp && exp < PREFIXES[i].exp + 3) {
+      prefix = PREFIXES[i].symbol;
+      exp = PREFIXES[i].exp;
+      if (exp > 0) {
+        value /= pow10(exp);
+      } else {
+        value *= pow10(-exp);
+      }
+      break;
+    }
+  }
+
+  char buffer[32];
+  if (prefix == '\0') {
+    std::snprintf(buffer, sizeof(buffer), "%.12lg", value);
+  } else {
+    std::snprintf(buffer, sizeof(buffer), "%.12lg%c", value, prefix);
+  }
+  return std::string(buffer);
+}
+
 std::string value_to_json_string(value_t value) {
   int exp = std::floor(std::log10(value) + 1e-6);
   exp = static_cast<int>(std::floor(static_cast<float>(exp) / 3)) * 3;
   char buffer[32];
-  if (-6 <= exp && exp < 6) {
+  if (-3 <= exp && exp < 6) {
     std::snprintf(buffer, sizeof(buffer), "%.12lg", value);
   } else {
     if (exp > 0) {
@@ -134,7 +202,7 @@ std::string value_to_json_string(value_t value) {
     } else {
       value *= pow10(-exp);
     }
-    std::snprintf(buffer, sizeof(buffer), "%.12lge%d", value, exp);
+    std::snprintf(buffer, sizeof(buffer), "%.12lge%1d", value, exp);
   }
   return std::string(buffer);
 }

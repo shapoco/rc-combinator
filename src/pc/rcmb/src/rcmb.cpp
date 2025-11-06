@@ -21,13 +21,13 @@ static constexpr char OPT_TARGET = 't';
 static constexpr char OPT_FORMAT = 'f';
 static constexpr char OPT_NUM_ELEMS_MIN = 0x82;
 static constexpr char OPT_NUM_ELEMS_MAX = 'n';
-static constexpr char OPT_TARGET_TOL = 0x84;
-static constexpr char OPT_TARGET_TOL_MIN = 0x85;
-static constexpr char OPT_TARGET_TOL_MAX = 'e';
+static constexpr char OPT_TARGET_TOL = 'e';
+static constexpr char OPT_TARGET_TOL_MIN = 0x84;
+static constexpr char OPT_TARGET_TOL_MAX = 0x85;
 static constexpr char OPT_TOTAL_MIN = 0x87;
 static constexpr char OPT_TOTAL_MAX = 0x88;
-static constexpr char OPT_SERIES_MIN = 'm';
-static constexpr char OPT_SERIES_MAX = 'x';
+static constexpr char OPT_SERIES_MIN = 0x89;
+static constexpr char OPT_SERIES_MAX = 0x8A;
 
 static struct option long_opts[] = {
     {"series", required_argument, 0, OPT_SERIES},
@@ -242,9 +242,8 @@ int main_xcmb(ComponentType type, int argc, char** argv) {
   value_t series_max = VALUE_NONE;
 
   char short_opts[256];
-  snprintf(short_opts, sizeof(short_opts), "%c:%c:%c:%c:%c:%c:%c:", OPT_SERIES,
-           OPT_TARGET, OPT_FORMAT, OPT_NUM_ELEMS_MAX, OPT_TARGET_TOL_MAX,
-           OPT_SERIES_MIN, OPT_SERIES_MAX);
+  snprintf(short_opts, sizeof(short_opts), "%c:%c:%c:%c:%c:", OPT_SERIES,
+           OPT_TARGET, OPT_FORMAT, OPT_NUM_ELEMS_MAX, OPT_TARGET_TOL);
 
   int opt;
   while ((opt = getopt_long(argc, argv, short_opts, long_opts, NULL)) != -1) {
@@ -265,7 +264,7 @@ int main_xcmb(ComponentType type, int argc, char** argv) {
         num_elems_max = std::stoi(optarg);
         break;
       case OPT_TARGET_TOL:
-        target_tol = std::stod(optarg);
+        target_tol = std::stod(optarg) / 100;
         break;
       case OPT_TARGET_TOL_MIN:
         target_tol_min = std::stod(optarg) / 100;
@@ -274,10 +273,10 @@ int main_xcmb(ComponentType type, int argc, char** argv) {
         target_tol_max = std::stod(optarg) / 100;
         break;
       case OPT_SERIES_MIN:
-        series_min = std::stod(optarg);
+        series_min = parse_prefixed(optarg);
         break;
       case OPT_SERIES_MAX:
-        series_max = std::stod(optarg);
+        series_max = parse_prefixed(optarg);
         break;
       case '?':
         return 1;
@@ -359,10 +358,10 @@ int main_xcmb(ComponentType type, int argc, char** argv) {
         std::printf("\n");
       }
     } else if (output_format == output_format_t::TEXT) {
-      std::printf("Target: %g\n", target);
+      std::printf("Target: %s\n", value_to_prefixed(target).c_str());
       for (size_t i = 0; i < combs.size(); i++) {
         const auto& comb = combs[i];
-        std::string line = value_to_json_string(comb->value);
+        std::string line = value_to_prefixed(comb->value);
         if (!comb->is_leaf()) {
           line += " <-- " + comb->to_string();
         }
@@ -392,10 +391,9 @@ int main_rdiv(int argc, char** argv) {
   value_t total_max = 100000;
 
   char short_opts[256];
-  snprintf(short_opts, sizeof(short_opts),
-           "%c:%c:%c:%c:%c:%c:%c:%c:%c:", OPT_SERIES, OPT_TARGET, OPT_FORMAT,
-           OPT_NUM_ELEMS_MAX, OPT_TARGET_TOL_MAX, OPT_SERIES_MIN,
-           OPT_SERIES_MAX, OPT_TOTAL_MIN, OPT_TOTAL_MAX);
+  snprintf(short_opts, sizeof(short_opts), "%c:%c:%c:%c:%c:%c:%c:", OPT_SERIES,
+           OPT_TARGET, OPT_FORMAT, OPT_NUM_ELEMS_MAX, OPT_TARGET_TOL,
+           OPT_TOTAL_MIN, OPT_TOTAL_MAX);
 
   int opt;
   while ((opt = getopt_long(argc, argv, short_opts, long_opts, NULL)) != -1) {
@@ -416,7 +414,7 @@ int main_rdiv(int argc, char** argv) {
         num_elems_max = std::stoi(optarg);
         break;
       case OPT_TARGET_TOL:
-        target_tol = std::stod(optarg);
+        target_tol = std::stod(optarg) / 100;
         break;
       case OPT_TARGET_TOL_MIN:
         target_tol_min = std::stod(optarg) / 100;
@@ -425,17 +423,16 @@ int main_rdiv(int argc, char** argv) {
         target_tol_max = std::stod(optarg) / 100;
         break;
       case OPT_SERIES_MIN:
-        series_min = std::stod(optarg);
+        series_min = parse_prefixed(optarg);
         break;
       case OPT_SERIES_MAX:
-        series_max = std::stod(optarg);
+        series_max = parse_prefixed(optarg);
         break;
       case OPT_TOTAL_MIN:
-        total_min = std::stod(optarg);
+        total_min = parse_prefixed(optarg);
         break;
       case OPT_TOTAL_MAX:
-        total_max = std::stod(optarg);
-        ;
+        total_max = parse_prefixed(optarg);
         break;
       case '?':
         return 1;
@@ -517,7 +514,7 @@ int main_rdiv(int argc, char** argv) {
         std::printf("\n");
       }
     } else if (output_format == output_format_t::TEXT) {
-      std::printf("Target: %g\n", target);
+      std::printf("Target: %s\n", value_to_json_string(target).c_str());
       for (size_t i = 0; i < combs.size(); i++) {
         const auto& comb = combs[i];
         std::printf("%s", comb->to_string().c_str());
@@ -559,7 +556,7 @@ std::vector<value_t> get_values_vector(const std::string& series, value_t min,
     auto vals = split(series, ',');
     std::vector<value_t> result;
     for (const auto& v : vals) {
-      const value_t val = static_cast<value_t>(std::stod(v));
+      const value_t val = static_cast<value_t>(parse_prefixed(v));
       if (min <= val && val <= max) {
         result.push_back(val);
       }

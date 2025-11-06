@@ -36,8 +36,8 @@ class CombinationClass {
 
   result_t verify() const;
   bool is_normalized() const;
-  std::string to_json_string() const;
   std::string to_string() const;
+  std::string to_json_string() const;
 };
 
 static inline Combination create_combination(
@@ -120,6 +120,27 @@ bool CombinationClass::is_normalized() const {
   return true;
 }
 
+std::string CombinationClass::to_string() const {
+  if (is_leaf()) {
+    return value_to_prefixed(value);
+  } else {
+    std::string s;
+    for (size_t i = 0; i < children.size(); i++) {
+      const auto &child = children[i];
+      if (child->is_leaf()) {
+        s += child->to_string();
+      } else {
+        s += "(" + child->to_string() + ")";
+      }
+      if (i + 1 < children.size()) {
+        s += topology->parallel ? "//" : "--";
+      }
+    }
+    // s += "==>" + std::to_string(value);
+    return s;
+  }
+}
+
 std::string CombinationClass::to_json_string() const {
   if (is_leaf()) {
     return value_to_json_string(value);
@@ -138,27 +159,6 @@ std::string CombinationClass::to_json_string() const {
       }
     }
     s += "]}";
-    return s;
-  }
-}
-
-std::string CombinationClass::to_string() const {
-  if (is_leaf()) {
-    return value_to_json_string(value);
-  } else {
-    std::string s;
-    for (size_t i = 0; i < children.size(); i++) {
-      const auto &child = children[i];
-      if (child->is_leaf()) {
-        s += child->to_string();
-      } else {
-        s += "(" + child->to_string() + ")";
-      }
-      if (i + 1 < children.size()) {
-        s += topology->parallel ? "//" : "--";
-      }
-    }
-    // s += "==>" + std::to_string(value);
     return s;
   }
 }

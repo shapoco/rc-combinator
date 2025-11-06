@@ -21,24 +21,30 @@ APP_CPP_FILES := \
 	$(wildcard $(APP_SRC_DIR)/*.cpp)
 APP_OBJ := $(BUILD_DIR)/rcmb_app.o
 
+OBJ_FILES := \
+	$(RCMB_OBJ) \
+	$(APP_OBJ)
+
 CXXFLAGS := \
 	-std=c++20 \
 	-I$(RCMB_INC_DIR) \
-	-DRCMB_DEBUG \
 	-O2 \
 	-Wall
 
+EXTRA_DEPENDENCIES := \
+	Makefile
+
 build: $(BIN)
 
-$(BIN): $(RCMB_OBJ) $(APP_OBJ)
+$(BIN): $(OBJ_FILES) $(EXTRA_DEPENDENCIES)
 	@mkdir -p $(BIN_DIR)
-	$(CXX) $(CXXFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) -o $@ $(OBJ_FILES)
 
-$(RCMB_OBJ): $(RCMB_CPP_FILES) $(RCMB_HPP_FILES)
+$(RCMB_OBJ): $(RCMB_CPP_FILES) $(RCMB_HPP_FILES) $(EXTRA_DEPENDENCIES)
 	@mkdir -p $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -c -o $@ $(RCMB_CPP_FILES)
 
-$(APP_OBJ): $(APP_CPP_FILES) $(RCMB_HPP_FILES)
+$(APP_OBJ): $(APP_CPP_FILES) $(RCMB_HPP_FILES) $(EXTRA_DEPENDENCIES)
 	@mkdir -p $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -c -o $@ $(APP_CPP_FILES)
 
