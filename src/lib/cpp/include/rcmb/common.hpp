@@ -111,6 +111,7 @@ uint32_t valueKeyOf(value_t value);
 value_t parse_prefixed(std::string s);
 std::string value_to_prefixed(value_t value);
 std::string value_to_json_string(value_t value);
+int zero_suppress(char* buffer, int len);
 
 #ifdef RCMB_IMPLEMENTATION
 
@@ -182,10 +183,12 @@ std::string value_to_prefixed(value_t value) {
   }
 
   char buffer[32];
-  if (prefix == '\0') {
-    std::snprintf(buffer, sizeof(buffer), "%.12lg", value);
-  } else {
-    std::snprintf(buffer, sizeof(buffer), "%.12lg%c", value, prefix);
+  int len = std::snprintf(buffer, sizeof(buffer), "%.12lg", value);
+  len = zero_suppress(buffer, len);
+
+  if (prefix != '\0') {
+    buffer[len] = prefix;
+    buffer[len + 1] = '\0';
   }
   return std::string(buffer);
 }
@@ -193,18 +196,43 @@ std::string value_to_prefixed(value_t value) {
 std::string value_to_json_string(value_t value) {
   int exp = std::floor(std::log10(value) + 1e-6);
   exp = static_cast<int>(std::floor(static_cast<float>(exp) / 3)) * 3;
-  char buffer[32];
   if (-3 <= exp && exp < 6) {
-    std::snprintf(buffer, sizeof(buffer), "%.12lg", value);
-  } else {
-    if (exp > 0) {
-      value /= pow10(exp);
-    } else {
-      value *= pow10(-exp);
-    }
-    std::snprintf(buffer, sizeof(buffer), "%.12lge%1d", value, exp);
+    exp = 0;
   }
+  if (exp > 0) {
+    value /= pow10(exp);
+  } else if (exp < 0) {
+    value *= pow10(-exp);
+  }
+
+  char buffer[32];
+  int len = std::snprintf(buffer, sizeof(buffer), "%.12lg", value);
+  len = zero_suppress(buffer, len);
+
+  if (exp != 0) {
+    std::snprintf(buffer + len, sizeof(buffer) - len, "e%1d", exp);
+  }
+
   return std::string(buffer);
+}
+
+int zero_suppress(char* buffer, int len) {
+  bool has_dot = false;
+  for (int i = 0; i < len; i++) {
+    if (buffer[i] == '.') {
+      has_dot = true;
+      break;
+    }
+  }
+  if (!has_dot) return len;
+
+  while (len >= 2 && buffer[len - 1] == '0') {
+    buffer[--len] = '\0';
+  }
+  if (buffer[len - 1] == '.') {
+    buffer[--len] = '\0';
+  }
+  return len;
 }
 
 #endif

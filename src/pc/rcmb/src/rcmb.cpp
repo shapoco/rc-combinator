@@ -329,7 +329,7 @@ int main_xcmb(ComponentType type, int argc, char** argv) {
 
     value_t target_min = target * (1 - target_tol_max);
     value_t target_max = target * (1 + target_tol_max);
-    ValueSearchArgs vsa(type, value_list, num_elems_min, num_elems_max, target,
+    CombinationSearchArgs vsa(type, value_list, num_elems_min, num_elems_max, target,
                         target_min, target_max);
     std::vector<Combination> combs;
     result_t res = search_combinations(vsa, combs);
@@ -680,7 +680,7 @@ bool test_search_combinations(ComponentType type, std::vector<value_t>& series,
   value_t target_max = target * 1.5;
 
   ValueList value_list(series);
-  ValueSearchArgs vsa(type, value_list, 1, max_elements, target, target_min,
+  CombinationSearchArgs vsa(type, value_list, 1, max_elements, target, target_min,
                       target_max);
 
   std::vector<Combination> dut_combs;

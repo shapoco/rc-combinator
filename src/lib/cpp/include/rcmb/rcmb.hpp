@@ -16,7 +16,7 @@
 
 namespace rcmb {
 
-struct ValueSearchArgs {
+struct CombinationSearchArgs {
   const ComponentType type;
   const ValueList& element_values;
   const int num_elems_min;
@@ -27,7 +27,7 @@ struct ValueSearchArgs {
   topology_constraint_t topology_constraint = topology_constraint_t::NO_LIMIT;
   int max_depth = 9999;
 
-  ValueSearchArgs(ComponentType type, const ValueList& values,
+  CombinationSearchArgs(ComponentType type, const ValueList& values,
                   int num_elems_min, int num_elems_max, value_t target,
                   value_t target_min, value_t target_max)
       : type(type),
@@ -141,7 +141,7 @@ struct DividerSearchArgs {
   }
 };
 
-result_t search_combinations(ValueSearchArgs& args,
+result_t search_combinations(CombinationSearchArgs& args,
                              std::vector<Combination>& out_combs);
 result_t search_dividers(DividerSearchArgs& args,
                          std::vector<DoubleCombination>& best_combs);
@@ -314,7 +314,7 @@ static void update_target_of_next_brother_of(SearchState st) {
 static void filter_unnormalized_combinations(std::vector<Combination>& combs);
 
 // 合成抵抗・合成容量の探索
-result_t search_combinations(ValueSearchArgs& args,
+result_t search_combinations(CombinationSearchArgs& args,
                              std::vector<Combination>& best_combs) {
   result_t ret;
   ret = args.validate();
@@ -487,7 +487,7 @@ result_t search_dividers(DividerSearchArgs& args,
           }
 
           // 下側の抵抗値に対応する上側の抵抗を列挙する
-          ValueSearchArgs vsa(ComponentType::Resistor, args.element_values, 1,
+          CombinationSearchArgs vsa(ComponentType::Resistor, args.element_values, 1,
                               upper_max_elements, est_upper_val,
                               target_upper_min, target_upper_max);
           vsa.topology_constraint = args.topology_constraint;

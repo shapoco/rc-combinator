@@ -46,7 +46,7 @@ std::string findCombinations(bool capacitor,
   }
   ValueList value_list(val_vec);
 
-  ValueSearchArgs args(type, value_list, num_elems_min, num_elems_max,
+  CombinationSearchArgs args(type, value_list, num_elems_min, num_elems_max,
                        target_value, target_min, target_max);
   args.topology_constraint =
       static_cast<topology_constraint_t>(topology_constraint);
